@@ -14,13 +14,15 @@
       "beans (except in chilli)"
     ],
     "principles": [
+      "⚠️ Right-foot friendly: no running, jumping or heavy calf/single-leg loading on the right foot. Train only in pain-free ranges, ice after sessions, and check in with a physio.",
       "Hit your protein target every single day — it protects muscle while you cut.",
-      "Aim for 8,000–10,000 steps daily on top of workouts.",
+      "Stay active daily, but keep it low-impact for your right foot — favour cycling over long walks or running.",
       "Sleep 7–9 hours. Fat loss happens when you recover.",
       "Drink ~2.5–3 L water a day.",
       "Weigh yourself same time each morning; judge progress on the weekly average, not single days.",
       "One flexible meal a week is fine — stay roughly within calories."
-    ]
+    ],
+    "notes": "Adapted for posterior tibial tendinitis (right foot): low-impact cardio (cycling/elliptical), no running or jumping, and leg work swapped to bilateral/seated/supported options (leg press, wall sit, glute bridge, seated leg curl) instead of lunges, split squats and calf raises."
   },
   "phases": [
     {
@@ -62,7 +64,7 @@
           "emoji": "🚶",
           "name": "Zone 2 + Core",
           "items": [
-            "30 min brisk walk / cycle (Zone 2)",
+            "30 min cycle / elliptical (Zone 2, low-impact)",
             "Dead bug — 3 x 12",
             "Side plank — 3 x 30s each"
           ]
@@ -73,14 +75,14 @@
           "emoji": "🏋️",
           "name": "Full Body B",
           "items": [
-            "Reverse lunge — 3 x 10 each",
+            "Leg press / wall sit — 3 x 12",
             "DB shoulder press — 3 x 10",
             "Lat pulldown / band pulldown — 3 x 12",
             "Hip thrust — 3 x 12",
             "Hanging / lying knee raise — 3 x 12"
           ],
           "homeItems": [
-            "Reverse lunge — 3 x 12 each",
+            "Wall sit — 3 x 45s",
             "Pike push-ups / DB shoulder press — 3 x 10",
             "Band pull-down / band row — 3 x 15",
             "Glute bridge — 3 x 15",
@@ -93,7 +95,7 @@
           "emoji": "🧘",
           "name": "Zone 2 + Mobility",
           "items": [
-            "35 min Zone 2 cardio",
+            "35 min cycle / elliptical (Zone 2)",
             "Full-body stretch / mobility flow — 10 min"
           ]
         },
@@ -103,17 +105,17 @@
           "emoji": "🏋️",
           "name": "Full Body C",
           "items": [
-            "Bulgarian split squat — 3 x 8 each",
+            "Leg press — 3 x 10",
             "Incline DB press — 3 x 10",
             "Seated cable / band row — 3 x 12",
             "Romanian deadlift — 3 x 10",
             "Side plank — 3 x 30s each"
           ],
           "homeItems": [
-            "Bulgarian split squat — 3 x 10 each",
+            "Box squat / sit-to-stand — 3 x 12",
             "Incline push-ups / DB floor press — 3 x 12",
             "Band row — 3 x 15",
-            "Single-leg glute bridge — 3 x 12 each",
+            "Glute bridge — 3 x 15",
             "Side plank — 3 x 30s each"
           ]
         },
@@ -121,16 +123,16 @@
           "day": "Saturday",
           "type": "hiit",
           "emoji": "⚡",
-          "name": "Intervals + Walk",
+          "name": "Low-Impact Intervals",
           "items": [
-            "Warm up 5 min easy",
-            "10 x (30s hard / 60s easy) — bike, run or rower",
-            "20 min walk to finish"
+            "Warm up 5 min easy cycle",
+            "10 x (30s hard / 60s easy) — bike or seated rower, no running",
+            "8 min easy spin to finish"
           ],
           "homeItems": [
-            "Warm up 5 min easy",
-            "10 x (30s high knees or burpees / 60s easy)",
-            "20 min walk to finish"
+            "Warm up 5 min",
+            "10 x (30s hard: shadow-boxing + fast arm circles / 60s easy) — no jumping",
+            "Core circuit — 2 rounds"
           ]
         },
         {
@@ -140,7 +142,7 @@
           "name": "Rest & Recover",
           "items": [
             "Full rest day",
-            "Hit 8,000 steps",
+            "Easy 20-min cycle or gentle mobility — keep weight off the right foot",
             "10 min gentle stretch"
           ]
         }
@@ -189,15 +191,15 @@
           "items": [
             "Back / goblet squat — 4 x 6-8",
             "Romanian deadlift — 4 x 8",
-            "Walking lunge — 3 x 10 each",
-            "Standing calf raise — 4 x 15",
+            "Leg press — 3 x 10",
+            "Seated leg curl — 4 x 12",
             "Cable / leg-raise core — 3 x 15"
           ],
           "homeItems": [
             "Goblet squat — 4 x 10",
             "DB Romanian deadlift — 4 x 10",
-            "Walking lunge — 3 x 10 each",
-            "Single-leg calf raise — 4 x 15",
+            "Box squat / sit-to-stand — 3 x 15",
+            "Glute bridge — 3 x 15",
             "Leg raise / plank — 3 x 15"
           ]
         },
@@ -207,7 +209,7 @@
           "emoji": "🚴",
           "name": "Zone 2 + Mobility",
           "items": [
-            "40 min Zone 2 cardio",
+            "40 min cycle / elliptical (Zone 2)",
             "Hip + shoulder mobility — 10 min"
           ]
         },
@@ -239,15 +241,15 @@
           "items": [
             "Front / goblet squat — 4 x 10-12",
             "Hip thrust — 4 x 12",
-            "Bulgarian split squat — 3 x 10 each",
-            "Leg curl / Nordic — 3 x 12",
+            "Leg press — 3 x 12",
+            "Leg curl — 3 x 12",
             "Core circuit — 3 rounds"
           ],
           "homeItems": [
             "Goblet / DB squat — 4 x 12",
             "DB hip thrust / glute bridge — 4 x 12",
-            "Bulgarian split squat — 3 x 10 each",
-            "Nordic / band leg curl — 3 x 12",
+            "Wall sit — 3 x 45s",
+            "Band leg curl — 3 x 12",
             "Core circuit — 3 rounds"
           ]
         },
@@ -255,16 +257,16 @@
           "day": "Saturday",
           "type": "hiit",
           "emoji": "⚡",
-          "name": "HIIT + Walk",
+          "name": "Low-Impact HIIT",
           "items": [
-            "Warm up 5 min",
-            "12 x (30s hard / 60s easy)",
-            "25 min walk to finish"
+            "Warm up 5 min easy cycle",
+            "12 x (30s hard / 60s easy) — bike or seated rower",
+            "8 min easy spin to finish"
           ],
           "homeItems": [
             "Warm up 5 min",
-            "12 x (30s burpees or mountain climbers / 60s easy)",
-            "25 min walk to finish"
+            "12 x (30s hard: shadow-boxing + standing band punches / 60s easy) — no jumping",
+            "Core circuit — 3 rounds"
           ]
         },
         {
@@ -274,7 +276,7 @@
           "name": "Rest & Recover",
           "items": [
             "Full rest day",
-            "Hit 9,000 steps",
+            "Easy 25-min cycle or gentle mobility — keep weight off the right foot",
             "Stretch / foam roll — 10 min"
           ]
         }
@@ -337,18 +339,16 @@
           "day": "Wednesday",
           "type": "hiit",
           "emoji": "⚡",
-          "name": "HIIT + Core",
+          "name": "Low-Impact HIIT + Core",
           "items": [
-            "Warm up 5 min",
-            "15 x (30s hard / 45s easy)",
-            "Core circuit — 3 rounds",
-            "20 min walk"
+            "Warm up 5 min easy cycle",
+            "15 x (30s hard / 45s easy) — bike or seated rower",
+            "Core circuit — 3 rounds"
           ],
           "homeItems": [
             "Warm up 5 min",
-            "15 x (30s burpees or high knees / 45s easy)",
-            "Core circuit — 3 rounds",
-            "20 min walk"
+            "15 x (30s hard: shadow-boxing + core / 45s easy) — no jumping",
+            "Core circuit — 3 rounds"
           ]
         },
         {
@@ -359,17 +359,17 @@
           "items": [
             "Squat — 4 x 8",
             "Romanian deadlift — 3 x 10",
-            "Walking lunge — 3 x 12 each",
+            "Leg press — 3 x 12",
             "Hip thrust — 3 x 12",
-            "Calf raise — 4 x 20",
+            "Seated leg curl — 3 x 15",
             "Hanging leg raise — 3 x 15"
           ],
           "homeItems": [
             "Goblet squat — 4 x 10",
             "DB Romanian deadlift — 3 x 10",
-            "Walking lunge — 3 x 12 each",
+            "Box squat / sit-to-stand — 3 x 15",
             "DB hip thrust / glute bridge — 3 x 12",
-            "Calf raise — 4 x 20",
+            "Glute bridge hold — 3 x 30s",
             "Lying leg raise — 3 x 15"
           ]
         },
@@ -383,14 +383,14 @@
             "Cable row — 3 x 15",
             "Lateral raise — 3 x 20",
             "Arms superset — 3 x 15",
-            "15 min cardio finisher"
+            "15 min cycle finisher (low-impact)"
           ],
           "homeItems": [
             "Incline push-ups — 3 x 15",
             "Band row — 3 x 15",
             "DB lateral raise — 3 x 20",
             "DB arms superset — 3 x 15",
-            "15 min cardio finisher (walk/jog)"
+            "15 min easy spin / low-impact finisher"
           ]
         },
         {
@@ -399,7 +399,7 @@
           "emoji": "🚶",
           "name": "Long Zone 2 + Core",
           "items": [
-            "45 min Zone 2 cardio",
+            "45 min cycle / elliptical (Zone 2)",
             "Core circuit — 3 rounds"
           ]
         },
@@ -410,7 +410,7 @@
           "name": "Rest & Recover",
           "items": [
             "Full rest day",
-            "Hit 10,000 steps",
+            "Easy 30-min cycle or gentle mobility — keep weight off the right foot",
             "Mobility / stretch — 15 min"
           ]
         }

@@ -93,8 +93,14 @@ bodyweight). Tap the **🏋️ Gym / 🏠 Home** toggle on the Today screen — 
 remembered. For the daily Telegram ping, set `PT_MODE` to `gym` or `home` in
 `.github/workflows/daily-ping.yml`.
 
-> ⚕️ General fitness guidance, not medical advice. Check with a GP before starting a
-> new program, especially if you have any health conditions.
+**🦶 Foot-friendly:** the plan is adapted for posterior tibial tendinitis (right foot)
+— no running or jumping, low-impact cardio (cycling/elliptical), and leg work uses
+bilateral/seated/supported moves (leg press, wall sit, glute bridge, seated leg curl)
+instead of lunges, split squats and calf raises. Work only in pain-free ranges.
+
+> ⚕️ General fitness guidance, not medical advice. Posterior tibial tendinitis can
+> worsen if loaded through pain — please get it assessed by a GP or physio, and stop
+> any movement that aggravates it.
 
 ---
 
