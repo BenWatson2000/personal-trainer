@@ -26,4 +26,6 @@ jobs:
           PT_START_DATE: "2026-06-22"
           # Your hosted web-app link (used in the message):
           APP_URL: "https://benwatson2000.github.io/personal-trainer/"
+          # Workout style for the ping: "gym" or "home" (no-equipment variants):
+          PT_MODE: "gym"
         run: node scripts/daily-ping.js

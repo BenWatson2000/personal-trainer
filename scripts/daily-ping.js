@@ -11,6 +11,7 @@ const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT = process.env.TELEGRAM_CHAT_ID;
 const START = process.env.PT_START_DATE || PLAN.meta.startDate;
 const APP_URL = process.env.APP_URL || "";
+const MODE = (process.env.PT_MODE || "gym").toLowerCase(); // "gym" or "home"
 
 if (!TOKEN || !CHAT) {
   console.error("Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID — skipping. Add them as repo secrets.");
@@ -44,13 +45,15 @@ if (dn < 0) {
   ];
   const quote = quotes[dn % quotes.length];
 
-  const workout = day.items.map((i) => `• ${esc(i)}`).join("\n");
+  const exercises = (MODE === "home" && day.homeItems) ? day.homeItems : day.items;
+  const modeTag = (MODE === "home" && day.homeItems) ? " 🏠 home" : "";
+  const workout = exercises.map((i) => `• ${esc(i)}`).join("\n");
   const meals = Object.entries(meal.items).map(([k, v]) => `<b>${esc(k)}:</b> ${esc(v)}`).join("\n");
 
   text =
     `${day.emoji} <b>Day ${dn + 1} · Week ${week}/12 — ${esc(phase.name)}</b>\n` +
     `<i>${esc(quote)}</i>\n\n` +
-    `<b>${day.emoji} ${esc(day.name)}</b> (${day.type})\n${workout}\n\n` +
+    `<b>${day.emoji} ${esc(day.name)}</b> (${day.type}${modeTag})\n${workout}\n\n` +
     `🍽 <b>Fuel — ${esc(meal.name)}</b>\n` +
     `🎯 ${phase.calories} kcal · ${phase.protein}g protein · ${phase.carbs}g carbs · ${phase.fat}g fat\n${meals}\n\n` +
     `💧 8 glasses of water · 🚶 hit your steps` +

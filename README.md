@@ -88,6 +88,11 @@ calories stepping down across three phases.
 Full daily workouts and a 7-day meal rotation (no fish; beans only in the chilli)
 live in [`data/plan.json`](data/plan.json) and render in the **Plan** tab of the app.
 
+**Gym or home?** Every lifting day has a no-equipment variant (dumbbells / bands /
+bodyweight). Tap the **🏋️ Gym / 🏠 Home** toggle on the Today screen — your choice is
+remembered. For the daily Telegram ping, set `PT_MODE` to `gym` or `home` in
+`.github/workflows/daily-ping.yml`.
+
 > ⚕️ General fitness guidance, not medical advice. Check with a GP before starting a
 > new program, especially if you have any health conditions.
 
