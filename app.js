@@ -139,7 +139,9 @@ function renderToday() {
 function renderPlan() {
   let html = `<div class="card hero"><span class="phase-tag">The blueprint</span>
     <h1>12-Week Shred</h1><p>${PLAN.meta.goal}</p>
-    <div class="pill-row">${PLAN.meta.dislikes.map(d => `<span class="tag">no ${d}</span>`).join("")}</div></div>`;
+    <div class="pill-row">${PLAN.meta.dislikes.map(d => `<span class="tag">no ${d}</span>`).join("")}
+      <span class="tag">low-impact</span></div>
+    ${PLAN.meta.notes ? `<p class="quote" style="font-style:normal;font-size:13px;color:var(--muted)">🦶 ${PLAN.meta.notes}</p>` : ""}</div>`;
 
   PLAN.phases.forEach((p) => {
     html += `<div class="card">
