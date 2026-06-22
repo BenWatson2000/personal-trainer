@@ -60,8 +60,13 @@ function renderToday() {
   const meal = PLAN.meals[pos.dn % PLAN.meals.length];
   const quote = QUOTES[pos.dn % QUOTES.length];
 
+  // gym vs home variant
+  const mode = LS.get("pt_mode", "gym");
+  const useHome = mode === "home" && day.homeItems;
+  const exercises = useHome ? day.homeItems : day.items;
+
   // workout checklist
-  const workItems = day.items.map((t, i) => {
+  const workItems = exercises.map((t, i) => {
     const done = checks.workout[i];
     return `<li class="${done ? "done" : ""}" data-act="workout" data-i="${i}">
       <span class="checkbox">${done ? "✓" : ""}</span><span class="item-text">${t}</span></li>`;
@@ -95,6 +100,10 @@ function renderToday() {
       <div><h2 style="margin:0">${day.name}</h2>
       <span class="type-badge type-${day.type}">${day.type.toUpperCase()}</span></div>
     </div>
+    ${day.homeItems ? `<div class="mode-toggle">
+      <button class="mode-btn ${!useHome ? "active" : ""}" data-mode="gym">🏋️ Gym</button>
+      <button class="mode-btn ${useHome ? "active" : ""}" data-mode="home">🏠 Home</button>
+    </div>` : ""}
     <ul class="checklist">${workItems}</ul>
   </div>
 
@@ -157,6 +166,16 @@ function renderPlan() {
         `<li style="cursor:default"><span class="item-text"><span class="meal-label">${k}</span>${m.items[k]}</span></li>`).join("")}</ul>`;
   });
   html += `</div>`;
+
+  if (PLAN.shoppingList) {
+    html += `<div class="card"><h2>🛒 Weekly shopping list</h2><p class="sub">${PLAN.shoppingList.note}</p>`;
+    PLAN.shoppingList.categories.forEach((cat) => {
+      html += `<div class="section-label">${cat.name}</div>
+        <ul class="checklist">${cat.items.map(i =>
+          `<li style="cursor:default"><span class="checkbox" style="border-radius:5px"></span><span class="item-text">${i}</span></li>`).join("")}</ul>`;
+    });
+    html += `</div>`;
+  }
 
   html += `<div class="card"><h2>📋 Golden rules</h2><ul class="note" style="padding-left:18px;line-height:1.8">
     ${PLAN.meta.principles.map(r => `<li>${r}</li>`).join("")}</ul></div>`;
@@ -271,6 +290,9 @@ function logWeight() {
 }
 
 function onViewClick(e) {
+  const modeBtn = e.target.closest("[data-mode]");
+  if (modeBtn) { LS.set("pt_mode", modeBtn.dataset.mode); render(); return; }
+
   const li = e.target.closest("[data-act]");
   if (li) {
     const act = li.dataset.act, i = parseInt(li.dataset.i, 10);

@@ -54,6 +54,12 @@ Every morning a GitHub Action sends you the day's workout + meals. Setup takes ~
 After that it runs automatically at **06:00 UTC (~7am UK summer time)** daily.
 Change the time or start date in `.github/workflows/daily-ping.yml`.
 
+**Weekly shopping list** — a second action (`Weekly Shopping List`) sends the week's
+shop to the same Telegram chat every **Sunday at ~5pm UK**, so you can prep ahead.
+It uses the same two secrets — no extra setup. Run it any time from
+**Actions → Weekly Shopping List → Run workflow**, or edit the day/time in
+`.github/workflows/weekly-shopping.yml`.
+
 > Prefer email instead of Telegram? Telegram is the simplest free option, but the
 > ping script is just one file (`scripts/daily-ping.js`) — swap the `fetch` call for
 > an email service (e.g. Resend/Mailgun free tier) and add those secrets.
@@ -82,6 +88,11 @@ calories stepping down across three phases.
 Full daily workouts and a 7-day meal rotation (no fish; beans only in the chilli)
 live in [`data/plan.json`](data/plan.json) and render in the **Plan** tab of the app.
 
+**Gym or home?** Every lifting day has a no-equipment variant (dumbbells / bands /
+bodyweight). Tap the **🏋️ Gym / 🏠 Home** toggle on the Today screen — your choice is
+remembered. For the daily Telegram ping, set `PT_MODE` to `gym` or `home` in
+`.github/workflows/daily-ping.yml`.
+
 > ⚕️ General fitness guidance, not medical advice. Check with a GP before starting a
 > new program, especially if you have any health conditions.
 
@@ -104,9 +115,10 @@ index.html              the web app shell
 styles.css  app.js      UI + logic (no frameworks, no build step)
 manifest.webmanifest    makes it installable (PWA)
 sw.js                   offline caching
-data/plan.json          the entire plan (single source of truth)
+data/plan.json          the entire plan + shopping list (single source of truth)
 scripts/daily-ping.js   builds + sends the daily Telegram message
-.github/workflows/      the morning cron job
+scripts/shopping-list.js builds + sends the Sunday shopping list
+.github/workflows/      the morning cron job + Sunday shopping cron
 icons/                  app icons
 ```
 
