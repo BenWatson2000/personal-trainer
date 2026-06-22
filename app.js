@@ -158,6 +158,16 @@ function renderPlan() {
   });
   html += `</div>`;
 
+  if (PLAN.shoppingList) {
+    html += `<div class="card"><h2>🛒 Weekly shopping list</h2><p class="sub">${PLAN.shoppingList.note}</p>`;
+    PLAN.shoppingList.categories.forEach((cat) => {
+      html += `<div class="section-label">${cat.name}</div>
+        <ul class="checklist">${cat.items.map(i =>
+          `<li style="cursor:default"><span class="checkbox" style="border-radius:5px"></span><span class="item-text">${i}</span></li>`).join("")}</ul>`;
+    });
+    html += `</div>`;
+  }
+
   html += `<div class="card"><h2>📋 Golden rules</h2><ul class="note" style="padding-left:18px;line-height:1.8">
     ${PLAN.meta.principles.map(r => `<li>${r}</li>`).join("")}</ul></div>`;
   return html;

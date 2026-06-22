@@ -267,5 +267,71 @@
         "Evening": "Square dark chocolate + casein shake"
       }
     }
-  ]
+  ],
+  "shoppingList": {
+    "note": "One week's shop for the 7-day meal rotation (one person). Quantities are a guide — buy a touch less in Phase 3 as portions tighten. No fish; beans only for the chilli.",
+    "categories": [
+      { "name": "🥩 Protein", "items": [
+        "Chicken breast — ~1 kg",
+        "Lean beef mince 5% — 300 g",
+        "Turkey mince — 150 g",
+        "Pork loin steaks — 2",
+        "Turkey rashers — 1 pack",
+        "Eggs — 1 dozen",
+        "Whey protein — (tub lasts weeks)",
+        "Casein or extra whey — (optional, for evenings)"
+      ]},
+      { "name": "🧀 Dairy & chilled", "items": [
+        "0% Greek yogurt — 1 kg tub",
+        "Cottage cheese — 2 pots",
+        "Cheddar — small block",
+        "Parmesan — small wedge",
+        "Babybel / light cheese — 1 pack"
+      ]},
+      { "name": "🍞 Carbs & grains", "items": [
+        "Rice — 500 g bag",
+        "Pasta + spaghetti — 1 bag each",
+        "Egg noodles — 1 pack",
+        "Couscous — small pack",
+        "Porridge oats — 500 g",
+        "Granola — 1 bag",
+        "Wholegrain bread — 1 loaf",
+        "Whole-wheat tortillas / wraps — 1 pack",
+        "New potatoes — 400 g",
+        "Sweet potato — 1",
+        "Rice cakes + wholegrain crackers"
+      ]},
+      { "name": "🥦 Fruit & veg", "items": [
+        "Bananas — 5",
+        "Apples — 5",
+        "Berries (blueberries/raspberries) — 2 punnets",
+        "Pineapple — small tub",
+        "Spinach — 1 bag",
+        "Broccoli — 2 heads",
+        "Peppers — 4",
+        "Onions — 3",
+        "Cherry tomatoes — 1 punnet",
+        "Mixed salad — 1 bag",
+        "Avocado — 1",
+        "Stir-fry veg mix — 1 bag",
+        "Sweetcorn — 1 tin"
+      ]},
+      { "name": "🫙 Store cupboard", "items": [
+        "Kidney beans — 1 tin (for the chilli)",
+        "Chopped tomatoes — 2 tins",
+        "Pasta / tomato sauce — 1 jar",
+        "Light pesto — 1 jar",
+        "Salsa — 1 jar",
+        "Soy sauce + sriracha",
+        "Curry paste / sauce + light coconut milk",
+        "Chilli & fajita seasoning",
+        "Olive oil, honey, peanut butter"
+      ]},
+      { "name": "🍫 Snacks & extras", "items": [
+        "Protein bars — 4",
+        "Almonds + cashews — 1 bag each",
+        "Dark chocolate — 1 bar"
+      ]}
+    ]
+  }
 }
