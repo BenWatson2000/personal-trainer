@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1116" />
+  <title>Ben's PT — 12 Week Shred</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="My PT" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <span class="brand-dot"></span>
+          <span id="phaseName">Loading…</span>
+        </div>
+        <div class="day-pill" id="dayPill">Day –</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="overallProgress"></div></div>
+    </header>
+
+    <main id="view"><div class="loading">Loading your plan…</div></main>
+
+    <nav class="tabbar">
+      <button class="tab active" data-tab="today">📅<span>Today</span></button>
+      <button class="tab" data-tab="plan">🗓️<span>Plan</span></button>
+      <button class="tab" data-tab="progress">📈<span>Progress</span></button>
+      <button class="tab" data-tab="settings">⚙️<span>Settings</span></button>
+    </nav>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+{
+  "meta": {
+    "athlete": "Ben",
+    "goal": "Get ripped — lose fat, keep muscle, reveal definition",
+    "stats": { "weightKg": 68, "heightCm": 156, "sex": "male" },
+    "weeks": 12,
+    "startDate": "2026-06-22",
+    "dislikes": ["fish", "beans (except in chilli)"],
+    "principles": [
+      "Hit your protein target every single day — it protects muscle while you cut.",
+      "Aim for 8,000–10,000 steps daily on top of workouts.",
+      "Sleep 7–9 hours. Fat loss happens when you recover.",
+      "Drink ~2.5–3 L water a day.",
+      "Weigh yourself same time each morning; judge progress on the weekly average, not single days.",
+      "One flexible meal a week is fine — stay roughly within calories."
+    ]
+  },
+  "phases": [
+    {
+      "id": 1,
+      "name": "Foundation",
+      "tagline": "Build the habit + reawaken the muscles",
+      "weekStart": 1,
+      "weekEnd": 4,
+      "calories": 1900,
+      "protein": 160,
+      "carbs": 180,
+      "fat": 60,
+      "focus": "Full-body strength 3x/week to keep muscle, easy cardio to start the fat burn. Don't go too hard yet — we're building consistency.",
+      "cardioNote": "Zone 2 = brisk pace where you can still hold a conversation.",
+      "schedule": [
+        { "day": "Monday", "type": "strength", "emoji": "🏋️", "name": "Full Body A", "items": [
+          "Goblet squat — 3 x 10",
+          "DB bench press / push-ups — 3 x 10",
+          "One-arm DB row — 3 x 10 each",
+          "Romanian deadlift — 3 x 10",
+          "Plank — 3 x 40s"
+        ]},
+        { "day": "Tuesday", "type": "cardio", "emoji": "🚶", "name": "Zone 2 + Core", "items": [
+          "30 min brisk walk / cycle (Zone 2)",
+          "Dead bug — 3 x 12",
+          "Side plank — 3 x 30s each"
+        ]},
+        { "day": "Wednesday", "type": "strength", "emoji": "🏋️", "name": "Full Body B", "items": [
+          "Reverse lunge — 3 x 10 each",
+          "DB shoulder press — 3 x 10",
+          "Lat pulldown / band pulldown — 3 x 12",
+          "Hip thrust — 3 x 12",
+          "Hanging / lying knee raise — 3 x 12"
+        ]},
+        { "day": "Thursday", "type": "cardio", "emoji": "🧘", "name": "Zone 2 + Mobility", "items": [
+          "35 min Zone 2 cardio",
+          "Full-body stretch / mobility flow — 10 min"
+        ]},
+        { "day": "Friday", "type": "strength", "emoji": "🏋️", "name": "Full Body C", "items": [
+          "Bulgarian split squat — 3 x 8 each",
+          "Incline DB press — 3 x 10",
+          "Seated cable / band row — 3 x 12",
+          "Romanian deadlift — 3 x 10",
+          "Side plank — 3 x 30s each"
+        ]},
+        { "day": "Saturday", "type": "hiit", "emoji": "⚡", "name": "Intervals + Walk", "items": [
+          "Warm up 5 min easy",
+          "10 x (30s hard / 60s easy) — bike, run or rower",
+          "20 min walk to finish"
+        ]},
+        { "day": "Sunday", "type": "rest", "emoji": "😴", "name": "Rest & Recover", "items": [
+          "Full rest day",
+          "Hit 8,000 steps",
+          "10 min gentle stretch"
+        ]}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Build & Burn",
+      "tagline": "Upper/Lower split + intervals — turn up the heat",
+      "weekStart": 5,
+      "weekEnd": 8,
+      "calories": 1800,
+      "protein": 160,
+      "carbs": 160,
+      "fat": 58,
+      "focus": "4 lifting days split upper/lower, plus harder intervals. Calories drop slightly as the cut deepens. Push the weights — keep reps in the tank with 1–2 left.",
+      "cardioNote": "Add weight or reps each week vs. the last — progressive overload.",
+      "schedule": [
+        { "day": "Monday", "type": "strength", "emoji": "💪", "name": "Upper Strength", "items": [
+          "DB / barbell bench press — 4 x 6-8",
+          "Bent-over row — 4 x 8",
+          "Standing overhead press — 3 x 8",
+          "Pull-ups / lat pulldown — 3 x 8-10",
+          "EZ-bar / DB curl — 3 x 12",
+          "Triceps rope / dip — 3 x 12"
+        ]},
+        { "day": "Tuesday", "type": "strength", "emoji": "🦵", "name": "Lower Strength", "items": [
+          "Back / goblet squat — 4 x 6-8",
+          "Romanian deadlift — 4 x 8",
+          "Walking lunge — 3 x 10 each",
+          "Standing calf raise — 4 x 15",
+          "Cable / leg-raise core — 3 x 15"
+        ]},
+        { "day": "Wednesday", "type": "cardio", "emoji": "🚴", "name": "Zone 2 + Mobility", "items": [
+          "40 min Zone 2 cardio",
+          "Hip + shoulder mobility — 10 min"
+        ]},
+        { "day": "Thursday", "type": "strength", "emoji": "💪", "name": "Upper Hypertrophy", "items": [
+          "Incline DB press — 4 x 10-12",
+          "Cable / band row — 4 x 12",
+          "Lateral raise — 4 x 15",
+          "Face pull — 3 x 15",
+          "Superset: curls + triceps — 3 x 12 each"
+        ]},
+        { "day": "Friday", "type": "strength", "emoji": "🦵", "name": "Lower Hypertrophy", "items": [
+          "Front / goblet squat — 4 x 10-12",
+          "Hip thrust — 4 x 12",
+          "Bulgarian split squat — 3 x 10 each",
+          "Leg curl / Nordic — 3 x 12",
+          "Core circuit — 3 rounds"
+        ]},
+        { "day": "Saturday", "type": "hiit", "emoji": "⚡", "name": "HIIT + Walk", "items": [
+          "Warm up 5 min",
+          "12 x (30s hard / 60s easy)",
+          "25 min walk to finish"
+        ]},
+        { "day": "Sunday", "type": "rest", "emoji": "😴", "name": "Rest & Recover", "items": [
+          "Full rest day",
+          "Hit 9,000 steps",
+          "Stretch / foam roll — 10 min"
+        ]}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Shred",
+      "tagline": "Push/Pull/Legs + extra cardio — bring out the definition",
+      "weekStart": 9,
+      "weekEnd": 12,
+      "calories": 1700,
+      "protein": 165,
+      "carbs": 140,
+      "fat": 55,
+      "focus": "Push/Pull/Legs with an upper pump day and more cardio. Tightest calories of the plan but highest protein. This is where the abs show up — stay disciplined, you're nearly there.",
+      "cardioNote": "If energy dips, keep the lifts and trim cardio — never trim protein.",
+      "schedule": [
+        { "day": "Monday", "type": "strength", "emoji": "🔥", "name": "Push", "items": [
+          "Bench press — 4 x 8",
+          "Overhead press — 4 x 8",
+          "Incline DB press — 3 x 12",
+          "Lateral raise — 4 x 15",
+          "Triceps superset — 3 x 15"
+        ]},
+        { "day": "Tuesday", "type": "strength", "emoji": "🔥", "name": "Pull", "items": [
+          "Romanian deadlift — 4 x 8",
+          "Bent-over / cable row — 4 x 10",
+          "Pull-ups / lat pulldown — 4 x 10",
+          "Face pull — 3 x 15",
+          "Biceps superset — 3 x 15"
+        ]},
+        { "day": "Wednesday", "type": "hiit", "emoji": "⚡", "name": "HIIT + Core", "items": [
+          "Warm up 5 min",
+          "15 x (30s hard / 45s easy)",
+          "Core circuit — 3 rounds",
+          "20 min walk"
+        ]},
+        { "day": "Thursday", "type": "strength", "emoji": "🦵", "name": "Legs", "items": [
+          "Squat — 4 x 8",
+          "Romanian deadlift — 3 x 10",
+          "Walking lunge — 3 x 12 each",
+          "Hip thrust — 3 x 12",
+          "Calf raise — 4 x 20",
+          "Hanging leg raise — 3 x 15"
+        ]},
+        { "day": "Friday", "type": "strength", "emoji": "💪", "name": "Upper Pump + Cardio", "items": [
+          "Incline press — 3 x 15",
+          "Cable row — 3 x 15",
+          "Lateral raise — 3 x 20",
+          "Arms superset — 3 x 15",
+          "15 min cardio finisher"
+        ]},
+        { "day": "Saturday", "type": "cardio", "emoji": "🚶", "name": "Long Zone 2 + Core", "items": [
+          "45 min Zone 2 cardio",
+          "Core circuit — 3 rounds"
+        ]},
+        { "day": "Sunday", "type": "rest", "emoji": "😴", "name": "Rest & Recover", "items": [
+          "Full rest day",
+          "Hit 10,000 steps",
+          "Mobility / stretch — 15 min"
+        ]}
+      ]
+    }
+  ],
+  "meals": [
+    {
+      "name": "Lean & Green",
+      "totals": { "kcal": 1900, "protein": 178, "carbs": 175, "fat": 52 },
+      "items": {
+        "Breakfast": "Greek yogurt bowl — 200g 0% Greek yogurt + 1 scoop whey + 40g granola + 80g blueberries",
+        "Lunch": "Chicken & rice bowl — 150g chicken breast, 60g (dry) rice, mixed veg, soy + sriracha",
+        "Snack": "Apple + 25g almonds",
+        "Dinner": "Turkey meatballs (150g mince) + 70g pasta + tomato sauce + sprinkle parmesan",
+        "Evening": "Whey shake + 1 rice cake"
+      }
+    },
+    {
+      "name": "Power Day",
+      "totals": { "kcal": 1890, "protein": 172, "carbs": 165, "fat": 58 },
+      "items": {
+        "Breakfast": "3-egg omelette + spinach + 30g cheddar + 2 slices wholegrain toast",
+        "Lunch": "Turkey & salad wrap (whole-wheat tortilla, 120g turkey) + small Greek yogurt",
+        "Snack": "Protein bar + banana",
+        "Dinner": "Lean beef chilli con carne (150g 5% mince + kidney beans) + 60g rice",
+        "Evening": "100g cottage cheese + 4 wholegrain crackers"
+      }
+    },
+    {
+      "name": "Reset",
+      "totals": { "kcal": 1880, "protein": 165, "carbs": 185, "fat": 55 },
+      "items": {
+        "Breakfast": "Overnight oats — 50g oats + 1 scoop whey + 10g peanut butter + half banana",
+        "Lunch": "Chicken pasta salad — 130g chicken, 70g pasta, cherry tomatoes, light pesto",
+        "Snack": "Babybel + 20g cashews",
+        "Dinner": "Chicken stir-fry — 150g chicken, 120g egg noodles, peppers, broccoli, soy",
+        "Evening": "Whey shake + apple"
+      }
+    },
+    {
+      "name": "Strong",
+      "totals": { "kcal": 1910, "protein": 175, "carbs": 160, "fat": 62 },
+      "items": {
+        "Breakfast": "Scrambled eggs (3) + 2 turkey rashers + smashed avocado on 1 slice toast",
+        "Lunch": "Lean beef (140g) + sweet potato (200g) + broccoli",
+        "Snack": "150g Greek yogurt + drizzle honey + berries",
+        "Dinner": "Chicken fajitas — 150g chicken, peppers, onion, 2 small tortillas, salsa, light cheese",
+        "Evening": "Casein / whey shake"
+      }
+    },
+    {
+      "name": "Fuel",
+      "totals": { "kcal": 1885, "protein": 168, "carbs": 170, "fat": 56 },
+      "items": {
+        "Breakfast": "Greek yogurt + 40g granola + 1 scoop whey + raspberries",
+        "Lunch": "Chicken wrap (light Caesar, 130g chicken) + side salad",
+        "Snack": "Protein bar",
+        "Dinner": "Pork loin steak (150g) + roast new potatoes (200g) + green veg",
+        "Evening": "100g cottage cheese + pineapple"
+      }
+    },
+    {
+      "name": "Refuel (heavy training day)",
+      "totals": { "kcal": 1950, "protein": 170, "carbs": 200, "fat": 52 },
+      "items": {
+        "Breakfast": "Protein pancakes — 40g oats + 1 egg + 1 scoop whey + half banana, with Greek yogurt",
+        "Lunch": "Chicken burrito bowl — 140g chicken, 70g rice, salsa, sweetcorn, light cheese",
+        "Snack": "25g nuts + apple",
+        "Dinner": "Spaghetti bolognese — 150g lean beef mince + 75g spaghetti + parmesan",
+        "Evening": "Whey shake"
+      }
+    },
+    {
+      "name": "Recover",
+      "totals": { "kcal": 1870, "protein": 160, "carbs": 165, "fat": 60 },
+      "items": {
+        "Breakfast": "Veggie & cheese omelette (3 eggs) + 1 slice wholegrain toast",
+        "Lunch": "Chicken & roast veg couscous — 140g chicken, 60g couscous",
+        "Snack": "Greek yogurt + berries + honey",
+        "Dinner": "Homemade chicken & veg curry (150g chicken, tomato/coconut-light sauce) + 60g rice",
+        "Evening": "Square dark chocolate + casein shake"
+      }
+    }
+  ]
+}
