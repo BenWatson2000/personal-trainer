@@ -171,9 +171,9 @@ a { color: var(--accent-2); }
 .tabbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%;
   max-width: 640px; display: flex; background: rgba(15,17,22,0.95); backdrop-filter: blur(10px);
   border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); z-index: 20; }
-.tab { flex: 1; background: none; border: none; color: var(--muted); font-size: 22px;
+.tab { flex: 1; background: none; border: none; color: var(--muted); font-size: 20px;
   padding: 8px 0 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
-.tab span { font-size: 11px; }
+.tab span { font-size: 10px; }
 .tab.active { color: var(--accent); }
 
 .celebrate { text-align: center; padding: 30px 10px; }

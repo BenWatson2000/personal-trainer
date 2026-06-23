@@ -174,19 +174,64 @@ function renderPlan() {
   });
   html += `</div>`;
 
-  (PLAN.shoppingLists || []).forEach((sl) => {
-    html += `<div class="card"><h2>🛒 Shopping — Week ${sl.week}</h2><p class="sub">${sl.note}</p>`;
-    sl.categories.forEach((cat) => {
-      html += `<div class="section-label">${cat.name}</div>
-        <ul class="checklist">${cat.items.map(i =>
-          `<li style="cursor:default"><span class="checkbox" style="border-radius:5px"></span><span class="item-text">${i}</span></li>`).join("")}</ul>`;
-    });
-    html += `</div>`;
-  });
+  html += `<div class="card"><h2>🛒 Shopping list</h2>
+    <p class="note">Your tickable list for the current week lives on the <b>Shop</b> tab — it auto-picks the right set (A or B) to match this week's meals.</p></div>`;
 
   html += `<div class="card"><h2>📋 Golden rules</h2><ul class="note" style="padding-left:18px;line-height:1.8">
     ${PLAN.meta.principles.map(r => `<li>${r}</li>`).join("")}</ul></div>`;
   return html;
+}
+
+/* ---------- SHOP ---------- */
+function renderShop() {
+  const lists = PLAN.shoppingLists || [];
+  if (!lists.length) return `<div class="card"><p class="note">No shopping list available.</p></div>`;
+  const pos = position();
+  const wk = Math.max(1, Math.min(pos.week, PLAN.meta.weeks));
+  const idx = (wk - 1) % lists.length;
+  const sl = lists[idx];
+  const next = lists[(idx + 1) % lists.length];
+  const dayFrom = idx * 7 + 1, dayTo = idx * 7 + 7;
+  const checks = LS.get("pt_shop_w" + wk, {});
+
+  let total = 0, done = 0;
+  sl.categories.forEach((c, ci) => c.items.forEach((_, ii) => { total++; if (checks["c" + ci + "i" + ii]) done++; }));
+  const pct = total ? Math.round((done / total) * 100) : 0;
+
+  const cats = sl.categories.map((cat, ci) => `
+    <div class="section-label">${cat.name}</div>
+    <ul class="checklist">${cat.items.map((it, ii) => {
+      const on = checks["c" + ci + "i" + ii];
+      return `<li class="${on ? "done" : ""}" data-act="shop" data-k="c${ci}i${ii}">
+        <span class="checkbox" style="border-radius:6px">${on ? "✓" : ""}</span>
+        <span class="item-text">${it}</span></li>`;
+    }).join("")}</ul>`).join("");
+
+  return `
+  <div class="card hero">
+    <span class="phase-tag">Week ${wk} · Set ${sl.week}</span>
+    <h1>🛒 This week's shop</h1>
+    <p>${sl.note}</p>
+    <div class="progress-track" style="margin-top:12px"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <p class="quote" style="font-style:normal;font-size:13px;color:var(--muted)">${done} of ${total} ticked off${(done === total && total) ? " — all done! 🎉" : ""}</p>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2 style="margin:0">Set ${sl.week} · days ${dayFrom}–${dayTo}</h2>
+      <button type="button" class="btn" id="resetShopBtn" style="min-height:auto;padding:7px 12px">Reset</button>
+    </div>
+    ${cats}
+  </div>
+
+  <div class="card">
+    <h2>⏭️ Next week — Set ${next.week}</h2>
+    <p class="sub">A peek so you can plan ahead</p>
+    ${next.categories.map(cat =>
+      `<div class="section-label">${cat.name}</div>
+       <ul class="checklist">${cat.items.map(i =>
+        `<li style="cursor:default"><span class="checkbox" style="border-radius:6px"></span><span class="item-text">${i}</span></li>`).join("")}</ul>`).join("")}
+  </div>`;
 }
 
 /* ---------- PROGRESS ---------- */
@@ -342,6 +387,7 @@ function onViewClick(e) {
   if (modeBtn) { haptic(6); LS.set("pt_mode", modeBtn.dataset.mode); applyMode(); return; }
 
   const li = e.target.closest("[data-act]");
+  if (li && li.dataset.act === "shop") { haptic(8); toggleShop(li); return; }
   if (li) {
     const act = li.dataset.act, i = parseInt(li.dataset.i, 10);
     const key = todayKey();
@@ -366,12 +412,38 @@ function onViewClick(e) {
     LS.set("pt_startDate", document.getElementById("startDateInput").value);
     CURRENT_TAB = "today"; setActiveTab(); navigate(); return;
   }
+  if (e.target.id === "resetShopBtn") {
+    LS.set("pt_shop_w" + Math.max(1, Math.min(position().week, PLAN.meta.weeks)), {});
+    repaintKeepScroll(); return;
+  }
   if (e.target.id === "resetBtn") {
     if (confirm("Clear all saved data on this device?")) {
       Object.keys(localStorage).filter(k => k.startsWith("pt_")).forEach(k => localStorage.removeItem(k));
       repaintKeepScroll();
     }
   }
+}
+
+// Tick a shopping item off — surgical update keyed to the current week, keeps scroll.
+function toggleShop(li) {
+  const wk = Math.max(1, Math.min(position().week, PLAN.meta.weeks));
+  const lsKey = "pt_shop_w" + wk;
+  const map = LS.get(lsKey, {});
+  const k = li.dataset.k;
+  map[k] = !map[k];
+  if (!map[k]) delete map[k];
+  LS.set(lsKey, map);
+  const on = !!map[k];
+  li.classList.toggle("done", on);
+  const cb = li.querySelector(".checkbox");
+  if (cb) cb.textContent = on ? "✓" : "";
+  const hero = document.querySelector(".progress-fill");
+  // refresh the little progress count without a full re-render
+  const items = document.querySelectorAll('[data-act="shop"]');
+  const done = document.querySelectorAll('[data-act="shop"].done').length;
+  if (hero) hero.style.width = Math.round((done / items.length) * 100) + "%";
+  const cnt = document.querySelector(".hero .quote");
+  if (cnt) cnt.textContent = `${done} of ${items.length} ticked off${done === items.length ? " — all done! 🎉" : ""}`;
 }
 
 function updateWater(n) {
@@ -390,6 +462,7 @@ function render() {
   const view = document.getElementById("view");
   if (CURRENT_TAB === "today") view.innerHTML = renderToday();
   else if (CURRENT_TAB === "plan") view.innerHTML = renderPlan();
+  else if (CURRENT_TAB === "shop") view.innerHTML = renderShop();
   else if (CURRENT_TAB === "progress") view.innerHTML = renderProgress();
   else view.innerHTML = renderSettings();
 
