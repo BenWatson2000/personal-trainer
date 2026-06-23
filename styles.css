@@ -136,6 +136,45 @@ main { flex: 1; padding: 16px 16px 96px; }
 
 .tomorrow-prep { border-left: 3px solid var(--warn); }
 .tmrw-head { display: flex; align-items: center; gap: 8px; font-size: 15px; margin: 6px 0 2px; }
+
+/* reveal-day countdown */
+.reveal { display: flex; align-items: center; gap: 14px;
+  background: linear-gradient(135deg, #221a30, #161821); border-color: #3a2f4a; }
+.reveal-num { font-size: 40px; font-weight: 900; line-height: 1;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text;
+  background-clip: text; color: transparent; min-width: 56px; text-align: center; }
+.reveal-txt { font-size: 15px; }
+
+/* recipe cards */
+.recipe { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+.recipe summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--accent-2);
+  list-style: none; padding: 6px 0; }
+.recipe summary::-webkit-details-marker { display: none; }
+.recipe-body { padding: 4px 0 2px; }
+.recipe-ing { margin: 4px 0 8px; padding-left: 18px; font-size: 14px; line-height: 1.6; color: var(--text); }
+.recipe-steps { margin: 4px 0; padding-left: 20px; font-size: 14px; line-height: 1.6; color: var(--muted); }
+.recipe-steps li { margin-bottom: 5px; }
+
+/* progress photos */
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
+.photo-thumb { position: relative; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-date { position: absolute; left: 4px; bottom: 4px; font-size: 10px; font-weight: 700;
+  background: rgba(0,0,0,.6); padding: 1px 5px; border-radius: 6px; }
+.photo-del { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%;
+  border: none; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; cursor: pointer; }
+.timelapse-stage { width: 100%; max-height: 460px; object-fit: contain; border-radius: 12px; margin-top: 12px; background: #000; }
+
+/* before/after compare */
+.compare { position: relative; width: 100%; aspect-ratio: 3/4; max-height: 420px; overflow: hidden;
+  border-radius: 12px; border: 1px solid var(--line); }
+.compare img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cmp-top { position: absolute; inset: 0; overflow: hidden; }
+.cmp-top img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cmp-handle { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent);
+  transform: translateX(-1px); pointer-events: none; }
+.cmp-range { width: 100%; margin-top: 8px; accent-color: var(--accent); }
+.cmp-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
 .checklist.preview li { cursor: default; padding: 8px 0; }
 .checklist.preview .bullet { flex: 0 0 16px; color: var(--accent-2); font-weight: 700; text-align: center; }
 .checklist.preview .item-text { font-size: 14px; color: var(--muted); }

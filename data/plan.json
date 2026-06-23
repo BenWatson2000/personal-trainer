@@ -452,7 +452,22 @@
           "text": "Turkey meatballs (150g 5% mince) + 70g pasta + marinara + parmesan",
           "kcal": 560,
           "p": 48,
-          "prep": "If your turkey mince is frozen, move it to the fridge tonight to defrost."
+          "prep": "If your turkey mince is frozen, move it to the fridge tonight to defrost.",
+          "recipe": {
+            "ingredients": [
+              "150g turkey mince",
+              "½ onion + 1 garlic clove",
+              "70g pasta",
+              "Tin chopped tomatoes / passata",
+              "Sprinkle parmesan, herbs"
+            ],
+            "steps": [
+              "Mix mince with grated onion, herbs, salt; roll into balls.",
+              "Brown the balls in a little oil, set aside.",
+              "Soften garlic, add tomatoes + herbs, simmer 10 min.",
+              "Return meatballs to sauce 5 min; serve over cooked pasta with parmesan."
+            ]
+          }
         },
         "Evening": {
           "text": "Whey shake + 1 rice cake",
@@ -489,7 +504,22 @@
           "text": "Lean beef chilli con carne (150g 5% mince + kidney beans) + 60g rice",
           "kcal": 540,
           "p": 45,
-          "prep": "Defrost the beef mince overnight if frozen — chilli also tastes better made a day ahead."
+          "prep": "Defrost the beef mince overnight if frozen — chilli also tastes better made a day ahead.",
+          "recipe": {
+            "ingredients": [
+              "150g 5% beef mince",
+              "½ onion, 1 pepper, garlic",
+              "½ tin kidney beans",
+              "Tin chopped tomatoes",
+              "Chilli powder, cumin, 60g rice"
+            ],
+            "steps": [
+              "Brown mince; add chopped onion, pepper, garlic.",
+              "Stir in spices, tomatoes and drained beans.",
+              "Simmer 20–25 min until thick.",
+              "Serve with boiled rice."
+            ]
+          }
         },
         "Evening": {
           "text": "100g cottage cheese + 4 wholegrain crackers",
@@ -526,7 +556,21 @@
         "Dinner": {
           "text": "Chicken stir-fry — 150g chicken, 120g egg noodles, peppers, broccoli, soy",
           "kcal": 520,
-          "p": 48
+          "p": 48,
+          "recipe": {
+            "ingredients": [
+              "150g chicken, sliced",
+              "120g egg noodles",
+              "Peppers, broccoli, ginger",
+              "2 tbsp soy + dash sriracha"
+            ],
+            "steps": [
+              "Cook noodles, drain.",
+              "Stir-fry chicken on high until done.",
+              "Add veg + ginger, fry 3–4 min.",
+              "Toss in noodles + soy/sriracha 1 min."
+            ]
+          }
         },
         "Evening": {
           "text": "Whey shake + apple",
@@ -562,7 +606,21 @@
         "Dinner": {
           "text": "Chicken fajitas — 150g chicken, peppers, onion, 2 small tortillas, salsa, light cheese",
           "kcal": 540,
-          "p": 50
+          "p": 50,
+          "recipe": {
+            "ingredients": [
+              "150g chicken strips",
+              "Peppers + onion",
+              "2 small tortillas",
+              "Fajita seasoning, salsa, light cheese"
+            ],
+            "steps": [
+              "Toss chicken in seasoning.",
+              "Fry chicken until cooked; add peppers + onion.",
+              "Warm tortillas.",
+              "Fill with chicken, salsa and a little cheese."
+            ]
+          }
         },
         "Evening": {
           "text": "Casein / whey shake",
@@ -598,7 +656,21 @@
         "Dinner": {
           "text": "Pork loin steak (150g) + new potatoes (200g) + green veg",
           "kcal": 560,
-          "p": 48
+          "p": 48,
+          "recipe": {
+            "ingredients": [
+              "150g pork loin steak",
+              "200g new potatoes",
+              "Green veg (beans/broccoli)",
+              "Garlic, olive oil"
+            ],
+            "steps": [
+              "Boil new potatoes ~15 min.",
+              "Season pork; pan-fry 3–4 min each side until cooked.",
+              "Steam the greens.",
+              "Rest pork 2 min; plate with potatoes + veg."
+            ]
+          }
         },
         "Evening": {
           "text": "100g cottage cheese + pineapple",
@@ -635,7 +707,21 @@
           "text": "Spaghetti bolognese — 150g 5% beef mince + 75g spaghetti + parmesan",
           "kcal": 560,
           "p": 45,
-          "prep": "Defrost the beef mince overnight if frozen."
+          "prep": "Defrost the beef mince overnight if frozen.",
+          "recipe": {
+            "ingredients": [
+              "150g 5% beef mince",
+              "75g spaghetti",
+              "½ onion, garlic, carrot",
+              "Tin tomatoes, herbs, parmesan"
+            ],
+            "steps": [
+              "Brown mince; add diced onion, carrot, garlic.",
+              "Add tomatoes + herbs, simmer 20 min.",
+              "Cook spaghetti.",
+              "Combine; top with parmesan."
+            ]
+          }
         },
         "Evening": {
           "text": "Whey shake",
@@ -671,7 +757,21 @@
         "Dinner": {
           "text": "Chicken & veg curry — 150g chicken, tomato/light-coconut sauce + 60g rice",
           "kcal": 540,
-          "p": 48
+          "p": 48,
+          "recipe": {
+            "ingredients": [
+              "150g chicken",
+              "Onion, pepper, garlic, ginger",
+              "Curry paste + light coconut milk",
+              "60g rice"
+            ],
+            "steps": [
+              "Fry onion, garlic, ginger; add curry paste.",
+              "Add chicken, brown.",
+              "Pour in coconut milk + veg; simmer 15 min.",
+              "Serve with rice."
+            ]
+          }
         },
         "Evening": {
           "text": "Square dark chocolate + casein shake",
@@ -707,7 +807,21 @@
         "Dinner": {
           "text": "BBQ chicken (160g) + sweet potato wedges (200g) + corn on the cob",
           "kcal": 560,
-          "p": 52
+          "p": 52,
+          "recipe": {
+            "ingredients": [
+              "160g chicken breast",
+              "BBQ sauce",
+              "200g sweet potato",
+              "Corn on the cob"
+            ],
+            "steps": [
+              "Cut sweet potato into wedges, roast 25–30 min.",
+              "Coat chicken in BBQ sauce; bake or grill ~20 min.",
+              "Boil/grill the corn.",
+              "Plate it all up."
+            ]
+          }
         },
         "Evening": {
           "text": "Whey shake + berries",
@@ -744,7 +858,21 @@
           "text": "Beef & broccoli stir-fry — 150g lean beef strips + 60g rice",
           "kcal": 540,
           "p": 46,
-          "prep": "Defrost the beef strips overnight if frozen."
+          "prep": "Defrost the beef strips overnight if frozen.",
+          "recipe": {
+            "ingredients": [
+              "150g lean beef strips",
+              "Broccoli",
+              "Garlic + ginger",
+              "2 tbsp soy, 60g rice"
+            ],
+            "steps": [
+              "Cook rice.",
+              "Sear beef on high heat, set aside.",
+              "Stir-fry broccoli, garlic, ginger 3 min.",
+              "Return beef + soy 1 min; serve over rice."
+            ]
+          }
         },
         "Evening": {
           "text": "Casein shake",
@@ -780,7 +908,21 @@
         "Dinner": {
           "text": "Chicken pesto pasta — 150g chicken, 75g pasta, light pesto, cherry tomatoes",
           "kcal": 560,
-          "p": 46
+          "p": 46,
+          "recipe": {
+            "ingredients": [
+              "150g chicken",
+              "75g pasta",
+              "Light pesto",
+              "Cherry tomatoes"
+            ],
+            "steps": [
+              "Cook pasta.",
+              "Pan-fry chicken until done, slice.",
+              "Toss pasta with pesto + halved tomatoes.",
+              "Top with chicken."
+            ]
+          }
         },
         "Evening": {
           "text": "Whey shake + apple",
@@ -816,7 +958,21 @@
         "Dinner": {
           "text": "Pork & apple traybake — 150g pork, new potatoes (200g) + veg",
           "kcal": 540,
-          "p": 46
+          "p": 46,
+          "recipe": {
+            "ingredients": [
+              "150g pork steak/chops",
+              "1 apple, wedged",
+              "200g new potatoes",
+              "Onion, rosemary"
+            ],
+            "steps": [
+              "Halve potatoes, par-boil 8 min.",
+              "Add to tray with pork, apple, onion, rosemary + oil.",
+              "Roast 25–30 min at 200°C until pork cooked.",
+              "Serve with green veg."
+            ]
+          }
         },
         "Evening": {
           "text": "200g Greek yogurt + 1 scoop whey + honey",
@@ -853,7 +1009,21 @@
         "Dinner": {
           "text": "2 turkey burgers (brioche thins) + oven sweet-potato chips + salad",
           "kcal": 560,
-          "p": 48
+          "p": 48,
+          "recipe": {
+            "ingredients": [
+              "2 turkey burgers",
+              "Brioche thins / buns",
+              "200g sweet potato (chips)",
+              "Salad"
+            ],
+            "steps": [
+              "Cut sweet potato into chips, oven 25 min.",
+              "Grill/fry burgers until cooked through.",
+              "Toast the buns.",
+              "Build with salad; serve with chips."
+            ]
+          }
         },
         "Evening": {
           "text": "Whey shake",
@@ -890,7 +1060,21 @@
           "text": "Chicken tikka (160g) + 60g rice + mini naan",
           "kcal": 560,
           "p": 50,
-          "prep": "Marinate the chicken in tikka paste + yogurt tonight for the best flavour."
+          "prep": "Marinate the chicken in tikka paste + yogurt tonight for the best flavour.",
+          "recipe": {
+            "ingredients": [
+              "160g chicken",
+              "Tikka paste + 2 tbsp yogurt",
+              "60g rice",
+              "Mini naan"
+            ],
+            "steps": [
+              "Marinate chicken in tikka paste + yogurt (ideally overnight).",
+              "Grill/bake ~20 min until charred and cooked.",
+              "Cook rice; warm naan.",
+              "Serve together."
+            ]
+          }
         },
         "Evening": {
           "text": "Whey shake + berries",
@@ -926,7 +1110,21 @@
         "Dinner": {
           "text": "4 reduced-fat sausages + mash + onion gravy + peas",
           "kcal": 540,
-          "p": 40
+          "p": 40,
+          "recipe": {
+            "ingredients": [
+              "4 reduced-fat sausages",
+              "2 potatoes (mash)",
+              "Onion gravy",
+              "Peas"
+            ],
+            "steps": [
+              "Boil potatoes; mash with a splash of milk.",
+              "Grill sausages ~15 min, turning.",
+              "Heat gravy; cook peas.",
+              "Plate sausages on mash with gravy + peas."
+            ]
+          }
         },
         "Evening": {
           "text": "Casein shake",
