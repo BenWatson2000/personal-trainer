@@ -94,15 +94,15 @@ function renderToday() {
     <div class="quote">"${quote}"</div>
   </div>
 
-  <div class="card">
+  <div class="card" data-workout-card>
     <div class="work-head">
       <span class="work-emoji">${day.emoji}</span>
       <div><h2 style="margin:0">${day.name}</h2>
       <span class="type-badge type-${day.type}">${day.type.toUpperCase()}</span></div>
     </div>
     ${day.homeItems ? `<div class="mode-toggle">
-      <button class="mode-btn ${!useHome ? "active" : ""}" data-mode="gym">🏋️ Gym</button>
-      <button class="mode-btn ${useHome ? "active" : ""}" data-mode="home">🏠 Home</button>
+      <button type="button" class="mode-btn ${!useHome ? "active" : ""}" data-mode="gym" aria-pressed="${!useHome}">🏋️ Gym</button>
+      <button type="button" class="mode-btn ${useHome ? "active" : ""}" data-mode="home" aria-pressed="${!!useHome}">🏠 Home</button>
     </div>` : ""}
     <ul class="checklist">${workItems}</ul>
   </div>
@@ -130,7 +130,7 @@ function renderToday() {
     <p class="sub">Best first thing in the morning</p>
     <div class="tracker-row">
       <input class="field" id="quickWeight" type="number" step="0.1" inputmode="decimal" placeholder="kg" style="max-width:140px" />
-      <button class="btn accent" id="logWeightBtn">Log</button>
+      <button type="button" class="btn accent" id="logWeightBtn">Log</button>
     </div>
   </div>`;
 }
@@ -225,7 +225,7 @@ function renderProgress() {
       `<li><span>${w.kg} kg</span><span>${w.date}</span></li>`).join("")}</ul>
     <div class="tracker-row" style="margin-top:12px">
       <input class="field" id="quickWeight" type="number" step="0.1" inputmode="decimal" placeholder="kg" style="max-width:140px" />
-      <button class="btn accent" id="logWeightBtn">Log weigh-in</button>
+      <button type="button" class="btn accent" id="logWeightBtn">Log weigh-in</button>
     </div>
   </div>`;
 }
@@ -251,7 +251,7 @@ function renderSettings() {
   <div class="card"><h2>⚙️ Settings</h2>
     <label class="field-label">Program start date</label>
     <input class="field" id="startDateInput" type="date" value="${getStartDate()}" />
-    <button class="btn accent block" id="saveStartBtn" style="margin-top:10px">Save start date</button>
+    <button type="button" class="btn accent block" id="saveStartBtn" style="margin-top:10px">Save start date</button>
     <p class="note" style="margin-top:8px">Set this to the Monday you want week 1 to begin (or today to start now).</p>
   </div>
 
@@ -268,7 +268,7 @@ function renderSettings() {
   </div>
 
   <div class="card"><h2>🗑️ Reset</h2>
-    <button class="btn block" id="resetBtn">Clear all my data on this device</button>
+    <button type="button" class="btn block" id="resetBtn">Clear all my data on this device</button>
     <p class="note" style="margin-top:8px">Removes check-ins, weigh-ins and start date from this phone only.</p>
   </div>
 
@@ -288,14 +288,53 @@ function logWeight() {
   const existing = weights.findIndex(w => w.date === key);
   if (existing >= 0) weights[existing].kg = kg; else weights.push({ date: key, kg });
   LS.set("pt_weights", weights);
-  render();
+  haptic(8); el.blur();
+  flashSaved(el);
+  repaintKeepScroll();   // refresh stats/chart without snapping to top
 }
 
 function haptic(ms) { if (navigator.vibrate) { try { navigator.vibrate(ms); } catch {} } }
 
+// Repaint the current tab but keep the scroll exactly where it was (no jump).
+function repaintKeepScroll() {
+  const y = window.scrollY || window.pageYOffset || 0;
+  render();
+  window.scrollTo(0, y);
+  requestAnimationFrame(() => window.scrollTo(0, y));
+}
+
+// Swap only the workout list + toggle state when Gym/Home is pressed — no full render.
+function applyMode() {
+  const pos = position();
+  if (pos.beforeStart || pos.finished) return;
+  const day = pos.phase.schedule[pos.weekday];
+  const card = document.querySelector("[data-workout-card]");
+  if (!card || !day.homeItems) return;
+  const useHome = LS.get("pt_mode", "gym") === "home";
+  const exercises = useHome ? day.homeItems : day.items;
+  const checks = LS.get("pt_checks_" + todayKey(), { workout: {}, meals: {}, water: 0 });
+  card.querySelector("ul.checklist").innerHTML = exercises.map((t, i) => {
+    const done = checks.workout[i];
+    return `<li class="${done ? "done" : ""}" data-act="workout" data-i="${i}">
+      <span class="checkbox">${done ? "✓" : ""}</span><span class="item-text">${t}</span></li>`;
+  }).join("");
+  card.querySelectorAll(".mode-btn").forEach((b) => {
+    const on = (b.dataset.mode === "home") === useHome;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-pressed", String(on));
+  });
+}
+
+function flashSaved(el) {
+  const tip = document.createElement("span");
+  tip.textContent = "Saved ✓"; tip.className = "saved-tip";
+  el.parentElement.appendChild(tip);
+  setTimeout(() => tip.remove(), 1400);
+}
+
 function onViewClick(e) {
   const modeBtn = e.target.closest("[data-mode]");
-  if (modeBtn) { haptic(6); LS.set("pt_mode", modeBtn.dataset.mode); render(); return; }
+  if (modeBtn) { haptic(6); LS.set("pt_mode", modeBtn.dataset.mode); applyMode(); return; }
 
   const li = e.target.closest("[data-act]");
   if (li) {
@@ -325,7 +364,7 @@ function onViewClick(e) {
   if (e.target.id === "resetBtn") {
     if (confirm("Clear all saved data on this device?")) {
       Object.keys(localStorage).filter(k => k.startsWith("pt_")).forEach(k => localStorage.removeItem(k));
-      render();
+      repaintKeepScroll();
     }
   }
 }
@@ -382,7 +421,11 @@ async function boot() {
     if (CURRENT_TAB === t.dataset.tab) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
     CURRENT_TAB = t.dataset.tab; setActiveTab(); navigate();
   }));
-  document.getElementById("view").addEventListener("click", onViewClick);
+  const view = document.getElementById("view");
+  view.addEventListener("click", onViewClick);
+  view.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && e.target.id === "quickWeight") { e.preventDefault(); logWeight(); }
+  });
   render();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 }
