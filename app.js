@@ -291,25 +291,36 @@ function logWeight() {
   render();
 }
 
+function haptic(ms) { if (navigator.vibrate) { try { navigator.vibrate(ms); } catch {} } }
+
 function onViewClick(e) {
   const modeBtn = e.target.closest("[data-mode]");
-  if (modeBtn) { LS.set("pt_mode", modeBtn.dataset.mode); render(); return; }
+  if (modeBtn) { haptic(6); LS.set("pt_mode", modeBtn.dataset.mode); render(); return; }
 
   const li = e.target.closest("[data-act]");
   if (li) {
     const act = li.dataset.act, i = parseInt(li.dataset.i, 10);
     const key = todayKey();
     const checks = LS.get("pt_checks_" + key, { workout: {}, meals: {}, water: 0 });
-    if (act === "water") { checks.water = (i + 1 === checks.water) ? i : i + 1; }
-    else { checks[act][i] = !checks[act][i]; }
-    LS.set("pt_checks_" + key, checks);
-    render();
+    haptic(8);
+    if (act === "water") {
+      checks.water = (i + 1 === checks.water) ? i : i + 1;
+      LS.set("pt_checks_" + key, checks);
+      updateWater(checks.water);          // surgical — keeps scroll position
+    } else {
+      checks[act][i] = !checks[act][i];
+      LS.set("pt_checks_" + key, checks);
+      const on = checks[act][i];
+      li.classList.toggle("done", on);    // surgical — no re-render, no scroll jump
+      const cb = li.querySelector(".checkbox");
+      if (cb) cb.textContent = on ? "✓" : "";
+    }
     return;
   }
   if (e.target.id === "logWeightBtn") return logWeight();
   if (e.target.id === "saveStartBtn") {
     LS.set("pt_startDate", document.getElementById("startDateInput").value);
-    CURRENT_TAB = "today"; setActiveTab(); render(); return;
+    CURRENT_TAB = "today"; setActiveTab(); navigate(); return;
   }
   if (e.target.id === "resetBtn") {
     if (confirm("Clear all saved data on this device?")) {
@@ -319,7 +330,18 @@ function onViewClick(e) {
   }
 }
 
+function updateWater(n) {
+  const wrap = document.querySelector(".water-dots");
+  if (!wrap) return;
+  wrap.querySelectorAll(".water-dot").forEach((d, i) => {
+    const filled = i < n;
+    d.classList.toggle("filled", filled);
+    d.textContent = filled ? "💧" : "";
+  });
+}
+
 /* ---------- shell ---------- */
+// render() repaints the current tab WITHOUT moving the scroll position.
 function render() {
   const view = document.getElementById("view");
   if (CURRENT_TAB === "today") view.innerHTML = renderToday();
@@ -335,7 +357,13 @@ function render() {
     pos.beforeStart ? "Soon" : pos.finished ? "Done" : `Day ${pos.dn + 1} · Wk ${pos.week}`;
   const pct = Math.max(0, Math.min(100, ((pos.dn + 1) / (PLAN.meta.weeks * 7)) * 100));
   document.getElementById("overallProgress").style.width = pct + "%";
-  window.scrollTo(0, 0);
+}
+// navigate() is for tab switches: repaint, animate in, and return to top.
+function navigate() {
+  render();
+  const v = document.getElementById("view");
+  v.classList.remove("view-anim"); void v.offsetWidth; v.classList.add("view-anim");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 function setActiveTab() {
   document.querySelectorAll(".tab").forEach(t =>
@@ -351,7 +379,8 @@ async function boot() {
     return;
   }
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
-    CURRENT_TAB = t.dataset.tab; setActiveTab(); render();
+    if (CURRENT_TAB === t.dataset.tab) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    CURRENT_TAB = t.dataset.tab; setActiveTab(); navigate();
   }));
   document.getElementById("view").addEventListener("click", onViewClick);
   render();

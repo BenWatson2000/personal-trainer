@@ -1,5 +1,5 @@
 /* Simple offline cache for the PT app. Bump CACHE to invalidate. */
-const CACHE = "pt-shred-v1";
+const CACHE = "pt-shred-v2";
 const ASSETS = [
   "./",
   "./index.html",
