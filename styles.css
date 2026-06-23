@@ -77,6 +77,20 @@ main { flex: 1; padding: 16px 16px 96px; }
 .hero h1 { margin: 0 0 4px; font-size: 22px; }
 .hero p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
 .hero .quote { margin-top: 12px; font-size: 14px; font-style: italic; color: var(--text); }
+.hero .greet { margin: 6px 0 2px; font-size: 12px; font-weight: 600; color: var(--muted);
+  text-transform: none; letter-spacing: .01em; }
+
+/* today at-a-glance chips */
+.today-chips { display: flex; gap: 8px; margin-top: 12px; }
+.chip { font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px;
+  background: var(--bg-card-2); border: 1px solid var(--line); color: var(--muted); }
+.chip.on { background: rgba(52,211,153,.16); border-color: rgba(52,211,153,.4); color: var(--accent); }
+
+/* tomorrow prep heads-up */
+.tomorrow-prep { border-left: 3px solid var(--warn); }
+.prep-line { background: var(--bg-card-2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 11px 13px; margin-top: 8px; font-size: 14px; line-height: 1.5; }
+.prep-line b { color: var(--warn); }
 
 /* Workout */
 .work-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
@@ -171,10 +185,12 @@ a { color: var(--accent-2); }
 .tabbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%;
   max-width: 640px; display: flex; background: rgba(15,17,22,0.95); backdrop-filter: blur(10px);
   border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); z-index: 20; }
-.tab { flex: 1; background: none; border: none; color: var(--muted); font-size: 20px;
-  padding: 8px 0 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+.tab { position: relative; flex: 1; background: none; border: none; color: var(--muted); font-size: 20px;
+  padding: 10px 0 10px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
 .tab span { font-size: 10px; }
 .tab.active { color: var(--accent); }
+.tab.active::after { content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 22px; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); }
 
 .celebrate { text-align: center; padding: 30px 10px; }
 .celebrate .big { font-size: 40px; }

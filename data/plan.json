@@ -451,7 +451,8 @@
         "Dinner": {
           "text": "Turkey meatballs (150g 5% mince) + 70g pasta + marinara + parmesan",
           "kcal": 560,
-          "p": 48
+          "p": 48,
+          "prep": "If your turkey mince is frozen, move it to the fridge tonight to defrost."
         },
         "Evening": {
           "text": "Whey shake + 1 rice cake",
@@ -487,7 +488,8 @@
         "Dinner": {
           "text": "Lean beef chilli con carne (150g 5% mince + kidney beans) + 60g rice",
           "kcal": 540,
-          "p": 45
+          "p": 45,
+          "prep": "Defrost the beef mince overnight if frozen — chilli also tastes better made a day ahead."
         },
         "Evening": {
           "text": "100g cottage cheese + 4 wholegrain crackers",
@@ -508,7 +510,8 @@
         "Breakfast": {
           "text": "Overnight oats — 50g oats + 1 scoop whey + 10g peanut butter + ½ banana",
           "kcal": 430,
-          "p": 35
+          "p": 35,
+          "prep": "Make tonight — mix the oats, whey, peanut butter & banana, cover and leave in the fridge overnight."
         },
         "Lunch": {
           "text": "Chicken pasta salad — 130g chicken, 70g pasta, cherry tomatoes, light pesto",
@@ -631,7 +634,8 @@
         "Dinner": {
           "text": "Spaghetti bolognese — 150g 5% beef mince + 75g spaghetti + parmesan",
           "kcal": 560,
-          "p": 45
+          "p": 45,
+          "prep": "Defrost the beef mince overnight if frozen."
         },
         "Evening": {
           "text": "Whey shake",
@@ -739,7 +743,8 @@
         "Dinner": {
           "text": "Beef & broccoli stir-fry — 150g lean beef strips + 60g rice",
           "kcal": 540,
-          "p": 46
+          "p": 46,
+          "prep": "Defrost the beef strips overnight if frozen."
         },
         "Evening": {
           "text": "Casein shake",
@@ -837,7 +842,8 @@
         "Lunch": {
           "text": "Chicken shawarma wrap — 140g chicken, wholemeal flatbread + salad",
           "kcal": 500,
-          "p": 44
+          "p": 44,
+          "prep": "Optional: marinate the chicken in shawarma spice + a little yogurt tonight."
         },
         "Snack": {
           "text": "Babybel + grapes",
@@ -883,7 +889,8 @@
         "Dinner": {
           "text": "Chicken tikka (160g) + 60g rice + mini naan",
           "kcal": 560,
-          "p": 50
+          "p": 50,
+          "prep": "Marinate the chicken in tikka paste + yogurt tonight for the best flavour."
         },
         "Evening": {
           "text": "Whey shake + berries",

@@ -87,11 +87,38 @@ function renderToday() {
     `<div class="water-dot ${i < checks.water ? "filled" : ""}" data-act="water" data-i="${i}">${i < checks.water ? "💧" : ""}</div>`
   ).join("");
 
+  // time-aware greeting + date
+  const hr = new Date().getHours();
+  const greet = hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening";
+  const dateStr = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+
+  // today at a glance
+  const wDone = exercises.filter((_, i) => checks.workout[i]).length;
+  const mDone = mealKeys.filter((_, i) => checks.meals[i]).length;
+  const chips = `<div class="today-chips">
+    <span class="chip ${wDone === exercises.length ? "on" : ""}">${day.type === "rest" ? "😴" : "🏋️"} ${wDone}/${exercises.length}</span>
+    <span class="chip ${mDone === mealKeys.length ? "on" : ""}">🍽️ ${mDone}/${mealKeys.length}</span>
+    <span class="chip ${checks.water >= 8 ? "on" : ""}">💧 ${checks.water}/8</span>
+  </div>`;
+
+  // tomorrow's prep-ahead heads-up
+  const tmrw = PLAN.meals[(pos.dn + 1) % PLAN.meals.length];
+  const prepLines = Object.entries(tmrw.items).filter(([, v]) => v.prep)
+    .map(([k, v]) => `<div class="prep-line">🌙 <b>${k}:</b> ${v.prep}</div>`).join("");
+  const tomorrowCard = `<div class="card ${prepLines ? "tomorrow-prep" : ""}">
+    <h2>🌙 Tomorrow — ${tmrw.name}</h2>
+    ${prepLines
+      ? `<p class="sub">Sort this tonight so you're ready:</p>${prepLines}`
+      : `<p class="note">Nothing to prep ahead. Tomorrow's dinner: ${tmrw.items.Dinner.text}</p>`}
+  </div>`;
+
   return `
   <div class="card hero">
     <span class="phase-tag">Phase ${pos.phase.id} · ${pos.phase.name}</span>
+    <p class="greet">${greet}, ${PLAN.meta.athlete} · ${dateStr}</p>
     <h1>${day.emoji} ${day.name}</h1>
-    <p>Week ${pos.week} of 12 · ${day.day}</p>
+    <p>Week ${pos.week} of 12 · Day ${pos.dn + 1}</p>
+    ${chips}
     <div class="quote">"${quote}"</div>
   </div>
 
@@ -120,6 +147,8 @@ function renderToday() {
     <p class="note" style="margin:10px 0 0">🎯 Phase ${pos.phase.id} aim ~${pos.phase.calories} kcal · ${pos.phase.adjust}</p>
     <ul class="checklist">${mealItems}</ul>
   </div>
+
+  ${tomorrowCard}
 
   <div class="card">
     <h2>💧 Water</h2>
