@@ -23,12 +23,14 @@ function midnight(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; 
 // Which week is the *upcoming* one? Sunday's shop is for the week that starts tomorrow.
 const dn = Math.floor((midnight(new Date()) - midnight(new Date(START + "T00:00:00"))) / 86400000);
 const upcomingWeek = Math.floor((dn + 1) / 7) + 1;
-const sl = PLAN.shoppingList;
+// 14-day meal rotation = 2 weeks of food, so the shopping list alternates A / B.
+const lists = PLAN.shoppingLists || [];
+const sl = lists[(Math.max(1, upcomingWeek) - 1) % lists.length] || lists[0];
 
 let header;
-if (dn < -1) header = "🛒 <b>Shopping list — Week 1 prep</b>";
+if (dn < -1) header = `🛒 <b>Shopping list — Week 1 prep (set ${sl.week})</b>`;
 else if (upcomingWeek > PLAN.meta.weeks) header = "🛒 <b>Shopping list</b>\n🏆 Final week — finish strong!";
-else header = `🛒 <b>Shopping list — week ${upcomingWeek} of ${PLAN.meta.weeks}</b>`;
+else header = `🛒 <b>Shopping list — week ${upcomingWeek} of ${PLAN.meta.weeks} (set ${sl.week})</b>`;
 
 const body = sl.categories.map((cat) =>
   `\n<b>${esc(cat.name)}</b>\n` + cat.items.map((i) => `☐ ${esc(i)}`).join("\n")

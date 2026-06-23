@@ -71,22 +71,29 @@ It uses the same two secrets — no extra setup. Run it any time from
 A fat-loss cut that protects muscle: progressive lifting + cardio, high protein,
 calories stepping down across three phases.
 
-| Phase | Weeks | Training | Calories | Protein |
+| Phase | Weeks | Training | Calorie aim | Protein |
 |------|-------|----------|----------|---------|
-| 1 · Foundation | 1–4 | Full body 3× + easy cardio | 1900 | 160 g |
-| 2 · Build & Burn | 5–8 | Upper/Lower 4× + intervals | 1800 | 160 g |
-| 3 · Shred | 9–12 | Push/Pull/Legs + extra cardio | 1700 | 165 g |
+| 1 · Foundation | 1–4 | Full body 3× + easy cardio | ~1850 | 160 g |
+| 2 · Build & Burn | 5–8 | Upper/Lower 4× + intervals | ~1750 | 160 g |
+| 3 · Shred | 9–12 | Push/Pull/Legs + extra cardio | ~1650 | 165 g |
+
+The **meals are the source of truth** (~1850 kcal/day as written). Each phase shows
+its aim plus a one-line *adjust* (e.g. "drop the evening snack") to step calories
+down — protein never gets cut.
 
 **Golden rules**
 
 - Hit your protein target *every* day — it's what keeps the muscle while you cut.
-- 8,000–10,000 steps a day on top of workouts.
+- Stay active daily but keep it low-impact for your right foot — cycling over long walks.
 - Sleep 7–9 hours, drink ~2.5–3 L water.
 - Weigh in each morning; judge progress on the **weekly average**, not single days.
 - One flexible meal a week is fine — stay roughly within calories.
 
-Full daily workouts and a 7-day meal rotation (no fish; beans only in the chilli)
-live in [`data/plan.json`](data/plan.json) and render in the **Plan** tab of the app.
+Full daily workouts and a **14-day meal rotation** — every meal carries its own
+kcal/protein and they sum to the day total (no fish; beans only in the chilli) — live
+in [`data/plan.json`](data/plan.json) and render in the **Plan** tab. The shopping list
+**alternates between two sets (A / B)** that match the meals for that week, so what you
+buy lines up with what you cook.
 
 **Gym or home?** Every lifting day has a no-equipment variant (dumbbells / bands /
 bodyweight). Tap the **🏋️ Gym / 🏠 Home** toggle on the Today screen — your choice is
