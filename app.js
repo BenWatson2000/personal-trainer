@@ -17,6 +17,31 @@ const QUOTES = [
 
 let PLAN = null;
 let CURRENT_TAB = "today";
+let PHOTOS = [];           // [{date, data(dataURL)}] loaded from IndexedDB
+let COMPARE_T = 50;        // before/after slider position
+
+/* ---------- progress photos: IndexedDB (blobs are too big for localStorage) ---------- */
+function idb() {
+  return new Promise((res, rej) => {
+    if (!("indexedDB" in self)) return rej(new Error("no idb"));
+    const r = indexedDB.open("pt-photos", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("photos", { keyPath: "date" });
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function photosAll() {
+  try {
+    const db = await idb();
+    return await new Promise((res) => {
+      const out = []; const c = db.transaction("photos").objectStore("photos").openCursor();
+      c.onsuccess = (e) => { const cur = e.target.result; if (cur) { out.push(cur.value); cur.continue(); } else res(out.sort((a, b) => a.date.localeCompare(b.date))); };
+      c.onerror = () => res([]);
+    });
+  } catch { return []; }
+}
+async function photoPut(rec) { try { const db = await idb(); db.transaction("photos", "readwrite").objectStore("photos").put(rec); } catch {} }
+async function photoDel(date) { try { const db = await idb(); db.transaction("photos", "readwrite").objectStore("photos").delete(date); } catch {} }
 
 function todayKey(d = new Date()) {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -37,6 +62,45 @@ function position() {
   const beforeStart = dn < 0;
   const finished = week > PLAN.meta.weeks;
   return { dn, week, weekday, phase, beforeStart, finished };
+}
+
+// reveal day = the morning after the final day of week 12
+function revealInfo() {
+  const start = new Date(getStartDate() + "T00:00:00");
+  const end = new Date(start); end.setDate(end.getDate() + PLAN.meta.weeks * 7);
+  const today = new Date(todayKey() + "T00:00:00");
+  return { end, daysLeft: Math.round((end - today) / 86400000),
+    endStr: end.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) };
+}
+// projected weight on reveal day from the logged trend (null if not enough data)
+function projectAtEnd() {
+  const w = LS.get("pt_weights", []);
+  if (w.length < 2) return null;
+  const first = w[0], last = w[w.length - 1];
+  const days = (new Date(last.date) - new Date(first.date)) / 86400000;
+  if (days <= 0) return null;
+  const ratePerDay = (last.kg - first.kg) / days;
+  const toEnd = (revealInfo().end - new Date(todayKey() + "T00:00:00")) / 86400000;
+  return +(last.kg + ratePerDay * toEnd).toFixed(1);
+}
+// auto-suggested goal: projected end if trending down, else a ~9% cut; floored at BMI ~20
+function suggestedGoal() {
+  const start = PLAN.meta.stats.weightKg;
+  const floor = Math.round(20 * Math.pow(PLAN.meta.stats.heightCm / 100, 2));
+  const proj = projectAtEnd();
+  const g = (proj != null && proj < start) ? proj : Math.round(start * 0.91);
+  return Math.max(floor, Math.round(g));
+}
+function recipeBlock(meal) {
+  const d = meal.items.Dinner; if (!d || !d.recipe) return "";
+  const r = d.recipe, title = d.text.split(" — ")[0];
+  return `<details class="recipe"><summary>📖 Tonight's recipe — ${title}</summary>
+    <div class="recipe-body">
+      <div class="section-label">Ingredients</div>
+      <ul class="recipe-ing">${r.ingredients.map(x => `<li>${x}</li>`).join("")}</ul>
+      <div class="section-label">Method</div>
+      <ol class="recipe-steps">${r.steps.map(x => `<li>${x}</li>`).join("")}</ol>
+    </div></details>`;
 }
 
 /* ---------- TODAY ---------- */
@@ -176,6 +240,14 @@ function renderToday() {
         <span>Day ${i + 1} · ${m.name}</span><span class="swap-kcal">${m.totals.kcal} kcal</span></button>`).join("")}
     </div></details>`;
 
+  // reveal-day countdown
+  const rv = revealInfo();
+  const proj = projectAtEnd();
+  const revealCard = `<div class="card reveal">
+    <div class="reveal-num">${Math.max(0, rv.daysLeft)}</div>
+    <div class="reveal-txt"><b>days to Reveal Day</b><br><span class="sub">${rv.endStr}${proj != null ? ` · on pace for ~${proj} kg` : ""}</span></div>
+  </div>`;
+
   return `
   ${perfectBanner}
   <div class="card hero">
@@ -186,6 +258,8 @@ function renderToday() {
     ${chips}
     <div class="quote">"${quote}"</div>
   </div>
+
+  ${revealCard}
 
   <div class="card" data-workout-card>
     <div class="work-head">
@@ -212,6 +286,7 @@ function renderToday() {
     </div>
     <p class="note" style="margin:10px 0 0">🎯 Phase ${pos.phase.id} aim ~${pos.phase.calories} kcal · ${pos.phase.adjust}</p>
     <ul class="checklist">${mealItems}</ul>
+    ${recipeBlock(meal)}
     ${swapPicker}
   </div>
 
@@ -266,7 +341,7 @@ function renderPlan() {
       <ul class="checklist">${Object.keys(m.items).map(k => {
         const it = m.items[k];
         return `<li style="cursor:default"><span class="item-text"><span class="meal-label">${k} · ${it.kcal} kcal</span>${it.text}</span></li>`;
-      }).join("")}</ul>`;
+      }).join("")}</ul>${recipeBlock(m)}`;
   });
   html += `</div>`;
 
@@ -385,12 +460,15 @@ function renderProgress() {
   const goal = LS.get("pt_goal", null);
   let goalCard;
   if (goal == null) {
+    const sg = suggestedGoal();
     goalCard = `<div class="card"><h2>🎯 Set a goal weight</h2>
       <p class="sub">We'll project when you'll hit it from your trend</p>
-      <div class="tracker-row" style="margin-top:6px">
-        <input class="field" id="goalWeight" type="number" step="0.1" inputmode="decimal" placeholder="target kg" style="max-width:160px" />
-        <button type="button" class="btn accent" id="saveGoalBtn">Set goal</button>
-      </div></div>`;
+      <button type="button" class="btn accent block" id="useSuggestedGoal" style="margin:4px 0 10px">✨ Use suggested goal: ${sg} kg</button>
+      <div class="tracker-row">
+        <input class="field" id="goalWeight" type="number" step="0.1" inputmode="decimal" placeholder="or your own kg" value="${sg}" style="max-width:160px" />
+        <button type="button" class="btn" id="saveGoalBtn">Set</button>
+      </div>
+      <p class="note" style="margin-top:8px">Suggested from your start weight, height and current trend — tweak it to whatever you're aiming for.</p></div>`;
   } else {
     const span = (start - goal) || 1;
     const gp = Math.max(0, Math.min(100, Math.round(((start - latest) / span) * 100)));
@@ -460,6 +538,40 @@ function renderProgress() {
 
   <div class="card"><h2>🏅 Achievements <small style="color:var(--muted);font-weight:600">${earned}/${A.length}</small></h2>
     <div class="badge-grid">${badges}</div>
+  </div>
+
+  ${renderPhotos()}`;
+}
+
+function renderPhotos() {
+  const has = PHOTOS.length;
+  const compare = PHOTOS.length >= 2 ? (() => {
+    const a = PHOTOS[0], b = PHOTOS[PHOTOS.length - 1];
+    return `<div class="section-label" style="margin-top:14px">Before → Now</div>
+      <div class="compare">
+        <img src="${a.data}" alt="before" class="cmp-base" />
+        <div class="cmp-top" id="cmpTop" style="clip-path: inset(0 ${100 - COMPARE_T}% 0 0)"><img src="${b.data}" alt="now" /></div>
+        <div class="cmp-handle" style="left:${COMPARE_T}%"></div>
+      </div>
+      <input type="range" min="0" max="100" value="${COMPARE_T}" id="compareRange" class="cmp-range" />
+      <div class="cmp-labels"><span>${a.date}</span><span>${b.date}</span></div>` ;
+  })() : "";
+
+  const thumbs = PHOTOS.map(p =>
+    `<div class="photo-thumb"><img src="${p.data}" alt="${p.date}" />
+      <span class="photo-date">${p.date.slice(5)}</span>
+      <button type="button" class="photo-del" data-act="delphoto" data-date="${p.date}">✕</button></div>`).join("");
+
+  return `<div class="card"><h2>📸 Progress photos</h2>
+    <p class="sub">Stored only on this device · the scale lies, photos don't</p>
+    ${has ? `<div class="photo-grid" id="photoStage">${thumbs}</div>` : `<p class="note">Add a photo each week to build your transformation.</p>`}
+    ${compare}
+    <div class="tracker-row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
+      <label class="btn accent" for="photoInput" style="cursor:pointer">📷 Add photo</label>
+      <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" />
+      ${PHOTOS.length >= 2 ? `<button type="button" class="btn" id="playTimelapse">▶ Play timelapse</button>` : ""}
+    </div>
+    <img id="timelapseStage" class="timelapse-stage" style="display:none" />
   </div>`;
 }
 
@@ -579,6 +691,7 @@ function onViewClick(e) {
   const tagged = e.target.closest("[data-act]");
   if (tagged && tagged.dataset.act === "swap") { haptic(6); swapMeal(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delcustom") { haptic(6); delCustom(+tagged.dataset.i); return; }
+  if (tagged && tagged.dataset.act === "delphoto") { haptic(6); delPhoto(tagged.dataset.date); return; }
   if (tagged && tagged.dataset.act === "shop") { haptic(8); toggleShop(tagged); return; }
   if (tagged && (tagged.dataset.act === "workout" || tagged.dataset.act === "meals" || tagged.dataset.act === "water")) {
     const act = tagged.dataset.act, i = parseInt(tagged.dataset.i, 10);
@@ -606,8 +719,10 @@ function onViewClick(e) {
   }
   if (e.target.id === "logWeightBtn") return logWeight();
   if (e.target.id === "saveGoalBtn") return saveGoal();
+  if (e.target.id === "useSuggestedGoal") { LS.set("pt_goal", suggestedGoal()); haptic(8); repaintKeepScroll(); return; }
   if (e.target.id === "clearGoalBtn") { localStorage.removeItem("pt_goal"); repaintKeepScroll(); return; }
   if (e.target.id === "addCustomBtn") return addCustom();
+  if (e.target.id === "playTimelapse") return playTimelapse();
   if (e.target.id === "saveStartBtn") {
     LS.set("pt_startDate", document.getElementById("startDateInput").value);
     CURRENT_TAB = "today"; setActiveTab(); navigate(); return;
@@ -652,6 +767,55 @@ function delCustom(i) {
   LS.set("pt_shop_w" + wk, ck);
   repaintKeepScroll();
 }
+/* ---------- progress photos ---------- */
+function addPhotoFromFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = async () => {
+      // downscale to max 800px long edge, JPEG ~0.7, to keep storage sane
+      const max = 800, scale = Math.min(1, max / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+      cv.getContext("2d").drawImage(img, 0, 0, w, h);
+      const data = cv.toDataURL("image/jpeg", 0.7);
+      await photoPut({ date: todayKey(), data });
+      PHOTOS = await photosAll();
+      haptic(8); repaintKeepScroll();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+async function delPhoto(date) {
+  if (!confirm("Delete this photo?")) return;
+  await photoDel(date); PHOTOS = await photosAll(); repaintKeepScroll();
+}
+let TL_INT = null;
+function playTimelapse() {
+  const stage = document.getElementById("timelapseStage");
+  if (!stage || PHOTOS.length < 2) return;
+  clearInterval(TL_INT);
+  stage.style.display = "block";
+  let i = 0;
+  const step = () => { stage.src = PHOTOS[i].data; i = (i + 1) % PHOTOS.length; };
+  step();
+  TL_INT = setInterval(() => {
+    step();
+    if (i === 0) { /* looped once */ }
+  }, 450);
+  // auto-stop after 2 full loops
+  setTimeout(() => clearInterval(TL_INT), PHOTOS.length * 450 * 2 + 50);
+}
+function setCompare(v) {
+  COMPARE_T = Math.max(0, Math.min(100, +v));
+  const top = document.getElementById("cmpTop");
+  const handle = document.querySelector(".cmp-handle");
+  if (top) top.style.clipPath = `inset(0 ${100 - COMPARE_T}% 0 0)`;
+  if (handle) handle.style.left = COMPARE_T + "%";
+}
+
 function updateTodayChips() {
   const pos = position(); if (pos.beforeStart || pos.finished) return;
   const day = pos.phase.schedule[pos.weekday];
@@ -743,7 +907,7 @@ function updateWater(n) {
 /* ---------- shell ---------- */
 // render() repaints the current tab WITHOUT moving the scroll position.
 function render() {
-  clearInterval(REST_INT); // a repaint replaces the timer element
+  clearInterval(REST_INT); clearInterval(TL_INT); // a repaint replaces those elements
   const view = document.getElementById("view");
   if (CURRENT_TAB === "today") view.innerHTML = renderToday();
   else if (CURRENT_TAB === "plan") view.innerHTML = renderPlan();
@@ -792,6 +956,13 @@ async function boot() {
     else if (e.target.id === "goalWeight") { e.preventDefault(); saveGoal(); }
     else if (e.target.id === "customItem") { e.preventDefault(); addCustom(); }
   });
+  view.addEventListener("change", (e) => {
+    if (e.target.id === "photoInput") addPhotoFromFile(e.target.files && e.target.files[0]);
+  });
+  view.addEventListener("input", (e) => {
+    if (e.target.id === "compareRange") setCompare(e.target.value);
+  });
+  try { PHOTOS = await photosAll(); } catch { PHOTOS = []; }
   render();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 }
