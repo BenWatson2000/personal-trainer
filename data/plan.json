@@ -5,8 +5,11 @@
     "stats": {
       "weightKg": 68,
       "heightCm": 156,
-      "sex": "male"
+      "sex": "male",
+      "age": 25
     },
+    "maintenance": 2250,
+    "calcNote": "BMR ~1,535 kcal (Mifflin-St Jeor); maintenance ~2,250 kcal. Phase aims (1850/1750/1650) give a ~400–600 kcal deficit. Protein ~160g protects muscle while cutting.",
     "weeks": 12,
     "startDate": "2026-06-22",
     "dislikes": [
