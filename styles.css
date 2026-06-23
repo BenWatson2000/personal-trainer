@@ -175,6 +175,25 @@ main { flex: 1; padding: 16px 16px 96px; }
   transform: translateX(-1px); pointer-events: none; }
 .cmp-range { width: 100%; margin-top: 8px; accent-color: var(--accent); }
 .cmp-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+
+/* recipe library */
+.lib-slot { border-top: 1px solid var(--line); }
+.lib-slot summary { cursor: pointer; font-size: 15px; padding: 12px 0; list-style: none; }
+.lib-slot summary::-webkit-details-marker { display: none; }
+.lib-slot summary .sub { font-weight: 400; }
+.lib-list { padding-bottom: 8px; }
+.lib-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid var(--line); cursor: pointer; }
+.lib-row:last-child { border-bottom: none; }
+.lib-row.on .checkbox { background: var(--accent); border-color: var(--accent); color: #04130c; }
+.lib-row .item-text { font-size: 14px; }
+.lib-macro { color: var(--muted); font-size: 12px; }
+
+/* toast */
+.toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%);
+  background: var(--bg-card-2); border: 1px solid var(--line); color: var(--text);
+  padding: 10px 16px; border-radius: 999px; font-size: 13px; font-weight: 600; z-index: 50;
+  box-shadow: 0 6px 20px rgba(0,0,0,.4); animation: viewIn .2s ease; }
 .checklist.preview li { cursor: default; padding: 8px 0; }
 .checklist.preview .bullet { flex: 0 0 16px; color: var(--accent-2); font-weight: 700; text-align: center; }
 .checklist.preview .item-text { font-size: 14px; color: var(--muted); }

@@ -1317,5 +1317,859 @@
         }
       ]
     }
-  ]
+  ],
+  "mealBank": {
+    "limits": {
+      "breakfast": [
+        3,
+        10
+      ],
+      "lunch": [
+        3,
+        10
+      ],
+      "dinner": [
+        4,
+        12
+      ],
+      "snack": [
+        2,
+        8
+      ],
+      "evening": [
+        2,
+        8
+      ]
+    },
+    "breakfast": [
+      {
+        "id": "b1",
+        "text": "Greek yogurt bowl — 200g 0% Greek yogurt + 1 scoop whey + 40g granola + 80g blueberries",
+        "kcal": 410,
+        "p": 40
+      },
+      {
+        "id": "b2",
+        "text": "3-egg omelette + spinach + 30g cheddar + 2 slices wholegrain toast",
+        "kcal": 430,
+        "p": 32
+      },
+      {
+        "id": "b3",
+        "text": "Overnight oats — 50g oats + 1 scoop whey + 10g peanut butter + ½ banana",
+        "kcal": 430,
+        "p": 35,
+        "prep": "Make tonight — mix the oats, whey, peanut butter & banana, cover and leave in the fridge overnight."
+      },
+      {
+        "id": "b4",
+        "text": "Scrambled eggs (3) + 2 turkey rashers + smashed avocado on 1 slice toast",
+        "kcal": 440,
+        "p": 33
+      },
+      {
+        "id": "b5",
+        "text": "Greek yogurt + 40g granola + 1 scoop whey + raspberries",
+        "kcal": 410,
+        "p": 40
+      },
+      {
+        "id": "b6",
+        "text": "Protein pancakes — 40g oats + 1 egg + 1 scoop whey + ½ banana, with Greek yogurt",
+        "kcal": 450,
+        "p": 38
+      },
+      {
+        "id": "b7",
+        "text": "Veggie & cheese omelette (3 eggs) + 1 slice wholegrain toast",
+        "kcal": 400,
+        "p": 30
+      },
+      {
+        "id": "b8",
+        "text": "Wholemeal bagel + light cream cheese + 2 scrambled eggs",
+        "kcal": 420,
+        "p": 28
+      },
+      {
+        "id": "b9",
+        "text": "Porridge (50g oats, milk) + 1 scoop whey + blueberries + honey",
+        "kcal": 430,
+        "p": 35
+      },
+      {
+        "id": "b10",
+        "text": "Greek yogurt parfait — 200g yogurt + 1 scoop whey + 40g granola + strawberries",
+        "kcal": 410,
+        "p": 38
+      },
+      {
+        "id": "b11",
+        "text": "Egg & cheese breakfast wrap (2 eggs, wholemeal tortilla)",
+        "kcal": 410,
+        "p": 28
+      },
+      {
+        "id": "b12",
+        "text": "3 Weetabix + milk + 1 scoop whey + banana",
+        "kcal": 440,
+        "p": 35
+      },
+      {
+        "id": "b13",
+        "text": "Cottage cheese (150g) + 2 poached eggs + 1 slice toast",
+        "kcal": 410,
+        "p": 34
+      },
+      {
+        "id": "b14",
+        "text": "Smoothie bowl — 1 scoop whey, banana, 30g oats, yogurt + granola topping",
+        "kcal": 440,
+        "p": 38
+      },
+      {
+        "id": "b15",
+        "text": "Bacon medallions (3) + 2 poached eggs + 1 toast",
+        "kcal": 420,
+        "p": 30
+      },
+      {
+        "id": "b16",
+        "text": "Banana & peanut-butter porridge + 1 scoop whey",
+        "kcal": 440,
+        "p": 34
+      },
+      {
+        "id": "b17",
+        "text": "Greek yogurt, granola, honey & walnuts",
+        "kcal": 410,
+        "p": 28
+      },
+      {
+        "id": "b18",
+        "text": "Cheese & egg breakfast muffins (3) + apple",
+        "kcal": 400,
+        "p": 32
+      },
+      {
+        "id": "b19",
+        "text": "Breakfast burrito — eggs, cheese, salsa, wrap",
+        "kcal": 430,
+        "p": 28
+      }
+    ],
+    "lunch": [
+      {
+        "id": "l1",
+        "text": "Chicken & rice bowl — 150g chicken breast, 60g (dry) rice, mixed veg, soy + sriracha",
+        "kcal": 500,
+        "p": 48
+      },
+      {
+        "id": "l2",
+        "text": "Turkey & salad wrap (120g turkey, wholemeal) + small Greek yogurt",
+        "kcal": 470,
+        "p": 42
+      },
+      {
+        "id": "l3",
+        "text": "Chicken pasta salad — 130g chicken, 70g pasta, cherry tomatoes, light pesto",
+        "kcal": 500,
+        "p": 45
+      },
+      {
+        "id": "l4",
+        "text": "Lean beef (140g) + sweet potato (200g) + broccoli",
+        "kcal": 480,
+        "p": 45
+      },
+      {
+        "id": "l5",
+        "text": "Chicken wrap (130g chicken, light Caesar) + side salad",
+        "kcal": 500,
+        "p": 44
+      },
+      {
+        "id": "l6",
+        "text": "Chicken burrito bowl — 140g chicken, 70g rice, salsa, sweetcorn, light cheese",
+        "kcal": 560,
+        "p": 46
+      },
+      {
+        "id": "l7",
+        "text": "Chicken & roast veg couscous — 140g chicken, 60g couscous",
+        "kcal": 480,
+        "p": 44
+      },
+      {
+        "id": "l8",
+        "text": "Lean ham & cheese toastie (wholegrain) + side salad + small Greek yogurt",
+        "kcal": 490,
+        "p": 40
+      },
+      {
+        "id": "l9",
+        "text": "Jacket potato + 130g chicken + light cheese + side salad",
+        "kcal": 500,
+        "p": 45
+      },
+      {
+        "id": "l10",
+        "text": "Chicken & rice power bowl — 150g chicken, 60g rice, mixed veg",
+        "kcal": 500,
+        "p": 48
+      },
+      {
+        "id": "l11",
+        "text": "Lean beef meatball sub (120g 5% mince, wholegrain roll) + salad",
+        "kcal": 520,
+        "p": 45
+      },
+      {
+        "id": "l12",
+        "text": "Chicken shawarma wrap — 140g chicken, wholemeal flatbread + salad",
+        "kcal": 500,
+        "p": 44,
+        "prep": "Optional: marinate the chicken in shawarma spice + a little yogurt tonight."
+      },
+      {
+        "id": "l13",
+        "text": "Chicken noodle soup (150g chicken) + wholegrain roll + cheese",
+        "kcal": 470,
+        "p": 40
+      },
+      {
+        "id": "l14",
+        "text": "3-egg cheese & ham omelette + 1 toast + fruit",
+        "kcal": 470,
+        "p": 40
+      },
+      {
+        "id": "l15",
+        "text": "BBQ chicken & rice salad",
+        "kcal": 500,
+        "p": 45
+      },
+      {
+        "id": "l16",
+        "text": "Turkey & cheese bagel + side salad",
+        "kcal": 480,
+        "p": 40
+      },
+      {
+        "id": "l17",
+        "text": "Chicken & sweetcorn jacket potato + salad",
+        "kcal": 500,
+        "p": 42
+      },
+      {
+        "id": "l18",
+        "text": "Cajun chicken wrap + slaw",
+        "kcal": 500,
+        "p": 44
+      },
+      {
+        "id": "l19",
+        "text": "Ham, cheese & egg salad bowl + roll",
+        "kcal": 470,
+        "p": 40
+      }
+    ],
+    "snack": [
+      {
+        "id": "s1",
+        "text": "Apple + 25g almonds",
+        "kcal": 230,
+        "p": 7
+      },
+      {
+        "id": "s2",
+        "text": "Protein bar + banana",
+        "kcal": 260,
+        "p": 22
+      },
+      {
+        "id": "s3",
+        "text": "Babybel + 20g cashews",
+        "kcal": 200,
+        "p": 8
+      },
+      {
+        "id": "s4",
+        "text": "150g Greek yogurt + drizzle honey + berries",
+        "kcal": 200,
+        "p": 18
+      },
+      {
+        "id": "s5",
+        "text": "Protein bar",
+        "kcal": 200,
+        "p": 20
+      },
+      {
+        "id": "s6",
+        "text": "25g mixed nuts + apple",
+        "kcal": 230,
+        "p": 7
+      },
+      {
+        "id": "s7",
+        "text": "Greek yogurt + berries + honey",
+        "kcal": 200,
+        "p": 18
+      },
+      {
+        "id": "s8",
+        "text": "2 rice cakes + peanut butter",
+        "kcal": 200,
+        "p": 9
+      },
+      {
+        "id": "s9",
+        "text": "100g cottage cheese + crackers",
+        "kcal": 190,
+        "p": 16
+      },
+      {
+        "id": "s10",
+        "text": "30g beef jerky + apple",
+        "kcal": 200,
+        "p": 20
+      },
+      {
+        "id": "s11",
+        "text": "Babybel + grapes",
+        "kcal": 180,
+        "p": 9
+      },
+      {
+        "id": "s12",
+        "text": "Protein flapjack",
+        "kcal": 220,
+        "p": 16
+      },
+      {
+        "id": "s13",
+        "text": "Square dark chocolate + 150g Greek yogurt",
+        "kcal": 220,
+        "p": 16
+      },
+      {
+        "id": "s14",
+        "text": "Protein yogurt + small granola",
+        "kcal": 200,
+        "p": 18
+      },
+      {
+        "id": "s15",
+        "text": "Apple + peanut butter",
+        "kcal": 200,
+        "p": 7
+      },
+      {
+        "id": "s16",
+        "text": "Cheese & crackers",
+        "kcal": 200,
+        "p": 10
+      },
+      {
+        "id": "s17",
+        "text": "Protein shake + oatcake",
+        "kcal": 180,
+        "p": 26
+      }
+    ],
+    "dinner": [
+      {
+        "id": "d1",
+        "text": "Turkey meatballs (150g 5% mince) + 70g pasta + marinara + parmesan",
+        "kcal": 560,
+        "p": 48,
+        "prep": "If your turkey mince is frozen, move it to the fridge tonight to defrost.",
+        "recipe": {
+          "ingredients": [
+            "150g turkey mince",
+            "½ onion + 1 garlic clove",
+            "70g pasta",
+            "Tin chopped tomatoes / passata",
+            "Sprinkle parmesan, herbs"
+          ],
+          "steps": [
+            "Mix mince with grated onion, herbs, salt; roll into balls.",
+            "Brown the balls in a little oil, set aside.",
+            "Soften garlic, add tomatoes + herbs, simmer 10 min.",
+            "Return meatballs to sauce 5 min; serve over cooked pasta with parmesan."
+          ]
+        }
+      },
+      {
+        "id": "d2",
+        "text": "Lean beef chilli con carne (150g 5% mince + kidney beans) + 60g rice",
+        "kcal": 540,
+        "p": 45,
+        "prep": "Defrost the beef mince overnight if frozen — chilli also tastes better made a day ahead.",
+        "recipe": {
+          "ingredients": [
+            "150g 5% beef mince",
+            "½ onion, 1 pepper, garlic",
+            "½ tin kidney beans",
+            "Tin chopped tomatoes",
+            "Chilli powder, cumin, 60g rice"
+          ],
+          "steps": [
+            "Brown mince; add chopped onion, pepper, garlic.",
+            "Stir in spices, tomatoes and drained beans.",
+            "Simmer 20–25 min until thick.",
+            "Serve with boiled rice."
+          ]
+        }
+      },
+      {
+        "id": "d3",
+        "text": "Chicken stir-fry — 150g chicken, 120g egg noodles, peppers, broccoli, soy",
+        "kcal": 520,
+        "p": 48,
+        "recipe": {
+          "ingredients": [
+            "150g chicken, sliced",
+            "120g egg noodles",
+            "Peppers, broccoli, ginger",
+            "2 tbsp soy + dash sriracha"
+          ],
+          "steps": [
+            "Cook noodles, drain.",
+            "Stir-fry chicken on high until done.",
+            "Add veg + ginger, fry 3–4 min.",
+            "Toss in noodles + soy/sriracha 1 min."
+          ]
+        }
+      },
+      {
+        "id": "d4",
+        "text": "Chicken fajitas — 150g chicken, peppers, onion, 2 small tortillas, salsa, light cheese",
+        "kcal": 540,
+        "p": 50,
+        "recipe": {
+          "ingredients": [
+            "150g chicken strips",
+            "Peppers + onion",
+            "2 small tortillas",
+            "Fajita seasoning, salsa, light cheese"
+          ],
+          "steps": [
+            "Toss chicken in seasoning.",
+            "Fry chicken until cooked; add peppers + onion.",
+            "Warm tortillas.",
+            "Fill with chicken, salsa and a little cheese."
+          ]
+        }
+      },
+      {
+        "id": "d5",
+        "text": "Pork loin steak (150g) + new potatoes (200g) + green veg",
+        "kcal": 560,
+        "p": 48,
+        "recipe": {
+          "ingredients": [
+            "150g pork loin steak",
+            "200g new potatoes",
+            "Green veg (beans/broccoli)",
+            "Garlic, olive oil"
+          ],
+          "steps": [
+            "Boil new potatoes ~15 min.",
+            "Season pork; pan-fry 3–4 min each side until cooked.",
+            "Steam the greens.",
+            "Rest pork 2 min; plate with potatoes + veg."
+          ]
+        }
+      },
+      {
+        "id": "d6",
+        "text": "Spaghetti bolognese — 150g 5% beef mince + 75g spaghetti + parmesan",
+        "kcal": 560,
+        "p": 45,
+        "prep": "Defrost the beef mince overnight if frozen.",
+        "recipe": {
+          "ingredients": [
+            "150g 5% beef mince",
+            "75g spaghetti",
+            "½ onion, garlic, carrot",
+            "Tin tomatoes, herbs, parmesan"
+          ],
+          "steps": [
+            "Brown mince; add diced onion, carrot, garlic.",
+            "Add tomatoes + herbs, simmer 20 min.",
+            "Cook spaghetti.",
+            "Combine; top with parmesan."
+          ]
+        }
+      },
+      {
+        "id": "d7",
+        "text": "Chicken & veg curry — 150g chicken, tomato/light-coconut sauce + 60g rice",
+        "kcal": 540,
+        "p": 48,
+        "recipe": {
+          "ingredients": [
+            "150g chicken",
+            "Onion, pepper, garlic, ginger",
+            "Curry paste + light coconut milk",
+            "60g rice"
+          ],
+          "steps": [
+            "Fry onion, garlic, ginger; add curry paste.",
+            "Add chicken, brown.",
+            "Pour in coconut milk + veg; simmer 15 min.",
+            "Serve with rice."
+          ]
+        }
+      },
+      {
+        "id": "d8",
+        "text": "BBQ chicken (160g) + sweet potato wedges (200g) + corn on the cob",
+        "kcal": 560,
+        "p": 52,
+        "recipe": {
+          "ingredients": [
+            "160g chicken breast",
+            "BBQ sauce",
+            "200g sweet potato",
+            "Corn on the cob"
+          ],
+          "steps": [
+            "Cut sweet potato into wedges, roast 25–30 min.",
+            "Coat chicken in BBQ sauce; bake or grill ~20 min.",
+            "Boil/grill the corn.",
+            "Plate it all up."
+          ]
+        }
+      },
+      {
+        "id": "d9",
+        "text": "Beef & broccoli stir-fry — 150g lean beef strips + 60g rice",
+        "kcal": 540,
+        "p": 46,
+        "prep": "Defrost the beef strips overnight if frozen.",
+        "recipe": {
+          "ingredients": [
+            "150g lean beef strips",
+            "Broccoli",
+            "Garlic + ginger",
+            "2 tbsp soy, 60g rice"
+          ],
+          "steps": [
+            "Cook rice.",
+            "Sear beef on high heat, set aside.",
+            "Stir-fry broccoli, garlic, ginger 3 min.",
+            "Return beef + soy 1 min; serve over rice."
+          ]
+        }
+      },
+      {
+        "id": "d10",
+        "text": "Chicken pesto pasta — 150g chicken, 75g pasta, light pesto, cherry tomatoes",
+        "kcal": 560,
+        "p": 46,
+        "recipe": {
+          "ingredients": [
+            "150g chicken",
+            "75g pasta",
+            "Light pesto",
+            "Cherry tomatoes"
+          ],
+          "steps": [
+            "Cook pasta.",
+            "Pan-fry chicken until done, slice.",
+            "Toss pasta with pesto + halved tomatoes.",
+            "Top with chicken."
+          ]
+        }
+      },
+      {
+        "id": "d11",
+        "text": "Pork & apple traybake — 150g pork, new potatoes (200g) + veg",
+        "kcal": 540,
+        "p": 46,
+        "recipe": {
+          "ingredients": [
+            "150g pork steak/chops",
+            "1 apple, wedged",
+            "200g new potatoes",
+            "Onion, rosemary"
+          ],
+          "steps": [
+            "Halve potatoes, par-boil 8 min.",
+            "Add to tray with pork, apple, onion, rosemary + oil.",
+            "Roast 25–30 min at 200°C until pork cooked.",
+            "Serve with green veg."
+          ]
+        }
+      },
+      {
+        "id": "d12",
+        "text": "2 turkey burgers (brioche thins) + oven sweet-potato chips + salad",
+        "kcal": 560,
+        "p": 48,
+        "recipe": {
+          "ingredients": [
+            "2 turkey burgers",
+            "Brioche thins / buns",
+            "200g sweet potato (chips)",
+            "Salad"
+          ],
+          "steps": [
+            "Cut sweet potato into chips, oven 25 min.",
+            "Grill/fry burgers until cooked through.",
+            "Toast the buns.",
+            "Build with salad; serve with chips."
+          ]
+        }
+      },
+      {
+        "id": "d13",
+        "text": "Chicken tikka (160g) + 60g rice + mini naan",
+        "kcal": 560,
+        "p": 50,
+        "prep": "Marinate the chicken in tikka paste + yogurt tonight for the best flavour.",
+        "recipe": {
+          "ingredients": [
+            "160g chicken",
+            "Tikka paste + 2 tbsp yogurt",
+            "60g rice",
+            "Mini naan"
+          ],
+          "steps": [
+            "Marinate chicken in tikka paste + yogurt (ideally overnight).",
+            "Grill/bake ~20 min until charred and cooked.",
+            "Cook rice; warm naan.",
+            "Serve together."
+          ]
+        }
+      },
+      {
+        "id": "d14",
+        "text": "4 reduced-fat sausages + mash + onion gravy + peas",
+        "kcal": 540,
+        "p": 40,
+        "recipe": {
+          "ingredients": [
+            "4 reduced-fat sausages",
+            "2 potatoes (mash)",
+            "Onion gravy",
+            "Peas"
+          ],
+          "steps": [
+            "Boil potatoes; mash with a splash of milk.",
+            "Grill sausages ~15 min, turning.",
+            "Heat gravy; cook peas.",
+            "Plate sausages on mash with gravy + peas."
+          ]
+        }
+      },
+      {
+        "id": "d15",
+        "text": "Turkey chilli + rice (with beans)",
+        "kcal": 540,
+        "p": 44,
+        "recipe": {
+          "ingredients": [
+            "150g turkey mince",
+            "Onion, pepper, garlic",
+            "½ tin kidney beans",
+            "Tin chopped tomatoes",
+            "Chilli spices, 60g rice"
+          ],
+          "steps": [
+            "Brown the mince.",
+            "Add veg + chilli spices.",
+            "Stir in tomatoes + beans; simmer 20 min.",
+            "Serve with rice."
+          ]
+        }
+      },
+      {
+        "id": "d16",
+        "text": "Cottage pie (lean beef mince) + veg",
+        "kcal": 540,
+        "p": 42,
+        "recipe": {
+          "ingredients": [
+            "150g 5% beef mince",
+            "Onion + carrot",
+            "Beef stock/gravy",
+            "2 potatoes (mash)",
+            "Peas"
+          ],
+          "steps": [
+            "Brown mince with onion + carrot.",
+            "Add stock, simmer 10 min.",
+            "Top with mash; bake 20 min at 200°C.",
+            "Serve with peas."
+          ]
+        }
+      },
+      {
+        "id": "d17",
+        "text": "Pork meatballs in tomato sauce + pasta",
+        "kcal": 560,
+        "p": 44,
+        "recipe": {
+          "ingredients": [
+            "150g pork mince",
+            "Breadcrumb + ½ egg",
+            "Passata + garlic, herbs",
+            "70g pasta"
+          ],
+          "steps": [
+            "Mix mince, breadcrumb, egg; roll into balls.",
+            "Brown the balls.",
+            "Simmer in garlicky passata 12 min.",
+            "Serve over pasta."
+          ]
+        }
+      },
+      {
+        "id": "d18",
+        "text": "Chicken & chorizo (light) rice one-pot",
+        "kcal": 560,
+        "p": 46,
+        "recipe": {
+          "ingredients": [
+            "140g chicken",
+            "40g light chorizo",
+            "Onion, pepper, paprika",
+            "60g rice + stock"
+          ],
+          "steps": [
+            "Fry chorizo to release oil.",
+            "Add chicken + veg + paprika.",
+            "Stir in rice + stock.",
+            "Cover and simmer 15 min."
+          ]
+        }
+      },
+      {
+        "id": "d19",
+        "text": "Chicken souvlaki + mini pitta + salad",
+        "kcal": 540,
+        "p": 46,
+        "prep": "Marinate the chicken in lemon, garlic & oregano tonight.",
+        "recipe": {
+          "ingredients": [
+            "150g chicken",
+            "Lemon, oregano, garlic",
+            "Mini pitta",
+            "Salad + light tzatziki"
+          ],
+          "steps": [
+            "Marinate chicken in lemon, oregano, garlic.",
+            "Grill/skewer until cooked.",
+            "Warm the pitta.",
+            "Fill with chicken, salad + tzatziki."
+          ]
+        }
+      },
+      {
+        "id": "d20",
+        "text": "Gammon steak, egg & sautéed potatoes + peas",
+        "kcal": 540,
+        "p": 42,
+        "recipe": {
+          "ingredients": [
+            "150g gammon steak",
+            "1 egg",
+            "200g potatoes",
+            "Peas"
+          ],
+          "steps": [
+            "Boil then sauté the potatoes.",
+            "Grill the gammon 4–5 min each side.",
+            "Fry the egg; cook peas.",
+            "Plate together."
+          ]
+        }
+      }
+    ],
+    "evening": [
+      {
+        "id": "e1",
+        "text": "Whey shake + 1 rice cake",
+        "kcal": 160,
+        "p": 27
+      },
+      {
+        "id": "e2",
+        "text": "100g cottage cheese + 4 wholegrain crackers",
+        "kcal": 170,
+        "p": 16
+      },
+      {
+        "id": "e3",
+        "text": "Whey shake + apple",
+        "kcal": 180,
+        "p": 27
+      },
+      {
+        "id": "e4",
+        "text": "Casein / whey shake",
+        "kcal": 150,
+        "p": 27
+      },
+      {
+        "id": "e5",
+        "text": "100g cottage cheese + pineapple",
+        "kcal": 160,
+        "p": 15
+      },
+      {
+        "id": "e6",
+        "text": "Whey shake",
+        "kcal": 140,
+        "p": 27
+      },
+      {
+        "id": "e7",
+        "text": "Square dark chocolate + casein shake",
+        "kcal": 190,
+        "p": 24
+      },
+      {
+        "id": "e8",
+        "text": "Whey shake + berries",
+        "kcal": 160,
+        "p": 27
+      },
+      {
+        "id": "e9",
+        "text": "Casein shake",
+        "kcal": 150,
+        "p": 27
+      },
+      {
+        "id": "e10",
+        "text": "200g Greek yogurt + 1 scoop whey + honey",
+        "kcal": 200,
+        "p": 30
+      },
+      {
+        "id": "e11",
+        "text": "Skyr + berries",
+        "kcal": 170,
+        "p": 18
+      },
+      {
+        "id": "e12",
+        "text": "Casein + almond butter on an oatcake",
+        "kcal": 190,
+        "p": 24
+      },
+      {
+        "id": "e13",
+        "text": "Warm milk + 1 scoop whey",
+        "kcal": 170,
+        "p": 28
+      }
+    ]
+  }
 }
