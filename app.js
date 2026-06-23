@@ -322,9 +322,13 @@ function renderSettings() {
     <p class="note" style="margin-top:8px">Removes check-ins, weigh-ins and start date from this phone only.</p>
   </div>
 
+  <div class="card"><h2>🎯 Your numbers</h2>
+    <p class="note">${PLAN.meta.athlete} · ${PLAN.meta.stats.age}y · ${PLAN.meta.stats.weightKg}kg / ${PLAN.meta.stats.heightCm}cm${PLAN.meta.maintenance ? ` · est. maintenance <b>~${PLAN.meta.maintenance.toLocaleString()} kcal</b>` : ""}.</p>
+    ${PLAN.meta.calcNote ? `<p class="note" style="margin-top:6px">${PLAN.meta.calcNote}</p>` : ""}
+  </div>
+
   <div class="card"><h2>ℹ️ About</h2>
-    <p class="note">Built for ${PLAN.meta.athlete} · ${PLAN.meta.stats.weightKg}kg / ${PLAN.meta.stats.heightCm}cm.
-    Everything is stored on your device — no account, no tracking. Add this page to your home screen for an app-like experience.</p>
+    <p class="note">Everything is stored on your device — no account, no tracking. Add this page to your home screen for an app-like experience.</p>
   </div>`;
 }
 
