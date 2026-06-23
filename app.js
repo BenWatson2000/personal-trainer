@@ -43,6 +43,58 @@ async function photosAll() {
 async function photoPut(rec) { try { const db = await idb(); db.transaction("photos", "readwrite").objectStore("photos").put(rec); } catch {} }
 async function photoDel(date) { try { const db = await idb(); db.transaction("photos", "readwrite").objectStore("photos").delete(date); } catch {} }
 
+/* ---------- recipe library: build the plan from a per-slot pool you choose ---------- */
+const SLOTS = [["Breakfast", "breakfast"], ["Lunch", "lunch"], ["Snack", "snack"], ["Dinner", "dinner"], ["Evening", "evening"]];
+let BANK = null;
+function buildBank() {
+  if (!PLAN.mealBank) { BANK = null; return; }
+  BANK = {};
+  for (const [, k] of SLOTS) {
+    const list = PLAN.mealBank[k] || [];
+    const byId = {}; list.forEach(it => byId[it.id] = it);
+    const lim = (PLAN.mealBank.limits && PLAN.mealBank.limits[k]) || [1, list.length];
+    BANK[k] = { list, byId, min: lim[0], max: lim[1] };
+  }
+}
+// default picks = the meals from the curated 14-day plan (capped at each slot's max)
+function defaultLibrary() {
+  const lib = {};
+  for (const [label, k] of SLOTS) {
+    const curated = new Set(PLAN.meals.map(m => m.items[label].text));
+    let ids = BANK[k].list.filter(it => curated.has(it.text)).map(it => it.id);
+    if (ids.length > BANK[k].max) ids = ids.slice(0, BANK[k].max);
+    if (ids.length < BANK[k].min) ids = BANK[k].list.slice(0, BANK[k].min).map(it => it.id);
+    lib[k] = ids;
+  }
+  return lib;
+}
+function currentLibrary() { return LS.get("pt_library", null) || defaultLibrary(); }
+// returns a saved+valid library, or null to fall back to the curated plan
+function getLibrary() {
+  const lib = LS.get("pt_library", null);
+  if (!lib || !BANK) return null;
+  for (const [, k] of SLOTS) {
+    const sel = (lib[k] || []).filter(id => BANK[k].byId[id]);
+    if (sel.length < BANK[k].min) return null;
+  }
+  return lib;
+}
+// the meal for a given day index — assembled from your library, else the curated plan
+function dayMeal(dn) {
+  const idx = ((dn % PLAN.meals.length) + PLAN.meals.length) % PLAN.meals.length;
+  const lib = getLibrary();
+  if (!lib) return PLAN.meals[idx];
+  const items = {}; let kcal = 0, protein = 0;
+  for (const [label, k] of SLOTS) {
+    const sel = lib[k].filter(id => BANK[k].byId[id]).map(id => BANK[k].byId[id]);
+    const pick = sel[((dn % sel.length) + sel.length) % sel.length];
+    items[label] = pick; kcal += pick.kcal; protein += pick.p;
+  }
+  const fat = Math.round(0.28 * kcal / 9);
+  const carbs = Math.round((kcal - 4 * protein - 9 * fat) / 4);
+  return { name: "Your mix", totals: { kcal, protein, carbs, fat }, items };
+}
+
 function todayKey(d = new Date()) {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
@@ -133,11 +185,9 @@ function renderToday() {
   }
 
   const day = pos.phase.schedule[pos.weekday];
-  const baseIdx = pos.dn % PLAN.meals.length;
   const swapIdx = LS.get("pt_swap_" + key, null);
-  const mealIdx = (swapIdx != null && swapIdx >= 0 && swapIdx < PLAN.meals.length) ? swapIdx : baseIdx;
-  const swapped = mealIdx !== baseIdx;
-  const meal = PLAN.meals[mealIdx];
+  const swapped = swapIdx != null && swapIdx >= 0 && swapIdx < PLAN.meals.length;
+  const meal = swapped ? PLAN.meals[swapIdx] : dayMeal(pos.dn);
   const quote = QUOTES[pos.dn % QUOTES.length];
 
   // gym vs home variant
@@ -186,7 +236,7 @@ function renderToday() {
   const tWeekday = (tDate.getDay() + 6) % 7;
   const tWeek = Math.floor((pos.dn + 1) / 7) + 1;
   const tDayName = tDate.toLocaleDateString("en-GB", { weekday: "long" });
-  const tmrw = PLAN.meals[(pos.dn + 1) % PLAN.meals.length];
+  const tmrw = dayMeal(pos.dn + 1);
   const tmrwPrep = prepNotes(tmrw);
   const prepLines = tmrwPrep.map(([k, v]) => `<div class="prep-line">🌙 <b>${k}:</b> ${v}</div>`).join("");
 
@@ -233,10 +283,10 @@ function renderToday() {
     </div>` : "";
 
   // meal swap picker
-  const swapPicker = `<details class="swap"><summary>🔀 ${swapped ? "Swapped — change or reset" : "Not feeling it? Swap today's meal"}</summary>
+  const swapPicker = `<details class="swap"><summary>🔀 ${swapped ? "Swapped today — change or reset" : "Not feeling it? Swap today's meal"}</summary>
     <div class="swap-list">
-      ${swapped ? `<button type="button" class="swap-opt reset" data-act="swap" data-i="${baseIdx}">↩︎ Reset to today's default (Day ${baseIdx + 1})</button>` : ""}
-      ${PLAN.meals.map((m, i) => `<button type="button" class="swap-opt ${i === mealIdx ? "cur" : ""}" data-act="swap" data-i="${i}">
+      ${swapped ? `<button type="button" class="swap-opt reset" data-act="swap" data-i="-1">↩︎ Reset to my plan</button>` : ""}
+      ${PLAN.meals.map((m, i) => `<button type="button" class="swap-opt ${swapped && swapIdx === i ? "cur" : ""}" data-act="swap" data-i="${i}">
         <span>Day ${i + 1} · ${m.name}</span><span class="swap-kcal">${m.totals.kcal} kcal</span></button>`).join("")}
     </div></details>`;
 
@@ -591,6 +641,25 @@ function sparkline(vals) {
 }
 
 /* ---------- SETTINGS ---------- */
+function renderLibrary() {
+  if (!BANK) return "";
+  const lib = currentLibrary();
+  const active = LS.get("pt_library", null) != null;
+  let html = `<div class="card"><h2>📚 Recipe Library</h2>
+    <p class="sub">Pick the meals you actually like — your daily plan is built from these and rotated across the days. ${active ? '<b style="color:var(--accent)">Active ✓</b>' : "Using the default plan until you customise."}</p>`;
+  for (const [label, k] of SLOTS) {
+    const sel = new Set(lib[k]); const mn = BANK[k].min, mx = BANK[k].max;
+    html += `<details class="lib-slot"><summary>${label}s — <b>${sel.size}</b>/${mx} <span class="sub">(min ${mn})</span></summary>
+      <div class="lib-list">${BANK[k].list.map(it => `
+        <div class="lib-row ${sel.has(it.id) ? "on" : ""}" data-act="lib" data-slot="${k}" data-id="${it.id}">
+          <span class="checkbox" style="border-radius:6px">${sel.has(it.id) ? "✓" : ""}</span>
+          <span class="item-text">${it.text}<span class="lib-macro"> · ${it.kcal} kcal · ${it.p}g P</span></span>
+        </div>`).join("")}</div></details>`;
+  }
+  html += `<button type="button" class="btn block" id="resetLibBtn" style="margin-top:10px">↩︎ Reset to default plan</button></div>`;
+  return html;
+}
+
 function renderSettings() {
   return `
   <div class="card"><h2>⚙️ Settings</h2>
@@ -599,6 +668,8 @@ function renderSettings() {
     <button type="button" class="btn accent block" id="saveStartBtn" style="margin-top:10px">Save start date</button>
     <p class="note" style="margin-top:8px">Set this to the Monday you want week 1 to begin (or today to start now).</p>
   </div>
+
+  ${renderLibrary()}
 
   <div class="card"><h2>📲 Daily reminders on Telegram</h2>
     <p class="note">A free GitHub Action sends you the day's workout + meals every morning. To switch it on:</p>
@@ -643,6 +714,26 @@ function logWeight() {
 }
 
 function haptic(ms) { if (navigator.vibrate) { try { navigator.vibrate(ms); } catch {} } }
+
+function toast(msg) {
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 1700);
+}
+
+// toggle a meal in/out of your library, enforcing the slot's min/max
+function libToggle(slot, id) {
+  const lib = currentLibrary();
+  const set = new Set(lib[slot]); const { min, max } = BANK[slot];
+  if (set.has(id)) {
+    if (set.size <= min) { haptic(20); toast(`Keep at least ${min} ${slot}${min > 1 ? "s" : ""}`); return; }
+    set.delete(id);
+  } else {
+    if (set.size >= max) { haptic(20); toast(`Max ${max} ${slot}s — deselect one first`); return; }
+    set.add(id);
+  }
+  lib[slot] = [...set]; LS.set("pt_library", lib); haptic(8);
+  repaintKeepScroll();
+}
 
 // Repaint the current tab but keep the scroll exactly where it was (no jump).
 function repaintKeepScroll() {
@@ -692,6 +783,7 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "swap") { haptic(6); swapMeal(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delcustom") { haptic(6); delCustom(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delphoto") { haptic(6); delPhoto(tagged.dataset.date); return; }
+  if (tagged && tagged.dataset.act === "lib") { libToggle(tagged.dataset.slot, tagged.dataset.id); return; }
   if (tagged && tagged.dataset.act === "shop") { haptic(8); toggleShop(tagged); return; }
   if (tagged && (tagged.dataset.act === "workout" || tagged.dataset.act === "meals" || tagged.dataset.act === "water")) {
     const act = tagged.dataset.act, i = parseInt(tagged.dataset.i, 10);
@@ -722,6 +814,7 @@ function onViewClick(e) {
   if (e.target.id === "useSuggestedGoal") { LS.set("pt_goal", suggestedGoal()); haptic(8); repaintKeepScroll(); return; }
   if (e.target.id === "clearGoalBtn") { localStorage.removeItem("pt_goal"); repaintKeepScroll(); return; }
   if (e.target.id === "addCustomBtn") return addCustom();
+  if (e.target.id === "resetLibBtn") { localStorage.removeItem("pt_library"); haptic(8); toast("Back to the default plan"); repaintKeepScroll(); return; }
   if (e.target.id === "playTimelapse") return playTimelapse();
   if (e.target.id === "saveStartBtn") {
     LS.set("pt_startDate", document.getElementById("startDateInput").value);
@@ -743,8 +836,7 @@ function onViewClick(e) {
 /* ---------- new feature handlers ---------- */
 function swapMeal(i) {
   const key = todayKey();
-  const base = position().dn % PLAN.meals.length;
-  if (i === base) localStorage.removeItem("pt_swap_" + key); else LS.set("pt_swap_" + key, i);
+  if (i < 0) localStorage.removeItem("pt_swap_" + key); else LS.set("pt_swap_" + key, i);
   repaintKeepScroll();
 }
 function saveGoal() {
@@ -821,9 +913,9 @@ function updateTodayChips() {
   const day = pos.phase.schedule[pos.weekday];
   const ex = (LS.get("pt_mode", "gym") === "home" && day.homeItems) ? day.homeItems : day.items;
   const key = todayKey(); const c = LS.get("pt_checks_" + key, { workout: {}, meals: {}, water: 0 });
-  const baseIdx = pos.dn % PLAN.meals.length, sw = LS.get("pt_swap_" + key, null);
-  const mealIdx = (sw != null && sw >= 0 && sw < PLAN.meals.length) ? sw : baseIdx;
-  const mKeys = Object.keys(PLAN.meals[mealIdx].items);
+  const sw = LS.get("pt_swap_" + key, null);
+  const meal = (sw != null && sw >= 0 && sw < PLAN.meals.length) ? PLAN.meals[sw] : dayMeal(pos.dn);
+  const mKeys = Object.keys(meal.items);
   const wDone = ex.filter((_, i) => c.workout[i]).length;
   const mDone = mKeys.filter((_, i) => c.meals[i]).length;
   const chips = document.querySelectorAll(".today-chips .chip");
@@ -838,9 +930,9 @@ function isTodayPerfect() {
   const day = pos.phase.schedule[pos.weekday];
   const ex = (LS.get("pt_mode", "gym") === "home" && day.homeItems) ? day.homeItems : day.items;
   const key = todayKey(); const c = LS.get("pt_checks_" + key, { workout: {}, meals: {}, water: 0 });
-  const baseIdx = pos.dn % PLAN.meals.length, sw = LS.get("pt_swap_" + key, null);
-  const mealIdx = (sw != null && sw >= 0 && sw < PLAN.meals.length) ? sw : baseIdx;
-  const mKeys = Object.keys(PLAN.meals[mealIdx].items);
+  const sw = LS.get("pt_swap_" + key, null);
+  const meal = (sw != null && sw >= 0 && sw < PLAN.meals.length) ? PLAN.meals[sw] : dayMeal(pos.dn);
+  const mKeys = Object.keys(meal.items);
   const wDone = ex.filter((_, i) => c.workout[i]).length;
   const mDone = mKeys.filter((_, i) => c.meals[i]).length;
   return wDone === ex.length && mDone === mKeys.length && c.water >= 8;
@@ -944,6 +1036,7 @@ async function boot() {
     document.getElementById("view").innerHTML = `<div class="card"><p>Couldn't load the plan. If you opened this file directly, view it via the hosted GitHub Pages link instead.</p></div>`;
     return;
   }
+  buildBank();
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
     if (CURRENT_TAB === t.dataset.tab) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
     CURRENT_TAB = t.dataset.tab; setActiveTab(); navigate();
