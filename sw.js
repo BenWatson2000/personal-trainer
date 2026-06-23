@@ -1,10 +1,12 @@
-/* Simple offline cache for the PT app. Bump CACHE to invalidate. */
-const CACHE = "pt-shred-v1";
+/* Offline cache for the PT app. Bump CACHE to invalidate.
+ * Core app shell is network-first so code/style updates land immediately when
+ * online, with the cache as an offline fallback. */
+const CACHE = "pt-shred-v3";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./app.js",
+  "./styles.css?v=3",
+  "./app.js?v=3",
   "./data/plan.json",
   "./manifest.webmanifest",
   "./icons/icon.svg",
@@ -17,16 +19,22 @@ self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((keys) =>
     Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
+
+function networkFirst(req) {
+  return fetch(req).then((r) => {
+    const copy = r.clone();
+    caches.open(CACHE).then((c) => c.put(req, copy));
+    return r;
+  }).catch(() => caches.match(req).then((r) => r || caches.match("./index.html")));
+}
+
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
-  // Network-first for plan.json so updates show; cache-first for the rest.
-  if (e.request.url.includes("plan.json")) {
-    e.respondWith(fetch(e.request).then((r) => {
-      const copy = r.clone();
-      caches.open(CACHE).then((c) => c.put(e.request, copy));
-      return r;
-    }).catch(() => caches.match(e.request)));
-    return;
-  }
+  const url = new URL(e.request.url);
+  const isCore = e.request.mode === "navigate" ||
+    /\/(index\.html|app\.js|styles\.css|plan\.json|manifest\.webmanifest)$/.test(url.pathname) ||
+    url.pathname.endsWith("/");
+  if (isCore) { e.respondWith(networkFirst(e.request)); return; }
+  // icons and everything else: cache-first
   e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
 });

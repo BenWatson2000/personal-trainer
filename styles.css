@@ -15,8 +15,34 @@
   --radius: 16px;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
 html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
+  text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+/* kill the 300ms tap delay + give instant tactile feedback on anything pressable */
+button, .tab, ul.checklist li, .water-dot, .mode-btn, .daychip, input, a { touch-action: manipulation; }
+button:active, .btn:active, .mode-btn:active, .water-dot:active, .daychip:active { transform: scale(.96); }
+button, .btn, .mode-btn, .water-dot, .daychip { transition: transform .12s ease, background .15s ease, color .15s ease; }
+ul.checklist li { transition: background .15s ease; }
+ul.checklist li:active { background: rgba(255,255,255,.03); }
+.card { will-change: transform; transition: transform .12s ease; }
+
+/* view transition when switching tabs */
+@keyframes viewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.view-anim > * { animation: viewIn .3s cubic-bezier(.22,.61,.36,1) backwards; }
+.view-anim > *:nth-child(2) { animation-delay: .03s; }
+.view-anim > *:nth-child(3) { animation-delay: .06s; }
+.view-anim > *:nth-child(4) { animation-delay: .09s; }
+.view-anim > *:nth-child(n+5) { animation-delay: .12s; }
+
+/* satisfying check pop */
+@keyframes checkPop { 0% { transform: scale(.5); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+li.done .checkbox { animation: checkPop .26s cubic-bezier(.3,.8,.4,1.4); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, .view-anim > *, li.done .checkbox { animation: none !important; scroll-behavior: auto !important; }
+}
 #app { max-width: 640px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
 
 /* Top bar */
@@ -88,11 +114,17 @@ li.done .item-text { color: var(--muted); text-decoration: line-through; }
 /* Trackers */
 .tracker-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .water-dots { display: flex; gap: 6px; flex-wrap: wrap; }
-.water-dot { width: 26px; height: 30px; border-radius: 6px; border: 2px solid var(--line);
-  cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.water-dots { gap: 8px; }
+.water-dot { width: 34px; height: 40px; border-radius: 8px; border: 2px solid var(--line);
+  cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
 .water-dot.filled { background: rgba(56,189,248,.25); border-color: var(--accent-2); }
 .btn { background: var(--bg-card-2); color: var(--text); border: 1px solid var(--line);
-  border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
+  min-height: 44px; }
+.tracker-row { position: relative; }
+.saved-tip { position: absolute; right: 0; top: -24px; background: var(--accent); color: #04130c;
+  font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+  animation: viewIn .2s ease; }
 .btn.accent { background: var(--accent); color: #04130c; border-color: var(--accent); }
 .btn.block { width: 100%; }
 input.field { background: var(--bg-card-2); border: 1px solid var(--line); border-radius: 10px;
