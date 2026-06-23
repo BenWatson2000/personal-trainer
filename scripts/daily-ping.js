@@ -52,6 +52,12 @@ if (dn < 0) {
   const meals = Object.entries(meal.items)
     .map(([k, v]) => `<b>${esc(k)}</b> (${v.kcal} kcal): ${esc(v.text)}`).join("\n");
 
+  // tomorrow's prep-ahead heads-up
+  const tmrw = PLAN.meals[((dn + 1) % PLAN.meals.length + PLAN.meals.length) % PLAN.meals.length];
+  const prep = Object.entries(tmrw.items).filter(([, v]) => v.prep)
+    .map(([k, v]) => `🌙 <b>${esc(k)}:</b> ${esc(v.prep)}`).join("\n");
+  const prepBlock = prep ? `\n\n🌙 <b>Prep tonight for tomorrow (${esc(tmrw.name)})</b>\n${prep}` : "";
+
   text =
     `${day.emoji} <b>Day ${dn + 1} · Week ${week}/12 — ${esc(phase.name)}</b>\n` +
     `<i>${esc(quote)}</i>\n\n` +
@@ -59,7 +65,7 @@ if (dn < 0) {
     `🍽 <b>Fuel — ${esc(meal.name)}</b>\n` +
     `📊 ${t.kcal} kcal · ${t.protein}g P · ${t.carbs}g C · ${t.fat}g F\n` +
     `🎯 Phase ${phase.id} aim ~${phase.calories} kcal — ${esc(phase.adjust)}\n${meals}\n\n` +
-    `💧 8 glasses of water · 🚶 hit your steps` +
+    `💧 8 glasses of water · 🚶 hit your steps` + prepBlock +
     (APP_URL ? `\n\n📲 Tick it all off: ${APP_URL}` : "");
 }
 
