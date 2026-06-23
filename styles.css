@@ -135,6 +135,10 @@ main { flex: 1; padding: 16px 16px 96px; }
   40% { opacity: 1; } 100% { transform: translateY(-10px) scale(1.4); opacity: 0; } }
 
 .tomorrow-prep { border-left: 3px solid var(--warn); }
+.tmrw-head { display: flex; align-items: center; gap: 8px; font-size: 15px; margin: 6px 0 2px; }
+.checklist.preview li { cursor: default; padding: 8px 0; }
+.checklist.preview .bullet { flex: 0 0 16px; color: var(--accent-2); font-weight: 700; text-align: center; }
+.checklist.preview .item-text { font-size: 14px; color: var(--muted); }
 .prep-line { background: var(--bg-card-2); border: 1px solid var(--line); border-radius: 12px;
   padding: 11px 13px; margin-top: 8px; font-size: 14px; line-height: 1.5; }
 .prep-line b { color: var(--warn); }

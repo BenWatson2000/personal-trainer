@@ -63,6 +63,17 @@ if (dn < 0) {
   const prep = prepPairs.map(([k, v]) => `🌙 <b>${esc(k)}:</b> ${esc(v)}`).join("\n");
   const prepBlock = prep ? `\n\n🌙 <b>Prep tonight for tomorrow (${esc(tmrw.name)})</b>\n${prep}` : "";
 
+  // quick preview of tomorrow's activity
+  const tWeek = Math.floor((dn + 1) / 7) + 1;
+  let tomorrowLine = "";
+  if (tWeek <= PLAN.meta.weeks) {
+    const tDate = new Date(now); tDate.setDate(tDate.getDate() + 1);
+    const tWd = (tDate.getDay() + 6) % 7;
+    const tPh = PLAN.phases.find((p) => tWeek >= p.weekStart && tWeek <= p.weekEnd) || PLAN.phases.at(-1);
+    const tD = tPh.schedule[tWd];
+    tomorrowLine = `\n\n🔜 <b>Tomorrow:</b> ${tD.emoji} ${esc(tD.name)} (${tD.type})`;
+  }
+
   text =
     `${day.emoji} <b>Day ${dn + 1} · Week ${week}/12 — ${esc(phase.name)}</b>\n` +
     `<i>${esc(quote)}</i>\n\n` +
@@ -70,7 +81,7 @@ if (dn < 0) {
     `🍽 <b>Fuel — ${esc(meal.name)}</b>\n` +
     `📊 ${t.kcal} kcal · ${t.protein}g P · ${t.carbs}g C · ${t.fat}g F\n` +
     `🎯 Phase ${phase.id} aim ~${phase.calories} kcal — ${esc(phase.adjust)}\n${meals}\n\n` +
-    `💧 8 glasses of water · 🚶 hit your steps` + prepBlock +
+    `💧 8 glasses of water · 🚶 hit your steps` + prepBlock + tomorrowLine +
     (APP_URL ? `\n\n📲 Tick it all off: ${APP_URL}` : "");
 }
 

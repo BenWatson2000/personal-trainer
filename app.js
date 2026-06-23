@@ -117,15 +117,35 @@ function renderToday() {
     <span class="chip ${checks.water >= 8 ? "on" : ""}">💧 ${checks.water}/8</span>
   </div>`;
 
-  // tomorrow's prep-ahead heads-up (explicit prep + auto defrost)
+  // tomorrow preview — activity + food (respects the current Gym/Home mode)
+  const tDate = new Date(); tDate.setDate(tDate.getDate() + 1);
+  const tWeekday = (tDate.getDay() + 6) % 7;
+  const tWeek = Math.floor((pos.dn + 1) / 7) + 1;
+  const tDayName = tDate.toLocaleDateString("en-GB", { weekday: "long" });
   const tmrw = PLAN.meals[(pos.dn + 1) % PLAN.meals.length];
   const tmrwPrep = prepNotes(tmrw);
   const prepLines = tmrwPrep.map(([k, v]) => `<div class="prep-line">🌙 <b>${k}:</b> ${v}</div>`).join("");
+
+  let activityHtml;
+  if (tWeek > PLAN.meta.weeks) {
+    activityHtml = `<div class="tmrw-head">🏁 <b>That's your 12 weeks done!</b></div>`;
+  } else {
+    const tPhase = PLAN.phases.find(p => tWeek >= p.weekStart && tWeek <= p.weekEnd) || PLAN.phases[PLAN.phases.length - 1];
+    const tDay = tPhase.schedule[tWeekday];
+    const tEx = (mode === "home" && tDay.homeItems) ? tDay.homeItems : tDay.items;
+    activityHtml = `<div class="tmrw-head"><span class="work-emoji" style="font-size:20px">${tDay.emoji}</span>
+        <b>${tDay.name}</b> <span class="type-badge type-${tDay.type}">${tDay.type.toUpperCase()}</span></div>
+      <ul class="checklist preview">${tEx.map(t => `<li><span class="bullet">•</span><span class="item-text">${t}</span></li>`).join("")}</ul>`;
+  }
+
   const tomorrowCard = `<div class="card ${prepLines ? "tomorrow-prep" : ""}">
-    <h2>🌙 Tomorrow — ${tmrw.name}</h2>
+    <h2>🌙 Tomorrow · ${tDayName}</h2>
+    <div class="section-label">🏋️ Activity</div>
+    ${activityHtml}
+    <div class="section-label" style="margin-top:14px">🍽️ Food — ${tmrw.name} (${tmrw.totals.kcal} kcal)</div>
     ${prepLines
-      ? `<p class="sub">Sort this tonight so you're ready:</p>${prepLines}`
-      : `<p class="note">Nothing to prep ahead. Tomorrow's dinner: ${tmrw.items.Dinner.text}</p>`}
+      ? `<p class="sub" style="margin:2px 0 0">Sort this tonight so you're ready:</p>${prepLines}`
+      : `<p class="note">Nothing to prep ahead. Dinner: ${tmrw.items.Dinner.text}</p>`}
   </div>`;
 
   // perfect day = workout + every meal + 8 water
