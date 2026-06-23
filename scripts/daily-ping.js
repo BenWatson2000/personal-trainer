@@ -48,14 +48,17 @@ if (dn < 0) {
   const exercises = (MODE === "home" && day.homeItems) ? day.homeItems : day.items;
   const modeTag = (MODE === "home" && day.homeItems) ? " 🏠 home" : "";
   const workout = exercises.map((i) => `• ${esc(i)}`).join("\n");
-  const meals = Object.entries(meal.items).map(([k, v]) => `<b>${esc(k)}:</b> ${esc(v)}`).join("\n");
+  const t = meal.totals;
+  const meals = Object.entries(meal.items)
+    .map(([k, v]) => `<b>${esc(k)}</b> (${v.kcal} kcal): ${esc(v.text)}`).join("\n");
 
   text =
     `${day.emoji} <b>Day ${dn + 1} · Week ${week}/12 — ${esc(phase.name)}</b>\n` +
     `<i>${esc(quote)}</i>\n\n` +
     `<b>${day.emoji} ${esc(day.name)}</b> (${day.type}${modeTag})\n${workout}\n\n` +
     `🍽 <b>Fuel — ${esc(meal.name)}</b>\n` +
-    `🎯 ${phase.calories} kcal · ${phase.protein}g protein · ${phase.carbs}g carbs · ${phase.fat}g fat\n${meals}\n\n` +
+    `📊 ${t.kcal} kcal · ${t.protein}g P · ${t.carbs}g C · ${t.fat}g F\n` +
+    `🎯 Phase ${phase.id} aim ~${phase.calories} kcal — ${esc(phase.adjust)}\n${meals}\n\n` +
     `💧 8 glasses of water · 🚶 hit your steps` +
     (APP_URL ? `\n\n📲 Tick it all off: ${APP_URL}` : "");
 }

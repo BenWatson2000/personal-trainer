@@ -76,9 +76,10 @@ function renderToday() {
   const mealKeys = Object.keys(meal.items);
   const mealItems = mealKeys.map((k, i) => {
     const done = checks.meals[i];
+    const m = meal.items[k];
     return `<li class="${done ? "done" : ""}" data-act="meals" data-i="${i}">
       <span class="checkbox">${done ? "✓" : ""}</span>
-      <span class="item-text"><span class="meal-label">${k}</span>${meal.items[k]}</span></li>`;
+      <span class="item-text"><span class="meal-label">${k} · ${m.kcal} kcal · ${m.p}g P</span>${m.text}</span></li>`;
   }).join("");
 
   // water dots (target ~8 glasses)
@@ -111,11 +112,12 @@ function renderToday() {
     <h2>🍽️ Today's Fuel</h2>
     <p class="sub">${meal.name} · tick each meal as you eat it</p>
     <div class="macros">
-      <div class="macro"><div class="val">${pos.phase.calories}</div><div class="lbl">kcal</div></div>
-      <div class="macro"><div class="val">${pos.phase.protein}g</div><div class="lbl">protein</div></div>
-      <div class="macro"><div class="val">${pos.phase.carbs}g</div><div class="lbl">carbs</div></div>
-      <div class="macro"><div class="val">${pos.phase.fat}g</div><div class="lbl">fat</div></div>
+      <div class="macro"><div class="val">${meal.totals.kcal}</div><div class="lbl">kcal</div></div>
+      <div class="macro"><div class="val">${meal.totals.protein}g</div><div class="lbl">protein</div></div>
+      <div class="macro"><div class="val">${meal.totals.carbs}g</div><div class="lbl">carbs</div></div>
+      <div class="macro"><div class="val">${meal.totals.fat}g</div><div class="lbl">fat</div></div>
     </div>
+    <p class="note" style="margin:10px 0 0">🎯 Phase ${pos.phase.id} aim ~${pos.phase.calories} kcal · ${pos.phase.adjust}</p>
     <ul class="checklist">${mealItems}</ul>
   </div>
 
@@ -161,23 +163,26 @@ function renderPlan() {
     </div>`;
   });
 
-  html += `<div class="card"><h2>🍽️ Meal rotation</h2><p class="sub">7 days, looping — no fish, beans only in the chilli</p>`;
-  PLAN.meals.forEach((m) => {
-    html += `<div class="section-label">${m.name} · ${m.totals.kcal} kcal · ${m.totals.protein}g protein</div>
-      <ul class="checklist">${Object.keys(m.items).map(k =>
-        `<li style="cursor:default"><span class="item-text"><span class="meal-label">${k}</span>${m.items[k]}</span></li>`).join("")}</ul>`;
+  html += `<div class="card"><h2>🍽️ Meal rotation</h2><p class="sub">${PLAN.meals.length} days, looping · every meal's macros sum to the day total · no fish, beans only in the chilli</p>`;
+  PLAN.meals.forEach((m, di) => {
+    const t = m.totals;
+    html += `<div class="section-label">Day ${di + 1} · ${m.name} — ${t.kcal} kcal · ${t.protein}P / ${t.carbs}C / ${t.fat}F</div>
+      <ul class="checklist">${Object.keys(m.items).map(k => {
+        const it = m.items[k];
+        return `<li style="cursor:default"><span class="item-text"><span class="meal-label">${k} · ${it.kcal} kcal</span>${it.text}</span></li>`;
+      }).join("")}</ul>`;
   });
   html += `</div>`;
 
-  if (PLAN.shoppingList) {
-    html += `<div class="card"><h2>🛒 Weekly shopping list</h2><p class="sub">${PLAN.shoppingList.note}</p>`;
-    PLAN.shoppingList.categories.forEach((cat) => {
+  (PLAN.shoppingLists || []).forEach((sl) => {
+    html += `<div class="card"><h2>🛒 Shopping — Week ${sl.week}</h2><p class="sub">${sl.note}</p>`;
+    sl.categories.forEach((cat) => {
       html += `<div class="section-label">${cat.name}</div>
         <ul class="checklist">${cat.items.map(i =>
           `<li style="cursor:default"><span class="checkbox" style="border-radius:5px"></span><span class="item-text">${i}</span></li>`).join("")}</ul>`;
     });
     html += `</div>`;
-  }
+  });
 
   html += `<div class="card"><h2>📋 Golden rules</h2><ul class="note" style="padding-left:18px;line-height:1.8">
     ${PLAN.meta.principles.map(r => `<li>${r}</li>`).join("")}</ul></div>`;

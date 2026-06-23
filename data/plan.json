@@ -31,9 +31,9 @@
       "tagline": "Build the habit + reawaken the muscles",
       "weekStart": 1,
       "weekEnd": 4,
-      "calories": 1900,
+      "calories": 1850,
       "protein": 160,
-      "carbs": 180,
+      "carbs": 165,
       "fat": 60,
       "focus": "Full-body strength 3x/week to keep muscle, easy cardio to start the fat burn. Don't go too hard yet — we're building consistency.",
       "cardioNote": "Zone 2 = brisk pace where you can still hold a conversation.",
@@ -146,7 +146,8 @@
             "10 min gentle stretch"
           ]
         }
-      ]
+      ],
+      "adjust": "Eat the plan as written."
     },
     {
       "id": 2,
@@ -154,10 +155,10 @@
       "tagline": "Upper/Lower split + intervals — turn up the heat",
       "weekStart": 5,
       "weekEnd": 8,
-      "calories": 1800,
+      "calories": 1750,
       "protein": 160,
-      "carbs": 160,
-      "fat": 58,
+      "carbs": 150,
+      "fat": 55,
       "focus": "4 lifting days split upper/lower, plus harder intervals. Calories drop slightly as the cut deepens. Push the weights — keep reps in the tank with 1–2 left.",
       "cardioNote": "Add weight or reps each week vs. the last — progressive overload.",
       "schedule": [
@@ -280,7 +281,8 @@
             "Stretch / foam roll — 10 min"
           ]
         }
-      ]
+      ],
+      "adjust": "Trim ~100 kcal: skip the evening snack on rest days, or swap a snack for fruit."
     },
     {
       "id": 3,
@@ -288,10 +290,10 @@
       "tagline": "Push/Pull/Legs + extra cardio — bring out the definition",
       "weekStart": 9,
       "weekEnd": 12,
-      "calories": 1700,
+      "calories": 1650,
       "protein": 165,
-      "carbs": 140,
-      "fat": 55,
+      "carbs": 130,
+      "fat": 52,
       "focus": "Push/Pull/Legs with an upper pump day and more cardio. Tightest calories of the plan but highest protein. This is where the abs show up — stay disciplined, you're nearly there.",
       "cardioNote": "If energy dips, keep the lifts and trim cardio — never trim protein.",
       "schedule": [
@@ -414,205 +416,698 @@
             "Mobility / stretch — 15 min"
           ]
         }
-      ]
+      ],
+      "adjust": "Trim ~200 kcal: drop the evening snack daily and keep starchy carbs to training days."
     }
   ],
   "meals": [
     {
       "name": "Lean & Green",
       "totals": {
-        "kcal": 1900,
-        "protein": 178,
-        "carbs": 175,
-        "fat": 52
+        "kcal": 1860,
+        "protein": 170,
+        "carbs": 165,
+        "fat": 58
       },
       "items": {
-        "Breakfast": "Greek yogurt bowl — 200g 0% Greek yogurt + 1 scoop whey + 40g granola + 80g blueberries",
-        "Lunch": "Chicken & rice bowl — 150g chicken breast, 60g (dry) rice, mixed veg, soy + sriracha",
-        "Snack": "Apple + 25g almonds",
-        "Dinner": "Turkey meatballs (150g mince) + 70g pasta + tomato sauce + sprinkle parmesan",
-        "Evening": "Whey shake + 1 rice cake"
+        "Breakfast": {
+          "text": "Greek yogurt bowl — 200g 0% Greek yogurt + 1 scoop whey + 40g granola + 80g blueberries",
+          "kcal": 410,
+          "p": 40
+        },
+        "Lunch": {
+          "text": "Chicken & rice bowl — 150g chicken breast, 60g (dry) rice, mixed veg, soy + sriracha",
+          "kcal": 500,
+          "p": 48
+        },
+        "Snack": {
+          "text": "Apple + 25g almonds",
+          "kcal": 230,
+          "p": 7
+        },
+        "Dinner": {
+          "text": "Turkey meatballs (150g 5% mince) + 70g pasta + marinara + parmesan",
+          "kcal": 560,
+          "p": 48
+        },
+        "Evening": {
+          "text": "Whey shake + 1 rice cake",
+          "kcal": 160,
+          "p": 27
+        }
       }
     },
     {
       "name": "Power Day",
       "totals": {
-        "kcal": 1890,
-        "protein": 172,
-        "carbs": 165,
+        "kcal": 1870,
+        "protein": 157,
+        "carbs": 180,
         "fat": 58
       },
       "items": {
-        "Breakfast": "3-egg omelette + spinach + 30g cheddar + 2 slices wholegrain toast",
-        "Lunch": "Turkey & salad wrap (whole-wheat tortilla, 120g turkey) + small Greek yogurt",
-        "Snack": "Protein bar + banana",
-        "Dinner": "Lean beef chilli con carne (150g 5% mince + kidney beans) + 60g rice",
-        "Evening": "100g cottage cheese + 4 wholegrain crackers"
+        "Breakfast": {
+          "text": "3-egg omelette + spinach + 30g cheddar + 2 slices wholegrain toast",
+          "kcal": 430,
+          "p": 32
+        },
+        "Lunch": {
+          "text": "Turkey & salad wrap (120g turkey, wholemeal) + small Greek yogurt",
+          "kcal": 470,
+          "p": 42
+        },
+        "Snack": {
+          "text": "Protein bar + banana",
+          "kcal": 260,
+          "p": 22
+        },
+        "Dinner": {
+          "text": "Lean beef chilli con carne (150g 5% mince + kidney beans) + 60g rice",
+          "kcal": 540,
+          "p": 45
+        },
+        "Evening": {
+          "text": "100g cottage cheese + 4 wholegrain crackers",
+          "kcal": 170,
+          "p": 16
+        }
       }
     },
     {
       "name": "Reset",
       "totals": {
-        "kcal": 1880,
-        "protein": 165,
-        "carbs": 185,
-        "fat": 55
+        "kcal": 1830,
+        "protein": 163,
+        "carbs": 166,
+        "fat": 57
       },
       "items": {
-        "Breakfast": "Overnight oats — 50g oats + 1 scoop whey + 10g peanut butter + half banana",
-        "Lunch": "Chicken pasta salad — 130g chicken, 70g pasta, cherry tomatoes, light pesto",
-        "Snack": "Babybel + 20g cashews",
-        "Dinner": "Chicken stir-fry — 150g chicken, 120g egg noodles, peppers, broccoli, soy",
-        "Evening": "Whey shake + apple"
+        "Breakfast": {
+          "text": "Overnight oats — 50g oats + 1 scoop whey + 10g peanut butter + ½ banana",
+          "kcal": 430,
+          "p": 35
+        },
+        "Lunch": {
+          "text": "Chicken pasta salad — 130g chicken, 70g pasta, cherry tomatoes, light pesto",
+          "kcal": 500,
+          "p": 45
+        },
+        "Snack": {
+          "text": "Babybel + 20g cashews",
+          "kcal": 200,
+          "p": 8
+        },
+        "Dinner": {
+          "text": "Chicken stir-fry — 150g chicken, 120g egg noodles, peppers, broccoli, soy",
+          "kcal": 520,
+          "p": 48
+        },
+        "Evening": {
+          "text": "Whey shake + apple",
+          "kcal": 180,
+          "p": 27
+        }
       }
     },
     {
       "name": "Strong",
       "totals": {
-        "kcal": 1910,
-        "protein": 175,
-        "carbs": 160,
-        "fat": 62
+        "kcal": 1810,
+        "protein": 173,
+        "carbs": 154,
+        "fat": 56
       },
       "items": {
-        "Breakfast": "Scrambled eggs (3) + 2 turkey rashers + smashed avocado on 1 slice toast",
-        "Lunch": "Lean beef (140g) + sweet potato (200g) + broccoli",
-        "Snack": "150g Greek yogurt + drizzle honey + berries",
-        "Dinner": "Chicken fajitas — 150g chicken, peppers, onion, 2 small tortillas, salsa, light cheese",
-        "Evening": "Casein / whey shake"
+        "Breakfast": {
+          "text": "Scrambled eggs (3) + 2 turkey rashers + smashed avocado on 1 slice toast",
+          "kcal": 440,
+          "p": 33
+        },
+        "Lunch": {
+          "text": "Lean beef (140g) + sweet potato (200g) + broccoli",
+          "kcal": 480,
+          "p": 45
+        },
+        "Snack": {
+          "text": "150g Greek yogurt + drizzle honey + berries",
+          "kcal": 200,
+          "p": 18
+        },
+        "Dinner": {
+          "text": "Chicken fajitas — 150g chicken, peppers, onion, 2 small tortillas, salsa, light cheese",
+          "kcal": 540,
+          "p": 50
+        },
+        "Evening": {
+          "text": "Casein / whey shake",
+          "kcal": 150,
+          "p": 27
+        }
       }
     },
     {
       "name": "Fuel",
       "totals": {
-        "kcal": 1885,
-        "protein": 168,
-        "carbs": 170,
-        "fat": 56
+        "kcal": 1830,
+        "protein": 167,
+        "carbs": 162,
+        "fat": 57
       },
       "items": {
-        "Breakfast": "Greek yogurt + 40g granola + 1 scoop whey + raspberries",
-        "Lunch": "Chicken wrap (light Caesar, 130g chicken) + side salad",
-        "Snack": "Protein bar",
-        "Dinner": "Pork loin steak (150g) + roast new potatoes (200g) + green veg",
-        "Evening": "100g cottage cheese + pineapple"
+        "Breakfast": {
+          "text": "Greek yogurt + 40g granola + 1 scoop whey + raspberries",
+          "kcal": 410,
+          "p": 40
+        },
+        "Lunch": {
+          "text": "Chicken wrap (130g chicken, light Caesar) + side salad",
+          "kcal": 500,
+          "p": 44
+        },
+        "Snack": {
+          "text": "Protein bar",
+          "kcal": 200,
+          "p": 20
+        },
+        "Dinner": {
+          "text": "Pork loin steak (150g) + new potatoes (200g) + green veg",
+          "kcal": 560,
+          "p": 48
+        },
+        "Evening": {
+          "text": "100g cottage cheese + pineapple",
+          "kcal": 160,
+          "p": 15
+        }
       }
     },
     {
-      "name": "Refuel (heavy training day)",
+      "name": "Refuel (training day)",
       "totals": {
-        "kcal": 1950,
-        "protein": 170,
-        "carbs": 200,
-        "fat": 52
+        "kcal": 1940,
+        "protein": 163,
+        "carbs": 187,
+        "fat": 60
       },
       "items": {
-        "Breakfast": "Protein pancakes — 40g oats + 1 egg + 1 scoop whey + half banana, with Greek yogurt",
-        "Lunch": "Chicken burrito bowl — 140g chicken, 70g rice, salsa, sweetcorn, light cheese",
-        "Snack": "25g nuts + apple",
-        "Dinner": "Spaghetti bolognese — 150g lean beef mince + 75g spaghetti + parmesan",
-        "Evening": "Whey shake"
+        "Breakfast": {
+          "text": "Protein pancakes — 40g oats + 1 egg + 1 scoop whey + ½ banana, with Greek yogurt",
+          "kcal": 450,
+          "p": 38
+        },
+        "Lunch": {
+          "text": "Chicken burrito bowl — 140g chicken, 70g rice, salsa, sweetcorn, light cheese",
+          "kcal": 560,
+          "p": 46
+        },
+        "Snack": {
+          "text": "25g mixed nuts + apple",
+          "kcal": 230,
+          "p": 7
+        },
+        "Dinner": {
+          "text": "Spaghetti bolognese — 150g 5% beef mince + 75g spaghetti + parmesan",
+          "kcal": 560,
+          "p": 45
+        },
+        "Evening": {
+          "text": "Whey shake",
+          "kcal": 140,
+          "p": 27
+        }
       }
     },
     {
       "name": "Recover",
       "totals": {
-        "kcal": 1870,
-        "protein": 160,
-        "carbs": 165,
-        "fat": 60
+        "kcal": 1810,
+        "protein": 164,
+        "carbs": 163,
+        "fat": 56
       },
       "items": {
-        "Breakfast": "Veggie & cheese omelette (3 eggs) + 1 slice wholegrain toast",
-        "Lunch": "Chicken & roast veg couscous — 140g chicken, 60g couscous",
-        "Snack": "Greek yogurt + berries + honey",
-        "Dinner": "Homemade chicken & veg curry (150g chicken, tomato/coconut-light sauce) + 60g rice",
-        "Evening": "Square dark chocolate + casein shake"
+        "Breakfast": {
+          "text": "Veggie & cheese omelette (3 eggs) + 1 slice wholegrain toast",
+          "kcal": 400,
+          "p": 30
+        },
+        "Lunch": {
+          "text": "Chicken & roast veg couscous — 140g chicken, 60g couscous",
+          "kcal": 480,
+          "p": 44
+        },
+        "Snack": {
+          "text": "Greek yogurt + berries + honey",
+          "kcal": 200,
+          "p": 18
+        },
+        "Dinner": {
+          "text": "Chicken & veg curry — 150g chicken, tomato/light-coconut sauce + 60g rice",
+          "kcal": 540,
+          "p": 48
+        },
+        "Evening": {
+          "text": "Square dark chocolate + casein shake",
+          "kcal": 190,
+          "p": 24
+        }
+      }
+    },
+    {
+      "name": "Fired Up (BBQ)",
+      "totals": {
+        "kcal": 1830,
+        "protein": 167,
+        "carbs": 162,
+        "fat": 57
+      },
+      "items": {
+        "Breakfast": {
+          "text": "Wholemeal bagel + light cream cheese + 2 scrambled eggs",
+          "kcal": 420,
+          "p": 28
+        },
+        "Lunch": {
+          "text": "Lean ham & cheese toastie (wholegrain) + side salad + small Greek yogurt",
+          "kcal": 490,
+          "p": 40
+        },
+        "Snack": {
+          "text": "Protein bar",
+          "kcal": 200,
+          "p": 20
+        },
+        "Dinner": {
+          "text": "BBQ chicken (160g) + sweet potato wedges (200g) + corn on the cob",
+          "kcal": 560,
+          "p": 52
+        },
+        "Evening": {
+          "text": "Whey shake + berries",
+          "kcal": 160,
+          "p": 27
+        }
+      }
+    },
+    {
+      "name": "Grind",
+      "totals": {
+        "kcal": 1820,
+        "protein": 162,
+        "carbs": 165,
+        "fat": 57
+      },
+      "items": {
+        "Breakfast": {
+          "text": "Porridge (50g oats, milk) + 1 scoop whey + blueberries + honey",
+          "kcal": 430,
+          "p": 35
+        },
+        "Lunch": {
+          "text": "Jacket potato + 130g chicken + light cheese + side salad",
+          "kcal": 500,
+          "p": 45
+        },
+        "Snack": {
+          "text": "2 rice cakes + peanut butter",
+          "kcal": 200,
+          "p": 9
+        },
+        "Dinner": {
+          "text": "Beef & broccoli stir-fry — 150g lean beef strips + 60g rice",
+          "kcal": 540,
+          "p": 46
+        },
+        "Evening": {
+          "text": "Casein shake",
+          "kcal": 150,
+          "p": 27
+        }
+      }
+    },
+    {
+      "name": "Pesto Power",
+      "totals": {
+        "kcal": 1840,
+        "protein": 175,
+        "carbs": 157,
+        "fat": 57
+      },
+      "items": {
+        "Breakfast": {
+          "text": "Greek yogurt parfait — 200g yogurt + 1 scoop whey + 40g granola + strawberries",
+          "kcal": 410,
+          "p": 38
+        },
+        "Lunch": {
+          "text": "Chicken & rice power bowl — 150g chicken, 60g rice, mixed veg",
+          "kcal": 500,
+          "p": 48
+        },
+        "Snack": {
+          "text": "100g cottage cheese + crackers",
+          "kcal": 190,
+          "p": 16
+        },
+        "Dinner": {
+          "text": "Chicken pesto pasta — 150g chicken, 75g pasta, light pesto, cherry tomatoes",
+          "kcal": 560,
+          "p": 46
+        },
+        "Evening": {
+          "text": "Whey shake + apple",
+          "kcal": 180,
+          "p": 27
+        }
+      }
+    },
+    {
+      "name": "Roast Day",
+      "totals": {
+        "kcal": 1870,
+        "protein": 169,
+        "carbs": 168,
+        "fat": 58
+      },
+      "items": {
+        "Breakfast": {
+          "text": "Egg & cheese breakfast wrap (2 eggs, wholemeal tortilla)",
+          "kcal": 410,
+          "p": 28
+        },
+        "Lunch": {
+          "text": "Lean beef meatball sub (120g 5% mince, wholegrain roll) + salad",
+          "kcal": 520,
+          "p": 45
+        },
+        "Snack": {
+          "text": "30g beef jerky + apple",
+          "kcal": 200,
+          "p": 20
+        },
+        "Dinner": {
+          "text": "Pork & apple traybake — 150g pork, new potatoes (200g) + veg",
+          "kcal": 540,
+          "p": 46
+        },
+        "Evening": {
+          "text": "200g Greek yogurt + 1 scoop whey + honey",
+          "kcal": 200,
+          "p": 30
+        }
+      }
+    },
+    {
+      "name": "Stacked",
+      "totals": {
+        "kcal": 1820,
+        "protein": 163,
+        "carbs": 164,
+        "fat": 57
+      },
+      "items": {
+        "Breakfast": {
+          "text": "3 Weetabix + milk + 1 scoop whey + banana",
+          "kcal": 440,
+          "p": 35
+        },
+        "Lunch": {
+          "text": "Chicken shawarma wrap — 140g chicken, wholemeal flatbread + salad",
+          "kcal": 500,
+          "p": 44
+        },
+        "Snack": {
+          "text": "Babybel + grapes",
+          "kcal": 180,
+          "p": 9
+        },
+        "Dinner": {
+          "text": "2 turkey burgers (brioche thins) + oven sweet-potato chips + salad",
+          "kcal": 560,
+          "p": 48
+        },
+        "Evening": {
+          "text": "Whey shake",
+          "kcal": 140,
+          "p": 27
+        }
+      }
+    },
+    {
+      "name": "Spice",
+      "totals": {
+        "kcal": 1820,
+        "protein": 167,
+        "carbs": 160,
+        "fat": 57
+      },
+      "items": {
+        "Breakfast": {
+          "text": "Cottage cheese (150g) + 2 poached eggs + 1 slice toast",
+          "kcal": 410,
+          "p": 34
+        },
+        "Lunch": {
+          "text": "Chicken noodle soup (150g chicken) + wholegrain roll + cheese",
+          "kcal": 470,
+          "p": 40
+        },
+        "Snack": {
+          "text": "Protein flapjack",
+          "kcal": 220,
+          "p": 16
+        },
+        "Dinner": {
+          "text": "Chicken tikka (160g) + 60g rice + mini naan",
+          "kcal": 560,
+          "p": 50
+        },
+        "Evening": {
+          "text": "Whey shake + berries",
+          "kcal": 160,
+          "p": 27
+        }
+      }
+    },
+    {
+      "name": "Comfort",
+      "totals": {
+        "kcal": 1820,
+        "protein": 161,
+        "carbs": 166,
+        "fat": 57
+      },
+      "items": {
+        "Breakfast": {
+          "text": "Smoothie bowl — 1 scoop whey, banana, 30g oats, yogurt + granola topping",
+          "kcal": 440,
+          "p": 38
+        },
+        "Lunch": {
+          "text": "3-egg cheese & ham omelette + 1 toast + fruit",
+          "kcal": 470,
+          "p": 40
+        },
+        "Snack": {
+          "text": "Square dark chocolate + 150g Greek yogurt",
+          "kcal": 220,
+          "p": 16
+        },
+        "Dinner": {
+          "text": "4 reduced-fat sausages + mash + onion gravy + peas",
+          "kcal": 540,
+          "p": 40
+        },
+        "Evening": {
+          "text": "Casein shake",
+          "kcal": 150,
+          "p": 27
+        }
       }
     }
   ],
-  "shoppingList": {
-    "note": "One week's shop for the 7-day meal rotation (one person). Quantities are a guide — buy a touch less in Phase 3 as portions tighten. No fish; beans only for the chilli.",
-    "categories": [
-      {
-        "name": "🥩 Protein",
-        "items": [
-          "Chicken breast — ~1 kg",
-          "Lean beef mince 5% — 300 g",
-          "Turkey mince — 150 g",
-          "Pork loin steaks — 2",
-          "Turkey rashers — 1 pack",
-          "Eggs — 1 dozen",
-          "Whey protein — (tub lasts weeks)",
-          "Casein or extra whey — (optional, for evenings)"
-        ]
-      },
-      {
-        "name": "🧀 Dairy & chilled",
-        "items": [
-          "0% Greek yogurt — 1 kg tub",
-          "Cottage cheese — 2 pots",
-          "Cheddar — small block",
-          "Parmesan — small wedge",
-          "Babybel / light cheese — 1 pack"
-        ]
-      },
-      {
-        "name": "🍞 Carbs & grains",
-        "items": [
-          "Rice — 500 g bag",
-          "Pasta + spaghetti — 1 bag each",
-          "Egg noodles — 1 pack",
-          "Couscous — small pack",
-          "Porridge oats — 500 g",
-          "Granola — 1 bag",
-          "Wholegrain bread — 1 loaf",
-          "Whole-wheat tortillas / wraps — 1 pack",
-          "New potatoes — 400 g",
-          "Sweet potato — 1",
-          "Rice cakes + wholegrain crackers"
-        ]
-      },
-      {
-        "name": "🥦 Fruit & veg",
-        "items": [
-          "Bananas — 5",
-          "Apples — 5",
-          "Berries (blueberries/raspberries) — 2 punnets",
-          "Pineapple — small tub",
-          "Spinach — 1 bag",
-          "Broccoli — 2 heads",
-          "Peppers — 4",
-          "Onions — 3",
-          "Cherry tomatoes — 1 punnet",
-          "Mixed salad — 1 bag",
-          "Avocado — 1",
-          "Stir-fry veg mix — 1 bag",
-          "Sweetcorn — 1 tin"
-        ]
-      },
-      {
-        "name": "🫙 Store cupboard",
-        "items": [
-          "Kidney beans — 1 tin (for the chilli)",
-          "Chopped tomatoes — 2 tins",
-          "Pasta / tomato sauce — 1 jar",
-          "Light pesto — 1 jar",
-          "Salsa — 1 jar",
-          "Soy sauce + sriracha",
-          "Curry paste / sauce + light coconut milk",
-          "Chilli & fajita seasoning",
-          "Olive oil, honey, peanut butter"
-        ]
-      },
-      {
-        "name": "🍫 Snacks & extras",
-        "items": [
-          "Protein bars — 4",
-          "Almonds + cashews — 1 bag each",
-          "Dark chocolate — 1 bar"
-        ]
-      }
-    ]
-  }
+  "shoppingLists": [
+    {
+      "week": "A",
+      "note": "Shop for meal-rotation days 1–7. One person, one week. No fish; beans only for the chilli.",
+      "categories": [
+        {
+          "name": "🥩 Protein",
+          "items": [
+            "Chicken breast — ~1.1 kg (rice bowls, stir-fry, fajitas, wrap, burrito, curry, couscous)",
+            "Turkey mince 5% — 250 g (meatballs)",
+            "Sliced turkey — 1 pack (wrap)",
+            "Lean beef mince 5% — 300 g (chilli + bolognese)",
+            "Lean beef steak/strips — 150 g",
+            "Pork loin steaks — 2",
+            "Turkey rashers — 1 pack",
+            "Eggs — 1 dozen",
+            "Whey protein — 1 tub",
+            "Casein (optional) — 1 tub"
+          ]
+        },
+        {
+          "name": "🧀 Dairy & chilled",
+          "items": [
+            "0% Greek yogurt — 1 kg tub",
+            "Cottage cheese — 2 pots",
+            "Cheddar — small block",
+            "Parmesan — small wedge",
+            "Babybel — 1 pack",
+            "Light grated cheese — 1 bag"
+          ]
+        },
+        {
+          "name": "🍞 Carbs & grains",
+          "items": [
+            "Basmati rice — 500 g",
+            "Pasta — 1 bag",
+            "Spaghetti — 1 bag",
+            "Egg noodles — 1 pack",
+            "Wholemeal tortillas — 1 pack",
+            "Couscous — small pack",
+            "Porridge oats — 500 g",
+            "Granola — 1 bag",
+            "Wholegrain bread — 1 loaf",
+            "Sweet potato — 1",
+            "New potatoes — 400 g",
+            "Rice cakes + wholegrain crackers — 1 pack each"
+          ]
+        },
+        {
+          "name": "🥦 Fruit & veg",
+          "items": [
+            "Bananas — 4",
+            "Apples — 4",
+            "Blueberries + raspberries — 1 punnet each",
+            "Mixed berries (frozen ok) — 1 bag",
+            "Pineapple — small tub",
+            "Spinach — 1 bag",
+            "Broccoli — 2 heads",
+            "Peppers — 4",
+            "Onions — 3",
+            "Cherry tomatoes — 1 punnet",
+            "Mixed salad — 2 bags",
+            "Avocado — 1",
+            "Stir-fry veg — 1 bag",
+            "Garlic + ginger"
+          ]
+        },
+        {
+          "name": "🫙 Store cupboard",
+          "items": [
+            "Passata / chopped tomatoes — 3 tins",
+            "Kidney beans — 1 tin (chilli only)",
+            "Pasta sauce — 1 jar",
+            "Light pesto — 1 jar",
+            "Salsa — 1 jar",
+            "Sweetcorn — 1 tin",
+            "Curry paste + light coconut milk",
+            "Chilli & fajita seasoning",
+            "Soy sauce + sriracha",
+            "Olive oil, honey, peanut butter"
+          ]
+        },
+        {
+          "name": "🍫 Snacks & extras",
+          "items": [
+            "Almonds + cashews — 1 bag each",
+            "Protein bars — 2",
+            "Dark chocolate — 1 bar"
+          ]
+        }
+      ]
+    },
+    {
+      "week": "B",
+      "note": "Shop for meal-rotation days 8–14. One person, one week. No fish; beans only for the chilli.",
+      "categories": [
+        {
+          "name": "🥩 Protein",
+          "items": [
+            "Chicken breast — ~1.1 kg (BBQ, jacket, power bowl, soup, tikka, shawarma)",
+            "Lean beef mince/strips — 300 g (meatball sub + beef & broccoli)",
+            "Pork steaks/chops — 2 (traybake)",
+            "Turkey burgers — 1 pack",
+            "Reduced-fat sausages — 1 pack",
+            "Lean ham — 1 pack",
+            "Beef jerky — 1 pack (snack)",
+            "Eggs — 1 dozen",
+            "Whey protein + casein"
+          ]
+        },
+        {
+          "name": "🧀 Dairy & chilled",
+          "items": [
+            "0% Greek yogurt — 1 kg tub",
+            "Cottage cheese — 2 pots",
+            "Light cream cheese — 1 tub",
+            "Cheddar / cheese slices — 1 pack",
+            "Babybel — 1 pack",
+            "Milk — 2 pints"
+          ]
+        },
+        {
+          "name": "🍞 Carbs & grains",
+          "items": [
+            "Wholemeal bagels — 1 pack",
+            "Baking potatoes — 2",
+            "Potatoes for mash — 500 g",
+            "Basmati rice — 500 g",
+            "Sweet potato — 1",
+            "Weetabix — 1 box",
+            "Porridge oats — 1 bag",
+            "Granola — 1 bag",
+            "Wholegrain rolls — 1 pack",
+            "Wholemeal tortillas/flatbreads — 1 pack",
+            "Brioche thins / burger buns — 1 pack",
+            "Mini naan — 1 pack",
+            "Oven chips — 1 bag",
+            "Rice cakes + wholegrain crackers"
+          ]
+        },
+        {
+          "name": "🥦 Fruit & veg",
+          "items": [
+            "Bananas — 3",
+            "Apples — 3",
+            "Blueberries + strawberries — 1 punnet each",
+            "Mixed berries — 1 bag",
+            "Grapes — 1 bunch",
+            "Kiwi — 2",
+            "Broccoli — 2 heads",
+            "Peppers — 3",
+            "Onions — 3",
+            "Peas — 1 bag",
+            "Sweetcorn — 2 cobs / 1 tin",
+            "Mixed salad — 2 bags",
+            "Mixed veg — 1 bag",
+            "Garlic"
+          ]
+        },
+        {
+          "name": "🫙 Store cupboard",
+          "items": [
+            "BBQ sauce",
+            "Tikka paste + curry sauce",
+            "Shawarma / mixed spice",
+            "Soy sauce",
+            "Onion gravy granules",
+            "Chicken stock + soup noodles",
+            "Salsa",
+            "Honey, peanut butter, olive oil"
+          ]
+        },
+        {
+          "name": "🍫 Snacks & extras",
+          "items": [
+            "Protein bars — 2",
+            "Protein flapjack — 1",
+            "Dark chocolate — 1 bar",
+            "Almonds — 1 bag"
+          ]
+        }
+      ]
+    }
+  ]
 }
