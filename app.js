@@ -403,33 +403,79 @@ function renderPlan() {
   return html;
 }
 
-/* ---------- SHOP ---------- */
+/* ---------- SHOP (auto-generated from the week's actual meals) ---------- */
+const AISLES = ["🥩 Protein", "🧀 Dairy & chilled", "🍞 Carbs & grains", "🥦 Fruit & veg", "🫙 Store cupboard", "🍫 Snacks & extras"];
+const INGREDIENTS = [
+  ["Chicken breast", 0, "chicken"], ["Lean beef mince / steak", 0, "beef"], ["Turkey", 0, "turkey"],
+  ["Pork", 0, "pork"], ["Sausages", 0, "sausage"], ["Gammon / ham", 0, "gammon|ham"], ["Bacon", 0, "bacon"],
+  ["Chorizo (light)", 0, "chorizo"], ["Eggs", 0, "egg"], ["Beef jerky", 0, "jerky"],
+  ["Whey / casein protein", 0, "whey|casein"], ["Protein bars / flapjack", 0, "protein bar|flapjack|protein yogurt"],
+  ["Greek yogurt / skyr", 1, "greek yogurt|yogurt|skyr|parfait"], ["Cottage cheese", 1, "cottage cheese"],
+  ["Cheese", 1, "cheddar|parmesan|cheese|babybel"], ["Cream cheese", 1, "cream cheese"], ["Milk", 1, "milk"],
+  ["Rice", 2, "rice(?! cake)"], ["Rice cakes", 2, "rice cake"], ["Pasta / spaghetti", 2, "pasta|spaghetti"],
+  ["Egg noodles", 2, "noodle"], ["Couscous", 2, "couscous"], ["Oats / porridge", 2, "oats|porridge"],
+  ["Granola", 2, "granola"], ["Bread / toast", 2, "bread|toast"], ["Bagel", 2, "bagel"],
+  ["Tortillas / wraps", 2, "tortilla|wrap|flatbread"], ["Pitta", 2, "pitta"], ["Naan", 2, "naan"],
+  ["Rolls / buns", 2, "\\broll|bun|brioche"], ["Sweet potato", 2, "sweetpotato"], ["Potatoes", 2, "potato"],
+  ["Crackers", 2, "cracker"], ["Oatcakes", 2, "oatcake"], ["Weetabix", 2, "weetabix"],
+  ["Bananas", 3, "banana"], ["Apples", 3, "apple"], ["Berries", 3, "blueberr|raspberr|strawberr|berries"],
+  ["Pineapple", 3, "pineapple"], ["Grapes", 3, "grape"], ["Kiwi", 3, "kiwi"], ["Spinach", 3, "spinach"],
+  ["Broccoli", 3, "broccoli"], ["Peppers", 3, "pepper"], ["Onions", 3, "onion"],
+  ["Tomatoes (fresh)", 3, "cherry tomato|fresh tomato"], ["Salad / slaw", 3, "salad|slaw"], ["Avocado", 3, "avocado"],
+  ["Sweetcorn", 3, "sweetcorn|corn"], ["Peas", 3, "peas"], ["Carrot", 3, "carrot"],
+  ["Garlic & ginger", 3, "garlic|ginger"], ["Mixed / stir-fry veg", 3, "mixed veg|stir-fry|green veg|veg\\b"],
+  ["Kidney beans", 4, "bean"], ["Chopped tomatoes / passata", 4, "passata|chopped tomato|marinara|tomato sauce|tomatoes"],
+  ["Pesto", 4, "pesto"], ["Salsa", 4, "salsa"], ["Soy / sriracha", 4, "soy|sriracha"],
+  ["Curry paste / coconut", 4, "curry|coconut|tikka"], ["BBQ sauce", 4, "bbq"], ["Gravy / stock", 4, "gravy|stock"],
+  ["Seasoning / spices", 4, "seasoning|paprika|cajun|shawarma|oregano|chilli"], ["Honey", 4, "honey"],
+  ["Peanut / almond butter", 4, "peanut butter|almond butter"], ["Tzatziki", 4, "tzatziki"],
+  ["Nuts (almonds / cashews)", 5, "almond|cashew|walnut|\\bnuts"], ["Dark chocolate", 5, "chocolate"],
+].map(([label, aisle, re]) => ({ label, aisle, re: new RegExp(re), clean: label === "Potatoes" }));
+
+function slug(s) { return "g_" + s.toLowerCase().replace(/[^a-z0-9]+/g, "_"); }
+function weekIngredients(startDn) {
+  const counts = new Map();
+  for (let d = 0; d < 7; d++) {
+    const meal = dayMeal(startDn + d);
+    let hay = Object.values(meal.items).map(v => v.text).join(" | ").toLowerCase();
+    const din = meal.items.Dinner;
+    if (din && din.recipe) hay += " | " + din.recipe.ingredients.join(" ").toLowerCase();
+    const hayNoSweet = hay.replace(/sweet potato/g, " ");
+    for (const ent of INGREDIENTS) {
+      if (ent.re.test(ent.clean ? hayNoSweet : hay)) {
+        const c = counts.get(ent.label) || { aisle: ent.aisle, label: ent.label, n: 0 };
+        c.n++; counts.set(ent.label, c);
+      }
+    }
+  }
+  return AISLES.map((name, ai) => ({ name, items: [...counts.values()].filter(x => x.aisle === ai) }))
+    .filter(b => b.items.length);
+}
+
 function renderShop() {
-  const lists = PLAN.shoppingLists || [];
-  if (!lists.length) return `<div class="card"><p class="note">No shopping list available.</p></div>`;
   const pos = position();
   const wk = Math.max(1, Math.min(pos.week, PLAN.meta.weeks));
-  const idx = (wk - 1) % lists.length;
-  const sl = lists[idx];
-  const next = lists[(idx + 1) % lists.length];
-  const dayFrom = idx * 7 + 1, dayTo = idx * 7 + 7;
+  const startDn = (wk - 1) * 7;
+  const buckets = weekIngredients(startDn);
+  const nextBuckets = weekIngredients(wk * 7);
   const checks = LS.get("pt_shop_w" + wk, {});
+  const custom = LS.get("pt_shopcustom_w" + wk, []);
+  const libActive = !!getLibrary();
 
   let total = 0, done = 0;
-  sl.categories.forEach((c, ci) => c.items.forEach((_, ii) => { total++; if (checks["c" + ci + "i" + ii]) done++; }));
+  buckets.forEach(b => b.items.forEach(it => { total++; if (checks[slug(it.label)]) done++; }));
+  custom.forEach((_, i) => { total++; if (checks["x" + i]) done++; });
   const pct = total ? Math.round((done / total) * 100) : 0;
 
-  const cats = sl.categories.map((cat, ci) => `
-    <div class="section-label">${cat.name}</div>
-    <ul class="checklist">${cat.items.map((it, ii) => {
-      const on = checks["c" + ci + "i" + ii];
-      return `<li class="${on ? "done" : ""}" data-act="shop" data-k="c${ci}i${ii}">
+  const cats = buckets.map(b => `
+    <div class="section-label">${b.name}</div>
+    <ul class="checklist">${b.items.map(it => {
+      const on = checks[slug(it.label)];
+      return `<li class="${on ? "done" : ""}" data-act="shop" data-k="${slug(it.label)}">
         <span class="checkbox" style="border-radius:6px">${on ? "✓" : ""}</span>
-        <span class="item-text">${it}</span></li>`;
+        <span class="item-text">${it.label}${it.n > 1 ? `<span class="lib-macro"> · ${it.n} days</span>` : ""}</span></li>`;
     }).join("")}</ul>`).join("");
 
-  // custom user-added items for this week
-  const custom = LS.get("pt_shopcustom_w" + wk, []);
   const customList = custom.length ? `<div class="section-label">➕ My extras</div>
     <ul class="checklist">${custom.map((it, ii) => {
       const on = checks["x" + ii];
@@ -441,33 +487,34 @@ function renderShop() {
 
   return `
   <div class="card hero">
-    <span class="phase-tag">Week ${wk} · Set ${sl.week}</span>
+    <span class="phase-tag">Week ${wk} of ${PLAN.meta.weeks}</span>
     <h1>🛒 This week's shop</h1>
-    <p>${sl.note}</p>
+    <p>Auto-built from the meals in your plan this week${libActive ? " (your Recipe Library picks)" : ""}.</p>
     <div class="progress-track" style="margin-top:12px"><div class="progress-fill" style="width:${pct}%"></div></div>
     <p class="quote" style="font-style:normal;font-size:13px;color:var(--muted)">${done} of ${total} ticked off${(done === total && total) ? " — all done! 🎉" : ""}</p>
   </div>
 
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <h2 style="margin:0">Set ${sl.week} · days ${dayFrom}–${dayTo}</h2>
+      <h2 style="margin:0">Your list</h2>
       <button type="button" class="btn" id="resetShopBtn" style="min-height:auto;padding:7px 12px">Reset</button>
     </div>
-    ${cats}
+    ${cats || `<p class="note">No meals scheduled this week.</p>`}
     ${customList}
     <div class="tracker-row" style="margin-top:14px">
       <input class="field" id="customItem" placeholder="Add your own item…" />
       <button type="button" class="btn accent" id="addCustomBtn">Add</button>
     </div>
+    <p class="note" style="margin-top:8px">Quantities depend on your portions — this is the what-to-buy list for the week. Telegram's Sunday list still uses the default plan.</p>
   </div>
 
   <div class="card">
-    <h2>⏭️ Next week — Set ${next.week}</h2>
+    <h2>⏭️ Next week</h2>
     <p class="sub">A peek so you can plan ahead</p>
-    ${next.categories.map(cat =>
-      `<div class="section-label">${cat.name}</div>
-       <ul class="checklist">${cat.items.map(i =>
-        `<li style="cursor:default"><span class="checkbox" style="border-radius:6px"></span><span class="item-text">${i}</span></li>`).join("")}</ul>`).join("")}
+    ${nextBuckets.map(b =>
+      `<div class="section-label">${b.name}</div>
+       <ul class="checklist">${b.items.map(it =>
+        `<li style="cursor:default"><span class="checkbox" style="border-radius:6px"></span><span class="item-text">${it.label}</span></li>`).join("")}</ul>`).join("")}
   </div>`;
 }
 
@@ -977,7 +1024,7 @@ function toggleShop(li) {
   li.classList.toggle("done", on);
   const cb = li.querySelector(".checkbox");
   if (cb) cb.textContent = on ? "✓" : "";
-  const hero = document.querySelector(".progress-fill");
+  const hero = document.querySelector(".hero .progress-fill");
   // refresh the little progress count without a full re-render
   const items = document.querySelectorAll('[data-act="shop"]');
   const done = document.querySelectorAll('[data-act="shop"].done').length;
