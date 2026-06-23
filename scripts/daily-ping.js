@@ -52,10 +52,15 @@ if (dn < 0) {
   const meals = Object.entries(meal.items)
     .map(([k, v]) => `<b>${esc(k)}</b> (${v.kcal} kcal): ${esc(v.text)}`).join("\n");
 
-  // tomorrow's prep-ahead heads-up
+  // tomorrow's prep-ahead heads-up (explicit prep + auto defrost for meat dinners)
   const tmrw = PLAN.meals[((dn + 1) % PLAN.meals.length + PLAN.meals.length) % PLAN.meals.length];
-  const prep = Object.entries(tmrw.items).filter(([, v]) => v.prep)
-    .map(([k, v]) => `🌙 <b>${esc(k)}:</b> ${esc(v.prep)}`).join("\n");
+  const prepPairs = Object.entries(tmrw.items).filter(([, v]) => v.prep).map(([k, v]) => [k, v.prep]);
+  const dinner = tmrw.items.Dinner;
+  if (dinner && !dinner.prep) {
+    const meat = /chicken|beef|pork|turkey|sausage|mince|lamb|gammon|ham/i.exec(dinner.text);
+    if (meat) prepPairs.push(["Dinner", `Take the ${meat[0].toLowerCase()} out to defrost tonight if it's frozen.`]);
+  }
+  const prep = prepPairs.map(([k, v]) => `🌙 <b>${esc(k)}:</b> ${esc(v)}`).join("\n");
   const prepBlock = prep ? `\n\n🌙 <b>Prep tonight for tomorrow (${esc(tmrw.name)})</b>\n${prep}` : "";
 
   text =

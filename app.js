@@ -40,6 +40,18 @@ function position() {
 }
 
 /* ---------- TODAY ---------- */
+// Prep-ahead notes for a meal: explicit prep fields + an auto defrost hint for meat dinners.
+function prepNotes(meal) {
+  const out = [];
+  for (const [slot, v] of Object.entries(meal.items)) if (v.prep) out.push([slot, v.prep]);
+  const d = meal.items.Dinner;
+  if (d && !d.prep) {
+    const meat = /chicken|beef|pork|turkey|sausage|mince|lamb|gammon|ham/i.exec(d.text);
+    if (meat) out.push(["Dinner", `Take the ${meat[0].toLowerCase()} out to defrost tonight if it's frozen.`]);
+  }
+  return out;
+}
+
 function renderToday() {
   const pos = position();
   const key = todayKey();
@@ -57,7 +69,11 @@ function renderToday() {
   }
 
   const day = pos.phase.schedule[pos.weekday];
-  const meal = PLAN.meals[pos.dn % PLAN.meals.length];
+  const baseIdx = pos.dn % PLAN.meals.length;
+  const swapIdx = LS.get("pt_swap_" + key, null);
+  const mealIdx = (swapIdx != null && swapIdx >= 0 && swapIdx < PLAN.meals.length) ? swapIdx : baseIdx;
+  const swapped = mealIdx !== baseIdx;
+  const meal = PLAN.meals[mealIdx];
   const quote = QUOTES[pos.dn % QUOTES.length];
 
   // gym vs home variant
@@ -101,10 +117,10 @@ function renderToday() {
     <span class="chip ${checks.water >= 8 ? "on" : ""}">💧 ${checks.water}/8</span>
   </div>`;
 
-  // tomorrow's prep-ahead heads-up
+  // tomorrow's prep-ahead heads-up (explicit prep + auto defrost)
   const tmrw = PLAN.meals[(pos.dn + 1) % PLAN.meals.length];
-  const prepLines = Object.entries(tmrw.items).filter(([, v]) => v.prep)
-    .map(([k, v]) => `<div class="prep-line">🌙 <b>${k}:</b> ${v.prep}</div>`).join("");
+  const tmrwPrep = prepNotes(tmrw);
+  const prepLines = tmrwPrep.map(([k, v]) => `<div class="prep-line">🌙 <b>${k}:</b> ${v}</div>`).join("");
   const tomorrowCard = `<div class="card ${prepLines ? "tomorrow-prep" : ""}">
     <h2>🌙 Tomorrow — ${tmrw.name}</h2>
     ${prepLines
@@ -112,7 +128,36 @@ function renderToday() {
       : `<p class="note">Nothing to prep ahead. Tomorrow's dinner: ${tmrw.items.Dinner.text}</p>`}
   </div>`;
 
+  // perfect day = workout + every meal + 8 water
+  const perfect = wDone === exercises.length && mDone === mealKeys.length && checks.water >= 8;
+  const perfectBanner = perfect ? `<div class="card hero perfect">
+    <div class="confetti">${"🎉".repeat(1)}</div>
+    <h1>🎉 Perfect day!</h1>
+    <p>Workout done, every meal ticked, fully hydrated. This is exactly how 12 weeks of progress get built.</p>
+  </div>` : "";
+
+  // rest timer (only on training days)
+  const restTimer = (day.type !== "rest") ? `
+    <div class="rest-timer">
+      <span class="rest-display" id="restDisplay">Rest timer</span>
+      <div class="rest-btns">
+        <button type="button" class="btn rest-btn" data-rest="60">60s</button>
+        <button type="button" class="btn rest-btn" data-rest="90">90s</button>
+        <button type="button" class="btn rest-btn" data-rest="120">2m</button>
+        <button type="button" class="btn rest-btn stop" data-rest="0">✕</button>
+      </div>
+    </div>` : "";
+
+  // meal swap picker
+  const swapPicker = `<details class="swap"><summary>🔀 ${swapped ? "Swapped — change or reset" : "Not feeling it? Swap today's meal"}</summary>
+    <div class="swap-list">
+      ${swapped ? `<button type="button" class="swap-opt reset" data-act="swap" data-i="${baseIdx}">↩︎ Reset to today's default (Day ${baseIdx + 1})</button>` : ""}
+      ${PLAN.meals.map((m, i) => `<button type="button" class="swap-opt ${i === mealIdx ? "cur" : ""}" data-act="swap" data-i="${i}">
+        <span>Day ${i + 1} · ${m.name}</span><span class="swap-kcal">${m.totals.kcal} kcal</span></button>`).join("")}
+    </div></details>`;
+
   return `
+  ${perfectBanner}
   <div class="card hero">
     <span class="phase-tag">Phase ${pos.phase.id} · ${pos.phase.name}</span>
     <p class="greet">${greet}, ${PLAN.meta.athlete} · ${dateStr}</p>
@@ -133,10 +178,11 @@ function renderToday() {
       <button type="button" class="mode-btn ${useHome ? "active" : ""}" data-mode="home" aria-pressed="${!!useHome}">🏠 Home</button>
     </div>` : ""}
     <ul class="checklist">${workItems}</ul>
+    ${restTimer}
   </div>
 
   <div class="card">
-    <h2>🍽️ Today's Fuel</h2>
+    <h2>🍽️ Today's Fuel${swapped ? ' <span class="swap-tag">swapped</span>' : ""}</h2>
     <p class="sub">${meal.name} · tick each meal as you eat it</p>
     <div class="macros">
       <div class="macro"><div class="val">${meal.totals.kcal}</div><div class="lbl">kcal</div></div>
@@ -146,6 +192,7 @@ function renderToday() {
     </div>
     <p class="note" style="margin:10px 0 0">🎯 Phase ${pos.phase.id} aim ~${pos.phase.calories} kcal · ${pos.phase.adjust}</p>
     <ul class="checklist">${mealItems}</ul>
+    ${swapPicker}
   </div>
 
   ${tomorrowCard}
@@ -236,6 +283,17 @@ function renderShop() {
         <span class="item-text">${it}</span></li>`;
     }).join("")}</ul>`).join("");
 
+  // custom user-added items for this week
+  const custom = LS.get("pt_shopcustom_w" + wk, []);
+  const customList = custom.length ? `<div class="section-label">➕ My extras</div>
+    <ul class="checklist">${custom.map((it, ii) => {
+      const on = checks["x" + ii];
+      return `<li class="${on ? "done" : ""}" data-act="shop" data-k="x${ii}">
+        <span class="checkbox" style="border-radius:6px">${on ? "✓" : ""}</span>
+        <span class="item-text">${it}</span>
+        <button type="button" class="x-del" data-act="delcustom" data-i="${ii}">✕</button></li>`;
+    }).join("")}</ul>` : "";
+
   return `
   <div class="card hero">
     <span class="phase-tag">Week ${wk} · Set ${sl.week}</span>
@@ -251,6 +309,11 @@ function renderShop() {
       <button type="button" class="btn" id="resetShopBtn" style="min-height:auto;padding:7px 12px">Reset</button>
     </div>
     ${cats}
+    ${customList}
+    <div class="tracker-row" style="margin-top:14px">
+      <input class="field" id="customItem" placeholder="Add your own item…" />
+      <button type="button" class="btn accent" id="addCustomBtn">Add</button>
+    </div>
   </div>
 
   <div class="card">
@@ -269,36 +332,103 @@ function renderProgress() {
   const pos = position();
   const start = PLAN.meta.stats.weightKg;
   const latest = weights.length ? weights[weights.length - 1].kg : start;
-  const lost = (start - latest).toFixed(1);
+  const lost = +(start - latest).toFixed(1);
 
-  // streak: count back consecutive days with any completion
+  // current streak: count back consecutive days with any completion
   let streak = 0;
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 200; i++) {
     const d = new Date(); d.setDate(d.getDate() - i);
     const c = LS.get("pt_checks_" + todayKey(d), null);
     const any = c && (Object.values(c.workout || {}).some(Boolean) || Object.values(c.meals || {}).some(Boolean) || c.water > 0);
     if (any) streak++; else if (i > 0) break;
   }
 
-  // completion across elapsed days
-  let workoutsDone = 0;
+  // single pass over elapsed days: workouts, perfect days, best streak, hydration
+  let workoutsDone = 0, perfectDays = 0, anyWater8 = false; const active = [];
   for (let i = 0; i <= Math.max(0, pos.dn); i++) {
     const d = new Date(getStartDate() + "T00:00:00"); d.setDate(d.getDate() + i);
     const c = LS.get("pt_checks_" + todayKey(d), null);
-    if (c && Object.values(c.workout || {}).some(Boolean)) workoutsDone++;
+    const wq = c ? Object.values(c.workout || {}).filter(Boolean).length : 0;
+    const mq = c ? Object.values(c.meals || {}).filter(Boolean).length : 0;
+    const water = c ? (c.water || 0) : 0;
+    if (wq >= 1) workoutsDone++;
+    if (water >= 8) anyWater8 = true;
+    if (wq >= 3 && mq >= 5 && water >= 8) perfectDays++;
+    active.push(!!(c && (wq || mq || water)));
+  }
+  let best = 0, run = 0; active.forEach(a => { run = a ? run + 1 : 0; best = Math.max(best, run); });
+
+  const daysIn = Math.max(0, pos.dn + (pos.beforeStart ? 0 : 1));
+  const chart = weights.length >= 2 ? sparkline(weights.map(w => w.kg)) : `<p class="note">Log a few weigh-ins and your trend line appears here.</p>`;
+
+  // weight goal + projection
+  const goal = LS.get("pt_goal", null);
+  let goalCard;
+  if (goal == null) {
+    goalCard = `<div class="card"><h2>🎯 Set a goal weight</h2>
+      <p class="sub">We'll project when you'll hit it from your trend</p>
+      <div class="tracker-row" style="margin-top:6px">
+        <input class="field" id="goalWeight" type="number" step="0.1" inputmode="decimal" placeholder="target kg" style="max-width:160px" />
+        <button type="button" class="btn accent" id="saveGoalBtn">Set goal</button>
+      </div></div>`;
+  } else {
+    const span = (start - goal) || 1;
+    const gp = Math.max(0, Math.min(100, Math.round(((start - latest) / span) * 100)));
+    let proj = `<p class="note">Log a couple of weigh-ins trending down and I'll project your finish date.</p>`;
+    if (weights.length >= 2) {
+      const first = weights[0], last = weights[weights.length - 1];
+      const days = (new Date(last.date) - new Date(first.date)) / 86400000;
+      const ratePerWeek = days > 0 ? (last.kg - first.kg) / (days / 7) : 0;
+      if (latest <= goal) proj = `<p class="note" style="color:var(--accent)">🎉 Goal reached — ${latest} kg. Time to set a new one or move to maintenance.</p>`;
+      else if (ratePerWeek < -0.05) {
+        const weeksLeft = (goal - latest) / ratePerWeek;
+        const eta = new Date(Date.now() + weeksLeft * 7 * 86400000);
+        const etaStr = weeksLeft > 52 ? "over a year out at this pace" :
+          "around " + eta.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+        proj = `<p class="note">📉 Losing <b>${Math.abs(ratePerWeek).toFixed(2)} kg/week</b> → goal of <b>${goal} kg</b> ${etaStr} (~${Math.max(1, Math.round(weeksLeft))} wk).</p>`;
+      } else proj = `<p class="note">Your trend is flat or up — tighten the deficit a touch (see Phase aim) to start moving toward ${goal} kg.</p>`;
+    }
+    goalCard = `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0">🎯 Goal: ${goal} kg</h2>
+        <button type="button" class="btn" id="clearGoalBtn" style="min-height:auto;padding:7px 12px">Change</button></div>
+      <div class="progress-track" style="margin:12px 0 6px"><div class="progress-fill" style="width:${gp}%"></div></div>
+      <p class="sub">${start} kg → ${goal} kg · ${gp}% there (${lost >= 0 ? "-" : "+"}${Math.abs(lost)} kg so far)</p>
+      ${proj}</div>`;
   }
 
-  const chart = weights.length >= 2 ? sparkline(weights.map(w => w.kg)) : `<p class="note">Log a few weigh-ins and your trend line appears here.</p>`;
+  // achievements
+  const A = [
+    ["🏋️", "First rep", workoutsDone >= 1],
+    ["💪", "10 workouts", workoutsDone >= 10],
+    ["🏆", "25 workouts", workoutsDone >= 25],
+    ["🔥", "3-day streak", best >= 3],
+    ["🔥", "7-day streak", best >= 7],
+    ["⚡", "14-day streak", best >= 14],
+    ["💧", "Hydrated", anyWater8],
+    ["✨", "Perfect day", perfectDays >= 1],
+    ["🌟", "5 perfect days", perfectDays >= 5],
+    ["⚖️", "Down 1 kg", lost >= 1],
+    ["📉", "Down 3 kg", lost >= 3],
+    ["🥇", "Down 5 kg", lost >= 5],
+    ["🗓️", "Halfway", daysIn >= 42],
+    ["🎓", "Finisher", daysIn >= 84],
+  ];
+  const earned = A.filter(a => a[2]).length;
+  const badges = A.map(([e, label, on]) =>
+    `<div class="badge ${on ? "earned" : ""}"><div class="badge-e">${e}</div><div class="badge-l">${label}</div></div>`).join("");
 
   return `
   <div class="card hero"><span class="phase-tag">Your numbers</span><h1>Progress</h1>
     <p>Down <b style="color:var(--accent)">${lost} kg</b> since you started.</p></div>
   <div class="card"><div class="stat-grid">
-    <div class="stat"><div class="big">${Math.max(0, pos.dn + (pos.beforeStart?0:1))}</div><div class="cap">days in</div></div>
+    <div class="stat"><div class="big">${daysIn}</div><div class="cap">days in</div></div>
     <div class="stat"><div class="big">🔥 ${streak}</div><div class="cap">day streak</div></div>
     <div class="stat"><div class="big">${workoutsDone}</div><div class="cap">workouts logged</div></div>
-    <div class="stat"><div class="big">${latest}kg</div><div class="cap">latest weight</div></div>
+    <div class="stat"><div class="big">✨ ${perfectDays}</div><div class="cap">perfect days</div></div>
   </div></div>
+
+  ${goalCard}
+
   <div class="card"><h2>⚖️ Weight trend</h2>${chart}
     <ul class="weight-list">${weights.slice().reverse().slice(0, 8).map(w =>
       `<li><span>${w.kg} kg</span><span>${w.date}</span></li>`).join("")}</ul>
@@ -306,6 +436,10 @@ function renderProgress() {
       <input class="field" id="quickWeight" type="number" step="0.1" inputmode="decimal" placeholder="kg" style="max-width:140px" />
       <button type="button" class="btn accent" id="logWeightBtn">Log weigh-in</button>
     </div>
+  </div>
+
+  <div class="card"><h2>🏅 Achievements <small style="color:var(--muted);font-weight:600">${earned}/${A.length}</small></h2>
+    <div class="badge-grid">${badges}</div>
   </div>`;
 }
 
@@ -419,10 +553,15 @@ function onViewClick(e) {
   const modeBtn = e.target.closest("[data-mode]");
   if (modeBtn) { haptic(6); LS.set("pt_mode", modeBtn.dataset.mode); applyMode(); return; }
 
-  const li = e.target.closest("[data-act]");
-  if (li && li.dataset.act === "shop") { haptic(8); toggleShop(li); return; }
-  if (li) {
-    const act = li.dataset.act, i = parseInt(li.dataset.i, 10);
+  const restBtn = e.target.closest("[data-rest]");
+  if (restBtn) { startRest(+restBtn.dataset.rest); return; }
+
+  const tagged = e.target.closest("[data-act]");
+  if (tagged && tagged.dataset.act === "swap") { haptic(6); swapMeal(+tagged.dataset.i); return; }
+  if (tagged && tagged.dataset.act === "delcustom") { haptic(6); delCustom(+tagged.dataset.i); return; }
+  if (tagged && tagged.dataset.act === "shop") { haptic(8); toggleShop(tagged); return; }
+  if (tagged && (tagged.dataset.act === "workout" || tagged.dataset.act === "meals" || tagged.dataset.act === "water")) {
+    const act = tagged.dataset.act, i = parseInt(tagged.dataset.i, 10);
     const key = todayKey();
     const checks = LS.get("pt_checks_" + key, { workout: {}, meals: {}, water: 0 });
     haptic(8);
@@ -434,19 +573,28 @@ function onViewClick(e) {
       checks[act][i] = !checks[act][i];
       LS.set("pt_checks_" + key, checks);
       const on = checks[act][i];
-      li.classList.toggle("done", on);    // surgical — no re-render, no scroll jump
-      const cb = li.querySelector(".checkbox");
+      tagged.classList.toggle("done", on);
+      const cb = tagged.querySelector(".checkbox");
       if (cb) cb.textContent = on ? "✓" : "";
+    }
+    updateTodayChips();
+    // celebrate the moment everything's complete
+    if (CURRENT_TAB === "today" && isTodayPerfect() && !document.querySelector(".perfect")) {
+      haptic([100, 50, 100, 50, 220]); repaintKeepScroll();
     }
     return;
   }
   if (e.target.id === "logWeightBtn") return logWeight();
+  if (e.target.id === "saveGoalBtn") return saveGoal();
+  if (e.target.id === "clearGoalBtn") { localStorage.removeItem("pt_goal"); repaintKeepScroll(); return; }
+  if (e.target.id === "addCustomBtn") return addCustom();
   if (e.target.id === "saveStartBtn") {
     LS.set("pt_startDate", document.getElementById("startDateInput").value);
     CURRENT_TAB = "today"; setActiveTab(); navigate(); return;
   }
   if (e.target.id === "resetShopBtn") {
-    LS.set("pt_shop_w" + Math.max(1, Math.min(position().week, PLAN.meta.weeks)), {});
+    const wk = Math.max(1, Math.min(position().week, PLAN.meta.weeks));
+    LS.set("pt_shop_w" + wk, {});
     repaintKeepScroll(); return;
   }
   if (e.target.id === "resetBtn") {
@@ -455,6 +603,89 @@ function onViewClick(e) {
       repaintKeepScroll();
     }
   }
+}
+
+/* ---------- new feature handlers ---------- */
+function swapMeal(i) {
+  const key = todayKey();
+  const base = position().dn % PLAN.meals.length;
+  if (i === base) localStorage.removeItem("pt_swap_" + key); else LS.set("pt_swap_" + key, i);
+  repaintKeepScroll();
+}
+function saveGoal() {
+  const el = document.getElementById("goalWeight"); const kg = parseFloat(el.value);
+  if (!kg || kg < 30 || kg > 250) { el.focus(); return; }
+  LS.set("pt_goal", kg); haptic(8); repaintKeepScroll();
+}
+function addCustom() {
+  const el = document.getElementById("customItem"); const v = (el.value || "").trim();
+  if (!v) { el.focus(); return; }
+  const wk = Math.max(1, Math.min(position().week, PLAN.meta.weeks));
+  const arr = LS.get("pt_shopcustom_w" + wk, []); arr.push(v); LS.set("pt_shopcustom_w" + wk, arr);
+  haptic(8); repaintKeepScroll();
+}
+function delCustom(i) {
+  const wk = Math.max(1, Math.min(position().week, PLAN.meta.weeks));
+  const arr = LS.get("pt_shopcustom_w" + wk, []); arr.splice(i, 1); LS.set("pt_shopcustom_w" + wk, arr);
+  const ck = LS.get("pt_shop_w" + wk, {});
+  Object.keys(ck).filter(k => k[0] === "x").forEach(k => delete ck[k]); // indices shift, clear custom ticks
+  LS.set("pt_shop_w" + wk, ck);
+  repaintKeepScroll();
+}
+function updateTodayChips() {
+  const pos = position(); if (pos.beforeStart || pos.finished) return;
+  const day = pos.phase.schedule[pos.weekday];
+  const ex = (LS.get("pt_mode", "gym") === "home" && day.homeItems) ? day.homeItems : day.items;
+  const key = todayKey(); const c = LS.get("pt_checks_" + key, { workout: {}, meals: {}, water: 0 });
+  const baseIdx = pos.dn % PLAN.meals.length, sw = LS.get("pt_swap_" + key, null);
+  const mealIdx = (sw != null && sw >= 0 && sw < PLAN.meals.length) ? sw : baseIdx;
+  const mKeys = Object.keys(PLAN.meals[mealIdx].items);
+  const wDone = ex.filter((_, i) => c.workout[i]).length;
+  const mDone = mKeys.filter((_, i) => c.meals[i]).length;
+  const chips = document.querySelectorAll(".today-chips .chip");
+  if (chips.length === 3) {
+    chips[0].classList.toggle("on", wDone === ex.length); chips[0].textContent = `${day.type === "rest" ? "😴" : "🏋️"} ${wDone}/${ex.length}`;
+    chips[1].classList.toggle("on", mDone === mKeys.length); chips[1].textContent = `🍽️ ${mDone}/${mKeys.length}`;
+    chips[2].classList.toggle("on", c.water >= 8); chips[2].textContent = `💧 ${c.water}/8`;
+  }
+}
+function isTodayPerfect() {
+  const pos = position(); if (pos.beforeStart || pos.finished) return false;
+  const day = pos.phase.schedule[pos.weekday];
+  const ex = (LS.get("pt_mode", "gym") === "home" && day.homeItems) ? day.homeItems : day.items;
+  const key = todayKey(); const c = LS.get("pt_checks_" + key, { workout: {}, meals: {}, water: 0 });
+  const baseIdx = pos.dn % PLAN.meals.length, sw = LS.get("pt_swap_" + key, null);
+  const mealIdx = (sw != null && sw >= 0 && sw < PLAN.meals.length) ? sw : baseIdx;
+  const mKeys = Object.keys(PLAN.meals[mealIdx].items);
+  const wDone = ex.filter((_, i) => c.workout[i]).length;
+  const mDone = mKeys.filter((_, i) => c.meals[i]).length;
+  return wDone === ex.length && mDone === mKeys.length && c.water >= 8;
+}
+
+let REST_INT = null;
+function startRest(sec) {
+  const disp = document.getElementById("restDisplay"); if (!disp) return;
+  clearInterval(REST_INT);
+  if (sec <= 0) { disp.textContent = "Rest timer"; disp.className = "rest-display"; haptic(6); return; }
+  let left = sec; haptic(10);
+  disp.className = "rest-display running";
+  const tick = () => { disp.textContent = `⏱️ ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`; };
+  tick();
+  REST_INT = setInterval(() => {
+    left--;
+    if (left <= 0) { clearInterval(REST_INT); disp.textContent = "✅ Go!"; disp.className = "rest-display ding"; haptic([120, 60, 120]); beep(); return; }
+    tick();
+  }, 1000);
+}
+function beep() {
+  try {
+    const A = new (window.AudioContext || window.webkitAudioContext)();
+    const o = A.createOscillator(), g = A.createGain();
+    o.connect(g); g.connect(A.destination); o.frequency.value = 880; o.start();
+    g.gain.setValueAtTime(0.15, A.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, A.currentTime + 0.4);
+    o.stop(A.currentTime + 0.4);
+  } catch {}
 }
 
 // Tick a shopping item off — surgical update keyed to the current week, keeps scroll.
@@ -492,6 +723,7 @@ function updateWater(n) {
 /* ---------- shell ---------- */
 // render() repaints the current tab WITHOUT moving the scroll position.
 function render() {
+  clearInterval(REST_INT); // a repaint replaces the timer element
   const view = document.getElementById("view");
   if (CURRENT_TAB === "today") view.innerHTML = renderToday();
   else if (CURRENT_TAB === "plan") view.innerHTML = renderPlan();
@@ -535,7 +767,10 @@ async function boot() {
   const view = document.getElementById("view");
   view.addEventListener("click", onViewClick);
   view.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && e.target.id === "quickWeight") { e.preventDefault(); logWeight(); }
+    if (e.key !== "Enter") return;
+    if (e.target.id === "quickWeight") { e.preventDefault(); logWeight(); }
+    else if (e.target.id === "goalWeight") { e.preventDefault(); saveGoal(); }
+    else if (e.target.id === "customItem") { e.preventDefault(); addCustom(); }
   });
   render();
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
