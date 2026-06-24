@@ -284,15 +284,17 @@ function renderToday() {
       <ul class="checklist preview">${tEx.map(t => `<li><span class="bullet">•</span><span class="item-text">${t}</span></li>`).join("")}</ul>`;
   }
 
-  const tomorrowCard = `<div class="card ${prepLines ? "tomorrow-prep" : ""}">
-    <h2>🌙 Tomorrow · ${tDayName}</h2>
-    <div class="section-label">🏋️ Activity</div>
-    ${activityHtml}
-    <div class="section-label" style="margin-top:14px">🍽️ Food — ${tmrw.name} (${tmrw.totals.kcal} kcal)</div>
-    ${prepLines
-      ? `<p class="sub" style="margin:2px 0 0">Sort this tonight so you're ready:</p>${prepLines}`
-      : `<p class="note">Nothing to prep ahead. Dinner: ${tmrw.items.Dinner.text}</p>`}
-  </div>`;
+  const tomorrowFold = `<details class="card fold ${prepLines ? "tomorrow-prep" : ""}">
+    <summary>🌙 Tomorrow · ${tDayName}${prepLines ? ' <span class="swap-tag">prep</span>' : ""}</summary>
+    <div class="fold-body">
+      <div class="section-label">🏋️ Activity</div>
+      ${activityHtml}
+      <div class="section-label" style="margin-top:14px">🍽️ Food — ${tmrw.name} (${tmrw.totals.kcal} kcal)</div>
+      ${prepLines
+        ? `<p class="sub" style="margin:2px 0 0">Sort this tonight so you're ready:</p>${prepLines}`
+        : `<p class="note">Nothing to prep ahead. Dinner: ${tmrw.items.Dinner.text}</p>`}
+    </div>
+  </details>`;
 
   // perfect day = workout + every meal + 8 water
   const perfect = wDone === exercises.length && mDone === mealKeys.length && checks.water >= 8;
@@ -302,21 +304,12 @@ function renderToday() {
     <p>Workout done, every meal ticked, fully hydrated. This is exactly how 12 weeks of progress get built.</p>
   </div>` : "";
 
-  // on-track traffic light (time-aware so it's not red all morning)
+  // on-track traffic light, merged into the hero (time-aware so it's not red all morning)
   const totalTargets = exercises.length + mealKeys.length + 8;
   const doneTargets = wDone + mDone + Math.min(checks.water, 8);
   const frac = totalTargets ? doneTargets / totalTargets : 0;
   const expected = Math.max(0, Math.min(0.95, (new Date().getHours() - 7) / 15));
-  let light, lmsg;
-  if (frac >= 1) { light = "green"; lmsg = "Everything ticked — perfect day!"; }
-  else if (frac >= expected) { light = "green"; lmsg = "On track — keep it rolling"; }
-  else if (frac >= expected * 0.6) { light = "amber"; lmsg = "A bit behind — chip away at it"; }
-  else { light = "red"; lmsg = "Off pace — let's get moving"; }
-  const trafficLight = `<div class="card light light-${light}">
-    <span class="light-dot"></span>
-    <div><b>${light === "green" ? "🟢 On track" : light === "amber" ? "🟡 A bit behind" : "🔴 Off pace"}</b>
-    <br><span class="sub">${lmsg} · ${doneTargets}/${totalTargets} done today</span></div>
-  </div>`;
+  const light = frac >= expected ? "green" : frac >= expected * 0.6 ? "amber" : "red";
 
   // cook once, eat twice — leftover-friendly dinner → tomorrow's lunch
   const dinnerText = meal.items.Dinner ? meal.items.Dinner.text : "";
@@ -344,19 +337,16 @@ function renderToday() {
     rest: "🚶 Optional: ~6–8k gentle steps or a short easy cycle if the foot feels good — otherwise just rest.",
   }[day.type] || "🚶 Keep moving little and often.";
 
-  // supplements
+  // supplements (compact chips, shown in the Daily log card)
   const supps = getSupps();
   const suppChecks = LS.get("pt_supp_" + key, {});
-  const suppsCard = supps.length ? `<div class="card">
-    <h2>💊 Supplements</h2>
-    <p class="sub">Tick as you take them</p>
-    <ul class="checklist">${supps.map((s, i) => {
-      const on = suppChecks[s];
-      return `<li class="${on ? "done" : ""}" data-act="supp" data-name="${encodeURIComponent(s)}">
-        <span class="checkbox">${on ? "✓" : ""}</span><span class="item-text">${s}</span></li>`;
-    }).join("")}</ul>
-    <p class="note" style="margin-top:6px">Edit your list in Settings → Supplements.</p>
-  </div>` : "";
+  const suppRow = supps.length ? `<div class="log-sec">
+      <div class="log-label">💊 Supplements</div>
+      <div class="supp-chips">${supps.map((s) => {
+        const on = suppChecks[s];
+        return `<button type="button" class="supp-chip ${on ? "on" : ""}" data-act="supp" data-name="${encodeURIComponent(s)}">${on ? "✓ " : ""}${s}</button>`;
+      }).join("")}</div>
+    </div>` : "";
 
   // meal swap picker
   const swapPicker = `<details class="swap"><summary>🔀 ${swapped ? "Swapped today — change or reset" : "Not feeling it? Swap today's meal"}</summary>
@@ -371,11 +361,9 @@ function renderToday() {
   const aim = dailyAim(pos);
   const aimAdj = aim !== pos.phase.calories;
 
-  // off-plan / cheat logging
+  // off-plan / cheat logging (inner fragment for the Adjust fold)
   const cheatToday = LS.get("pt_cheat_" + key, 0);
-  const cheatCard = `<div class="card">
-    <h2>🍔 Eating out / treat</h2>
-    <p class="sub">No stress — log it and I'll balance the next ${CHEAT_SPREAD} days</p>
+  const cheatInner = `<div class="section-label">🍔 Eating out / treat</div>
     ${cheatToday
       ? `<p class="note">Logged <b>+${cheatToday} kcal</b> today, spread over the next ${CHEAT_SPREAD} days. <button type="button" class="btn" id="clearCheatBtn" style="min-height:auto;padding:6px 10px;margin-left:6px">Clear</button></p>`
       : `<div class="step-quick">
@@ -386,41 +374,35 @@ function renderToday() {
         <div class="tracker-row" style="margin-top:8px">
           <input class="field" id="cheatInput" type="number" inputmode="numeric" placeholder="custom +kcal" style="max-width:150px" />
           <button type="button" class="btn accent" id="setCheatBtn">Log</button>
-        </div>`}
-  </div>`;
+        </div>`}`;
 
-  // reschedule (missed/skipped a day)
+  // reschedule (inner fragment)
   const shift = LS.get("pt_shift", 0);
-  const reschedule = `<div class="card">
-    <h2>📅 Can't train today?</h2>
-    <p class="sub">Push the plan back a day so you don't lose the session</p>
+  const reschedInner = `<div class="section-label" style="margin-top:14px">📅 Can't train today?</div>
     <div class="step-quick">
       <button type="button" class="btn" id="pushDayBtn">⏭ Push plan back a day</button>
       ${shift > 0 ? `<button type="button" class="btn" id="undoShiftBtn">Undo</button>` : ""}
     </div>
-    ${shift > 0 ? `<p class="note" style="margin-top:8px">Plan pushed back <b>${shift} day${shift > 1 ? "s" : ""}</b> — now finishing ${revealInfo().endStr}. <button type="button" class="btn" id="resetShiftBtn" style="min-height:auto;padding:5px 9px;margin-left:4px">Reset</button></p>` : ""}
-  </div>`;
+    ${shift > 0 ? `<p class="note" style="margin-top:8px">Pushed back <b>${shift} day${shift > 1 ? "s" : ""}</b> — finishing ${revealInfo().endStr}. <button type="button" class="btn" id="resetShiftBtn" style="min-height:auto;padding:5px 9px;margin-left:4px">Reset</button></p>` : ""}`;
 
-  // reveal-day countdown
+  const adjustFold = `<details class="card fold"><summary>⚙️ Adjust today — eating out · reschedule${cheatToday ? ' <span class="swap-tag">+' + cheatToday + '</span>' : ""}${shift > 0 ? ' <span class="swap-tag">shifted</span>' : ""}</summary>
+    <div class="fold-body">${cheatInner}${reschedInner}</div></details>`;
+
   const rv = revealInfo();
-  const proj = projectAtEnd();
-  const revealCard = `<div class="card reveal">
-    <div class="reveal-num">${Math.max(0, rv.daysLeft)}</div>
-    <div class="reveal-txt"><b>days to Reveal Day</b><br><span class="sub">${rv.endStr}${proj != null ? ` · on pace for ~${proj} kg` : ""}</span></div>
-  </div>`;
 
   return `
-  ${perfect ? perfectBanner : trafficLight}
-  <div class="card hero">
-    <span class="phase-tag">Phase ${pos.phase.id} · ${pos.phase.name}</span>
+  ${perfectBanner}
+  <div class="card hero light-${light}">
+    <div class="hero-top">
+      <span class="phase-tag">Phase ${pos.phase.id} · ${pos.phase.name}</span>
+      <span class="light-pill">${light === "green" ? "🟢 On track" : light === "amber" ? "🟡 Behind" : "🔴 Off pace"}</span>
+    </div>
     <p class="greet">${greet}, ${PLAN.meta.athlete} · ${dateStr}</p>
     <h1>${day.emoji} ${day.name}</h1>
-    <p>Week ${pos.week} of 12 · Day ${pos.dn + 1}</p>
+    <p class="hero-meta">Week ${pos.week}/12 · Day ${pos.dn + 1} · 🏁 ${Math.max(0, rv.daysLeft)} to Reveal Day</p>
     ${chips}
     <div class="quote">"${quote}"</div>
   </div>
-
-  ${revealCard}
 
   <div class="card" data-workout-card>
     <div class="work-head">
@@ -447,35 +429,32 @@ function renderToday() {
       <div class="macro"><div class="val">${meal.totals.fat}g</div><div class="lbl">fat</div></div>
     </div>
     <p class="note" style="margin:10px 0 0">🎯 Phase ${pos.phase.id} aim ~${aim} kcal${aimAdj ? ' <span class="swap-tag">recalc</span>' : ""} · ${pos.phase.adjust}</p>
-    ${payback > 0 ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">⤵️ Balancing ${payback} kcal from a recent treat — today's aim trimmed to keep your week on track.</p>` : ""}
+    ${payback > 0 ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">⤵️ Balancing ${payback} kcal from a recent treat.</p>` : ""}
     ${cookTwice}
     <ul class="checklist">${mealItems}</ul>
     ${recipeBlock(meal)}
     ${swapPicker}
   </div>
 
-  ${cheatCard}
-
-  ${reschedule}
-
-  ${tomorrowCard}
-
-  ${suppsCard}
-
   <div class="card">
-    <h2>💧 Water</h2>
-    <p class="sub">Aim for 8 glasses (~2.5 L)</p>
-    <div class="water-dots">${waterDots}</div>
+    <h2>📋 Daily log</h2>
+    <div class="log-sec">
+      <div class="log-label">💧 Water · ${checks.water}/8</div>
+      <div class="water-dots">${waterDots}</div>
+    </div>
+    ${suppRow}
+    <div class="log-sec">
+      <div class="log-label">⚖️ Weigh-in</div>
+      <div class="tracker-row">
+        <input class="field" id="quickWeight" type="number" step="0.1" inputmode="decimal" placeholder="kg" style="max-width:140px" />
+        <button type="button" class="btn accent" id="logWeightBtn">Log</button>
+      </div>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>⚖️ Quick weigh-in</h2>
-    <p class="sub">Best first thing in the morning</p>
-    <div class="tracker-row">
-      <input class="field" id="quickWeight" type="number" step="0.1" inputmode="decimal" placeholder="kg" style="max-width:140px" />
-      <button type="button" class="btn accent" id="logWeightBtn">Log</button>
-    </div>
-  </div>`;
+  ${tomorrowFold}
+
+  ${adjustFold}`;
 }
 
 /* ---------- PLAN ---------- */
@@ -1041,11 +1020,12 @@ function swapMeal(i) {
   repaintKeepScroll();
 }
 /* supplements */
-function toggleSupp(name, li) {
+function toggleSupp(name, el) {
   const key = "pt_supp_" + todayKey(); const c = LS.get(key, {});
   c[name] = !c[name]; if (!c[name]) delete c[name]; LS.set(key, c);
-  const on = !!c[name]; li.classList.toggle("done", on);
-  const cb = li.querySelector(".checkbox"); if (cb) cb.textContent = on ? "✓" : "";
+  const on = !!c[name];
+  el.classList.toggle("on", on);
+  el.textContent = (on ? "✓ " : "") + name;
 }
 function addSupp() {
   const el = document.getElementById("suppInput"); const v = (el.value || "").trim();
@@ -1157,20 +1137,20 @@ function updateTodayChips() {
     chips[1].classList.toggle("on", mDone === mKeys.length); chips[1].textContent = `🍽️ ${mDone}/${mKeys.length}`;
     chips[2].classList.toggle("on", c.water >= 8); chips[2].textContent = `💧 ${c.water}/8`;
   }
-  // live-update the traffic light
-  const el = document.querySelector(".light");
-  if (el) {
+  // live-update the hero status (traffic light merged into the hero)
+  const hero = document.querySelector(".hero");
+  const pill = hero && hero.querySelector(".light-pill");
+  if (pill) {
     const total = ex.length + mKeys.length + 8, done = wDone + mDone + Math.min(c.water || 0, 8);
     const frac = total ? done / total : 0, expected = Math.max(0, Math.min(0.95, (new Date().getHours() - 7) / 15));
-    let light, label, msg;
-    if (frac >= 1) { light = "green"; label = "🟢 On track"; msg = "Everything ticked — perfect day!"; }
-    else if (frac >= expected) { light = "green"; label = "🟢 On track"; msg = "On track — keep it rolling"; }
-    else if (frac >= expected * 0.6) { light = "amber"; label = "🟡 A bit behind"; msg = "A bit behind — chip away at it"; }
-    else { light = "red"; label = "🔴 Off pace"; msg = "Off pace — let's get moving"; }
-    el.className = "card light light-" + light;
-    el.querySelector("b").textContent = label;
-    el.querySelector(".sub").textContent = `${msg} · ${done}/${total} done today`;
+    const light = frac >= expected ? "green" : frac >= expected * 0.6 ? "amber" : "red";
+    hero.classList.remove("light-green", "light-amber", "light-red");
+    hero.classList.add("light-" + light);
+    pill.textContent = light === "green" ? "🟢 On track" : light === "amber" ? "🟡 Behind" : "🔴 Off pace";
   }
+  // water label
+  const wl = document.querySelector(".log-label");
+  if (wl && wl.textContent.startsWith("💧")) wl.textContent = `💧 Water · ${c.water || 0}/8`;
 }
 function isTodayPerfect() {
   const pos = position(); if (pos.beforeStart || pos.finished) return false;
