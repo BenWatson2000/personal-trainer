@@ -217,6 +217,14 @@ main { flex: 1; padding: 16px 16px 96px; }
   border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 600; cursor: pointer; min-height: 40px; }
 .supp-chip.on { background: rgba(52,211,153,.16); border-color: rgba(52,211,153,.4); color: var(--accent); }
 
+/* section heading that sits outside a card (Plan meal rotation) */
+.section-head { margin: 20px 4px 2px; font-size: 18px; }
+.section-sub { margin: 0 4px 10px; }
+.meal-day > summary { font-weight: 600; }
+.meal-day-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meal-day-title b { color: var(--accent); }
+.meal-day-macro { color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+
 /* collapsible card (Tomorrow / Adjust) */
 details.fold { padding: 0; }
 details.fold > summary { list-style: none; cursor: pointer; padding: 16px; font-size: 16px;

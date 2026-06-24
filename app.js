@@ -483,19 +483,25 @@ function renderPlan() {
     </div>`;
   });
 
-  html += `<div class="card"><h2>🍽️ Meal rotation</h2><p class="sub">${PLAN.meals.length} days, looping · every meal's macros sum to the day total · no fish, beans only in the chilli</p>`;
+  html += `<h2 class="section-head">🍽️ Meal rotation</h2>
+    <p class="sub section-sub">${PLAN.meals.length} days, looping · tap a day for meals + recipe · no fish, beans only in the chilli</p>`;
   PLAN.meals.forEach((m, di) => {
     const t = m.totals;
-    html += `<div class="section-label">Day ${di + 1} · ${m.name} — ${t.kcal} kcal · ${t.protein}P / ${t.carbs}C / ${t.fat}F</div>
-      <ul class="checklist">${Object.keys(m.items).map(k => {
-        const it = m.items[k];
-        return `<li style="cursor:default"><span class="item-text"><span class="meal-label">${k} · ${it.kcal} kcal</span>${it.text}</span></li>`;
-      }).join("")}</ul>${recipeBlock(m)}`;
+    html += `<details class="card fold meal-day">
+      <summary>
+        <span class="meal-day-title"><b>Day ${di + 1}</b> · ${m.name}</span>
+        <span class="meal-day-macro">${t.kcal} kcal · ${t.protein}g P</span>
+      </summary>
+      <div class="fold-body">
+        <ul class="checklist">${Object.entries(m.items).map(([k, it]) =>
+          `<li style="cursor:default"><span class="item-text"><span class="meal-label">${k} · ${it.kcal} kcal</span>${it.text}</span></li>`).join("")}</ul>
+        ${recipeBlock(m)}
+      </div>
+    </details>`;
   });
-  html += `</div>`;
 
   html += `<div class="card"><h2>🛒 Shopping list</h2>
-    <p class="note">Your tickable list for the current week lives on the <b>Shop</b> tab — it auto-picks the right set (A or B) to match this week's meals.</p></div>`;
+    <p class="note">Your tickable weekly list lives on the <b>Shop</b> tab — auto-built from the meals in your plan that week.</p></div>`;
 
   html += `<div class="card"><h2>📋 Golden rules</h2><ul class="note" style="padding-left:18px;line-height:1.8">
     ${PLAN.meta.principles.map(r => `<li>${r}</li>`).join("")}</ul></div>`;
