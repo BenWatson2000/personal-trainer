@@ -392,7 +392,6 @@ function renderToday() {
       ${shift > 0 ? `<button type="button" class="btn" id="undoShiftBtn">Undo</button>` : ""}
     </div>
     ${shift > 0 ? `<p class="note" style="margin-top:8px">Plan pushed back <b>${shift} day${shift > 1 ? "s" : ""}</b> — now finishing ${revealInfo().endStr}. <button type="button" class="btn" id="resetShiftBtn" style="min-height:auto;padding:5px 9px;margin-left:4px">Reset</button></p>` : ""}
-    <p class="note" style="margin-top:6px">Your Telegram reminders stay on the original calendar.</p>
   </div>`;
 
   // reveal-day countdown
@@ -633,7 +632,7 @@ function renderShop() {
       <input class="field" id="customItem" placeholder="Add your own item…" />
       <button type="button" class="btn accent" id="addCustomBtn">Add</button>
     </div>
-    <p class="note" style="margin-top:8px">Quantities depend on your portions — this is the what-to-buy list for the week. Telegram's Sunday list still uses the default plan.</p>
+    <p class="note" style="margin-top:8px">Quantities depend on your portions — this is the what-to-buy list for the week.</p>
   </div>
 
   ${batchCard}
@@ -882,18 +881,6 @@ function renderSettings() {
       <input class="field" id="suppInput" placeholder="Add a supplement…" />
       <button type="button" class="btn accent" id="addSuppBtn">Add</button>
     </div>
-  </div>
-
-  <div class="card"><h2>📲 Daily reminders on Telegram</h2>
-    <p class="note">A free GitHub Action sends you the day's workout + meals every morning. To switch it on:</p>
-    <ol class="note" style="padding-left:18px;line-height:1.9">
-      <li>In Telegram, message <code>@BotFather</code> → <code>/newbot</code> → copy the <b>token</b>.</li>
-      <li>Message <code>@userinfobot</code> to get your <b>chat id</b>.</li>
-      <li>In your GitHub repo → <b>Settings → Secrets → Actions</b>, add
-        <code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_CHAT_ID</code>.</li>
-      <li>That's it — you'll get a ping every morning at 7am.</li>
-    </ol>
-    <p class="note">Full instructions are in the repo's <code>README.md</code>.</p>
   </div>
 
   <div class="card"><h2>🗑️ Reset</h2>

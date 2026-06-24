@@ -1,16 +1,16 @@
 # 🏋️ Ben's PT — 12-Week Shred
 
-Your own personal trainer in your pocket: a free, installable web app + a daily
-Telegram reminder, all hosted on GitHub for **£0**.
+Your own personal trainer in your pocket: a free, installable web app, hosted on
+GitHub Pages for **£0**. No account, no tracking — everything lives on your device.
 
 - **Goal:** get ripped in 12 weeks — lose fat, keep muscle, reveal definition
-- **Built for:** 68 kg · 156 cm male
+- **Built for:** 25 yr · 68 kg · 156 cm male
 - **Diet:** high protein, **no fish**, **no beans** (except in chilli 😄)
-- **Cost:** free (GitHub Pages + GitHub Actions)
+- **Foot-friendly:** adapted for posterior tibial tendinitis (right foot)
 
 ---
 
-## 📲 1. Get the app on your phone
+## 📲 Get the app on your phone
 
 The app lives at:
 
@@ -18,58 +18,38 @@ The app lives at:
 https://benwatson2000.github.io/personal-trainer/
 ```
 
-**Turn on hosting (one time):**
-
-1. Push this branch and merge it into `main` (or just point Pages at this branch).
-2. Repo → **Settings → Pages**.
-3. Under **Build and deployment → Source**, choose **Deploy from a branch**.
-4. Branch: `main` (or `claude/fitness-plan-tracking-app-eph981`), folder: `/ (root)` → **Save**.
-5. Wait ~1 minute, then open the link above.
+**Turn on hosting (one time):** Repo → **Settings → Pages** → **Deploy from a branch**
+→ Branch `main`, folder `/ (root)` → **Save**. Wait ~1 minute, then open the link.
 
 **Add it to your home screen** so it feels like a real app:
 
 - **iPhone:** open the link in Safari → Share → **Add to Home Screen**.
 - **Android:** open in Chrome → ⋮ menu → **Install app / Add to Home screen**.
 
-It works offline and remembers your check-ins, water and weigh-ins on your device.
+It works offline and remembers everything on your device.
 
 ---
 
-## 🔔 2. Daily reminders on Telegram (free)
+## ✨ What's in the app
 
-Every morning a GitHub Action sends you the day's workout + meals. Setup takes ~3 minutes:
+- **Today** — workout (with rest timer, Gym/Home toggle), meals (with recipes &
+  swap), water, steps, supplements, tomorrow preview, and a Reveal-Day countdown.
+- **Plan** — the full 12-week blueprint + meal rotation + recipes.
+- **Shop** — a weekly shopping list **auto-built from your meals**, with batch-prep
+  and custom items.
+- **Progress** — weight trend, goal + ETA, achievements, metabolism (TDEE), photos.
+- **Settings** — start date, **Recipe Library** (pick your meals), step goal,
+  supplements.
 
-1. **Create a bot** — in Telegram, message [`@BotFather`](https://t.me/BotFather),
-   send `/newbot`, follow the prompts, and copy the **bot token** it gives you.
-2. **Find your chat id** — message [`@userinfobot`](https://t.me/userinfobot);
-   it replies with your numeric **Id**.
-3. **Start a chat with your new bot** (search its username and tap *Start*) so it's
-   allowed to message you.
-4. **Add the secrets** — repo → **Settings → Secrets and variables → Actions → New repository secret**:
-   - `TELEGRAM_BOT_TOKEN` → the token from step 1
-   - `TELEGRAM_CHAT_ID` → the id from step 2
-5. **Test it now** — repo → **Actions → Daily PT Ping → Run workflow**. You should
-   get a message within a few seconds.
-
-After that it runs automatically at **06:00 UTC (~7am UK summer time)** daily.
-Change the time or start date in `.github/workflows/daily-ping.yml`.
-
-**Weekly shopping list** — a second action (`Weekly Shopping List`) sends the week's
-shop to the same Telegram chat every **Sunday at ~5pm UK**, so you can prep ahead.
-It uses the same two secrets — no extra setup. Run it any time from
-**Actions → Weekly Shopping List → Run workflow**, or edit the day/time in
-`.github/workflows/weekly-shopping.yml`.
-
-> Prefer email instead of Telegram? Telegram is the simplest free option, but the
-> ping script is just one file (`scripts/daily-ping.js`) — swap the `fetch` call for
-> an email service (e.g. Resend/Mailgun free tier) and add those secrets.
+**Flexible by design:** log an eating-out **treat** and it balances the next few
+days; **miss a day** and push the whole plan back without losing a session.
 
 ---
 
 ## 🗓️ The Plan
 
-A fat-loss cut that protects muscle: progressive lifting + cardio, high protein,
-calories stepping down across three phases.
+A fat-loss cut that protects muscle: progressive lifting + low-impact cardio, high
+protein, calories stepping down across three phases.
 
 | Phase | Weeks | Training | Calorie aim | Protein |
 |------|-------|----------|----------|---------|
@@ -77,49 +57,28 @@ calories stepping down across three phases.
 | 2 · Build & Burn | 5–8 | Upper/Lower 4× + intervals | ~1750 | 160 g |
 | 3 · Shred | 9–12 | Push/Pull/Legs + extra cardio | ~1650 | 165 g |
 
-The **meals are the source of truth** (~1850 kcal/day as written). Each phase shows
-its aim plus a one-line *adjust* (e.g. "drop the evening snack") to step calories
-down — protein never gets cut.
+The **meals are the source of truth** (~1850 kcal/day). Each phase shows its aim plus
+a one-line *adjust* to step calories down — and the aim auto-recalculates as your
+weight drops, to hold the deficit. Protein never gets cut.
 
-**Golden rules**
-
-- Hit your protein target *every* day — it's what keeps the muscle while you cut.
-- Stay active daily but keep it low-impact for your right foot — cycling over long walks.
-- Sleep 7–9 hours, drink ~2.5–3 L water.
-- Weigh in each morning; judge progress on the **weekly average**, not single days.
-- One flexible meal a week is fine — stay roughly within calories.
-
-Full daily workouts and a **14-day meal rotation** — every meal carries its own
-kcal/protein and they sum to the day total (no fish; beans only in the chilli) — live
-in [`data/plan.json`](data/plan.json) and render in the **Plan** tab. The shopping list
-**alternates between two sets (A / B)** that match the meals for that week, so what you
-buy lines up with what you cook.
-
-**Gym or home?** Every lifting day has a no-equipment variant (dumbbells / bands /
-bodyweight). Tap the **🏋️ Gym / 🏠 Home** toggle on the Today screen — your choice is
-remembered. For the daily Telegram ping, set `PT_MODE` to `gym` or `home` in
-`.github/workflows/daily-ping.yml`.
-
-**🦶 Foot-friendly:** the plan is adapted for posterior tibial tendinitis (right foot)
-— no running or jumping, low-impact cardio (cycling/elliptical), and leg work uses
-bilateral/seated/supported moves (leg press, wall sit, glute bridge, seated leg curl)
-instead of lunges, split squats and calf raises. Work only in pain-free ranges.
+**🦶 Foot-friendly:** no running or jumping, low-impact cardio (cycling/elliptical),
+and leg work uses bilateral/seated/supported moves (leg press, wall sit, glute
+bridge, seated leg curl) instead of lunges, split squats and calf raises.
 
 > ⚕️ General fitness guidance, not medical advice. Posterior tibial tendinitis can
-> worsen if loaded through pain — please get it assessed by a GP or physio, and stop
-> any movement that aggravates it.
+> worsen if loaded through pain — get it assessed by a GP or physio, and stop any
+> movement that aggravates it.
 
 ---
 
 ## ✏️ Editing your plan
 
-Everything is data-driven — edit **`data/plan.json`** and both the app and the daily
-ping update automatically:
+Everything is data-driven — edit **`data/plan.json`** and the app updates:
 
-- `phases[].schedule` — the 7 daily workouts for each phase
-- `meals` — the rotating meal days
-- `phases[].calories / protein / carbs / fat` — your macro targets
-- `meta.startDate` — default program start (you can also set it in the app's Settings)
+- `phases[].schedule` — the 7 daily workouts (gym + `homeItems`) for each phase
+- `meals` — the 14-day curated rotation; `mealBank` — the full pool for the Recipe Library
+- `phases[].calories / protein / carbs / fat` — macro targets
+- `meta.startDate` — default program start (also settable in the app)
 
 ## 🧩 What's in here
 
@@ -127,11 +86,8 @@ ping update automatically:
 index.html              the web app shell
 styles.css  app.js      UI + logic (no frameworks, no build step)
 manifest.webmanifest    makes it installable (PWA)
-sw.js                   offline caching
-data/plan.json          the entire plan + shopping list (single source of truth)
-scripts/daily-ping.js   builds + sends the daily Telegram message
-scripts/shopping-list.js builds + sends the Sunday shopping list
-.github/workflows/      the morning cron job + Sunday shopping cron
+sw.js                   offline caching (network-first app shell)
+data/plan.json          the entire plan + meal bank (single source of truth)
 icons/                  app icons
 ```
 
