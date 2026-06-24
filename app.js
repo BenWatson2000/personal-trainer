@@ -186,7 +186,6 @@ function adjustedAim(phase) {
 }
 const DEFAULT_SUPPS = ["Whey protein", "Creatine 5g", "Vitamin D"];
 function getSupps() { return LS.get("pt_supps", DEFAULT_SUPPS); }
-function stepGoal() { return LS.get("pt_stepgoal", 8000); }
 
 /* ---------- TODAY ---------- */
 // Prep-ahead notes for a meal: explicit prep fields + an auto defrost hint for meat dinners.
@@ -315,27 +314,13 @@ function renderToday() {
       </div>
     </div>` : "";
 
-  // steps / NEAT
-  const steps = LS.get("pt_steps_" + key, 0);
-  const goalSteps = stepGoal();
-  const stepsCard = `<div class="card">
-    <h2>👣 Steps</h2>
-    <p class="sub">Goal ${goalSteps.toLocaleString()} · low-impact NEAT</p>
-    <div class="steps-row">
-      ${ring(Math.min(1, steps / goalSteps), steps.toLocaleString())}
-      <div class="steps-ctl">
-        <div class="step-quick">
-          <button type="button" class="btn" data-steps="1000">+1k</button>
-          <button type="button" class="btn" data-steps="2000">+2k</button>
-          <button type="button" class="btn" data-steps="-1000">−1k</button>
-        </div>
-        <div class="tracker-row" style="margin-top:8px">
-          <input class="field" id="stepsInput" type="number" inputmode="numeric" placeholder="set total" value="${steps || ""}" style="max-width:120px" />
-          <button type="button" class="btn accent" id="setStepsBtn">Set</button>
-        </div>
-      </div>
-    </div>
-  </div>`;
+  // step suggestion (shown inside the activity card, no tracking)
+  const stepHint = {
+    strength: "🚶 NEAT target: ~7–8k easy steps across the day to keep fat loss ticking — low-impact, spread out so the foot's happy.",
+    cardio: "🚶 Today's cardio is your movement — keep extra steps comfortable and pain-free.",
+    hiit: "🚶 Intervals cover your output today — no need to chase steps; stay easy on the foot.",
+    rest: "🚶 Optional: ~6–8k gentle steps or a short easy cycle if the foot feels good — otherwise just rest.",
+  }[day.type] || "🚶 Keep moving little and often.";
 
   // supplements
   const supps = getSupps();
@@ -426,6 +411,7 @@ function renderToday() {
       <button type="button" class="mode-btn ${useHome ? "active" : ""}" data-mode="home" aria-pressed="${!!useHome}">🏠 Home</button>
     </div>` : ""}
     <ul class="checklist">${workItems}</ul>
+    <p class="note" style="margin:10px 0 0">${stepHint}</p>
     ${restTimer}
   </div>
 
@@ -450,8 +436,6 @@ function renderToday() {
   ${reschedule}
 
   ${tomorrowCard}
-
-  ${stepsCard}
 
   ${suppsCard}
 
@@ -809,15 +793,6 @@ function renderPhotos() {
   </div>`;
 }
 
-function ring(frac, label) {
-  const r = 34, c = 2 * Math.PI * r, off = c * (1 - Math.max(0, Math.min(1, frac)));
-  return `<svg class="ring" viewBox="0 0 80 80" width="80" height="80">
-    <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--bg-card-2)" stroke-width="8"/>
-    <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round"
-      stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 40 40)"/>
-    <text x="40" y="44" text-anchor="middle" font-size="14" font-weight="800" fill="var(--text)">${label}</text>
-  </svg>`;
-}
 function sparkline(vals) {
   const w = 320, h = 140, pad = 10;
   const min = Math.min(...vals), max = Math.max(...vals);
@@ -863,14 +838,6 @@ function renderSettings() {
   </div>
 
   ${renderLibrary()}
-
-  <div class="card"><h2>👣 Daily step goal</h2>
-    <div class="tracker-row" style="margin-top:6px">
-      <input class="field" id="stepGoalInput" type="number" inputmode="numeric" value="${stepGoal()}" style="max-width:160px" />
-      <button type="button" class="btn accent" id="saveStepGoalBtn">Save</button>
-    </div>
-    <p class="note" style="margin-top:8px">Cycling counts toward fitness but not steps — set this to whatever's realistic for your foot.</p>
-  </div>
 
   <div class="card"><h2>💊 Supplements</h2>
     <p class="sub">What you tick off daily on the Today screen</p>
@@ -978,8 +945,6 @@ function onViewClick(e) {
 
   const restBtn = e.target.closest("[data-rest]");
   if (restBtn) { startRest(+restBtn.dataset.rest); return; }
-  const stepBtn = e.target.closest("[data-steps]");
-  if (stepBtn) { addSteps(+stepBtn.dataset.steps); return; }
   const cheatBtn = e.target.closest("[data-cheat]");
   if (cheatBtn) { logCheat(+cheatBtn.dataset.cheat); return; }
 
@@ -1021,8 +986,6 @@ function onViewClick(e) {
   if (e.target.id === "useSuggestedGoal") { LS.set("pt_goal", suggestedGoal()); haptic(8); repaintKeepScroll(); return; }
   if (e.target.id === "clearGoalBtn") { localStorage.removeItem("pt_goal"); repaintKeepScroll(); return; }
   if (e.target.id === "addCustomBtn") return addCustom();
-  if (e.target.id === "setStepsBtn") return setStepsFromInput();
-  if (e.target.id === "saveStepGoalBtn") return saveStepGoal();
   if (e.target.id === "addSuppBtn") return addSupp();
   if (e.target.id === "setCheatBtn") return setCheatFromInput();
   if (e.target.id === "clearCheatBtn") { localStorage.removeItem("pt_cheat_" + todayKey()); haptic(8); repaintKeepScroll(); return; }
@@ -1053,21 +1016,6 @@ function swapMeal(i) {
   const key = todayKey();
   if (i < 0) localStorage.removeItem("pt_swap_" + key); else LS.set("pt_swap_" + key, i);
   repaintKeepScroll();
-}
-/* steps / NEAT */
-function addSteps(delta) {
-  const key = "pt_steps_" + todayKey();
-  LS.set(key, Math.max(0, LS.get(key, 0) + delta)); haptic(8); repaintKeepScroll();
-}
-function setStepsFromInput() {
-  const el = document.getElementById("stepsInput"); const v = parseInt(el.value, 10);
-  if (isNaN(v) || v < 0) { el.focus(); return; }
-  LS.set("pt_steps_" + todayKey(), v); haptic(8); el.blur(); repaintKeepScroll();
-}
-function saveStepGoal() {
-  const el = document.getElementById("stepGoalInput"); const v = parseInt(el.value, 10);
-  if (isNaN(v) || v < 1000) { el.focus(); return; }
-  LS.set("pt_stepgoal", v); haptic(8); toast("Step goal updated"); repaintKeepScroll();
 }
 /* supplements */
 function toggleSupp(name, li) {
@@ -1310,8 +1258,6 @@ async function boot() {
     if (e.target.id === "quickWeight") { e.preventDefault(); logWeight(); }
     else if (e.target.id === "goalWeight") { e.preventDefault(); saveGoal(); }
     else if (e.target.id === "customItem") { e.preventDefault(); addCustom(); }
-    else if (e.target.id === "stepsInput") { e.preventDefault(); setStepsFromInput(); }
-    else if (e.target.id === "stepGoalInput") { e.preventDefault(); saveStepGoal(); }
     else if (e.target.id === "suppInput") { e.preventDefault(); addSupp(); }
     else if (e.target.id === "cheatInput") { e.preventDefault(); setCheatFromInput(); }
   });

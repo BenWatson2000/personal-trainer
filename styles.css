@@ -189,10 +189,7 @@ main { flex: 1; padding: 16px 16px 96px; }
 .lib-row .item-text { font-size: 14px; }
 .lib-macro { color: var(--muted); font-size: 12px; }
 
-/* steps ring */
-.steps-row { display: flex; align-items: center; gap: 16px; }
-.ring { flex: 0 0 80px; }
-.steps-ctl { flex: 1; }
+/* quick-action button row (cheat / reschedule) */
 .step-quick { display: flex; gap: 6px; }
 .step-quick .btn { flex: 1; min-height: 40px; padding: 8px 4px; }
 
