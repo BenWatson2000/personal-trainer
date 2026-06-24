@@ -199,6 +199,34 @@ main { flex: 1; padding: 16px 16px 96px; }
 .light-red { border-left-color: #f87171; }
 .light-red .light-dot { background: #f87171; box-shadow: 0 0 10px #f87171; }
 
+/* hero status (traffic light merged in) */
+.hero-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.light-pill { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+  background: var(--bg-card-2); border: 1px solid var(--line); white-space: nowrap; }
+.hero.light-green { border-left: 4px solid var(--accent); }
+.hero.light-amber { border-left: 4px solid var(--warn); }
+.hero.light-red { border-left: 4px solid #f87171; }
+.hero-meta { color: var(--muted); font-size: 13px; margin: 2px 0 0; }
+
+/* daily log card */
+.log-sec { padding: 12px 0; border-top: 1px solid var(--line); }
+.log-sec:first-of-type { border-top: none; padding-top: 4px; }
+.log-label { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+.supp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.supp-chip { background: var(--bg-card-2); border: 1px solid var(--line); color: var(--text);
+  border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 600; cursor: pointer; min-height: 40px; }
+.supp-chip.on { background: rgba(52,211,153,.16); border-color: rgba(52,211,153,.4); color: var(--accent); }
+
+/* collapsible card (Tomorrow / Adjust) */
+details.fold { padding: 0; }
+details.fold > summary { list-style: none; cursor: pointer; padding: 16px; font-size: 16px;
+  font-weight: 700; display: flex; align-items: center; gap: 8px; }
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after { content: "⌄"; margin-left: auto; color: var(--muted);
+  font-size: 18px; transition: transform .2s; }
+details.fold[open] > summary::after { transform: rotate(180deg); }
+details.fold .fold-body { padding: 0 16px 16px; }
+
 /* quick-action button row (cheat / reschedule) */
 .step-quick { display: flex; gap: 6px; }
 .step-quick .btn { flex: 1; min-height: 40px; padding: 8px 4px; }
