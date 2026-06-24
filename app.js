@@ -302,6 +302,28 @@ function renderToday() {
     <p>Workout done, every meal ticked, fully hydrated. This is exactly how 12 weeks of progress get built.</p>
   </div>` : "";
 
+  // on-track traffic light (time-aware so it's not red all morning)
+  const totalTargets = exercises.length + mealKeys.length + 8;
+  const doneTargets = wDone + mDone + Math.min(checks.water, 8);
+  const frac = totalTargets ? doneTargets / totalTargets : 0;
+  const expected = Math.max(0, Math.min(0.95, (new Date().getHours() - 7) / 15));
+  let light, lmsg;
+  if (frac >= 1) { light = "green"; lmsg = "Everything ticked — perfect day!"; }
+  else if (frac >= expected) { light = "green"; lmsg = "On track — keep it rolling"; }
+  else if (frac >= expected * 0.6) { light = "amber"; lmsg = "A bit behind — chip away at it"; }
+  else { light = "red"; lmsg = "Off pace — let's get moving"; }
+  const trafficLight = `<div class="card light light-${light}">
+    <span class="light-dot"></span>
+    <div><b>${light === "green" ? "🟢 On track" : light === "amber" ? "🟡 A bit behind" : "🔴 Off pace"}</b>
+    <br><span class="sub">${lmsg} · ${doneTargets}/${totalTargets} done today</span></div>
+  </div>`;
+
+  // cook once, eat twice — leftover-friendly dinner → tomorrow's lunch
+  const dinnerText = meal.items.Dinner ? meal.items.Dinner.text : "";
+  const leftoverOK = /chilli|bolognese|curry|cottage pie|meatballs|traybake|one-pot|chorizo|stir-fry|soup|pesto pasta|ragu|casserole|stew/i.test(dinnerText);
+  const dinnerTitle = dinnerText.split(" — ")[0].split(" + ")[0];
+  const cookTwice = leftoverOK ? `<p class="note" style="margin:6px 0 0;color:var(--accent-2)">🍳 Cook once, eat twice — make an extra portion of tonight's ${dinnerTitle} for tomorrow's lunch.</p>` : "";
+
   // rest timer (only on training days)
   const restTimer = (day.type !== "rest") ? `
     <div class="rest-timer">
@@ -388,7 +410,7 @@ function renderToday() {
   </div>`;
 
   return `
-  ${perfectBanner}
+  ${perfect ? perfectBanner : trafficLight}
   <div class="card hero">
     <span class="phase-tag">Phase ${pos.phase.id} · ${pos.phase.name}</span>
     <p class="greet">${greet}, ${PLAN.meta.athlete} · ${dateStr}</p>
@@ -426,6 +448,7 @@ function renderToday() {
     </div>
     <p class="note" style="margin:10px 0 0">🎯 Phase ${pos.phase.id} aim ~${aim} kcal${aimAdj ? ' <span class="swap-tag">recalc</span>' : ""} · ${pos.phase.adjust}</p>
     ${payback > 0 ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">⤵️ Balancing ${payback} kcal from a recent treat — today's aim trimmed to keep your week on track.</p>` : ""}
+    ${cookTwice}
     <ul class="checklist">${mealItems}</ul>
     ${recipeBlock(meal)}
     ${swapPicker}
@@ -1133,6 +1156,20 @@ function updateTodayChips() {
     chips[0].classList.toggle("on", wDone === ex.length); chips[0].textContent = `${day.type === "rest" ? "😴" : "🏋️"} ${wDone}/${ex.length}`;
     chips[1].classList.toggle("on", mDone === mKeys.length); chips[1].textContent = `🍽️ ${mDone}/${mKeys.length}`;
     chips[2].classList.toggle("on", c.water >= 8); chips[2].textContent = `💧 ${c.water}/8`;
+  }
+  // live-update the traffic light
+  const el = document.querySelector(".light");
+  if (el) {
+    const total = ex.length + mKeys.length + 8, done = wDone + mDone + Math.min(c.water || 0, 8);
+    const frac = total ? done / total : 0, expected = Math.max(0, Math.min(0.95, (new Date().getHours() - 7) / 15));
+    let light, label, msg;
+    if (frac >= 1) { light = "green"; label = "🟢 On track"; msg = "Everything ticked — perfect day!"; }
+    else if (frac >= expected) { light = "green"; label = "🟢 On track"; msg = "On track — keep it rolling"; }
+    else if (frac >= expected * 0.6) { light = "amber"; label = "🟡 A bit behind"; msg = "A bit behind — chip away at it"; }
+    else { light = "red"; label = "🔴 Off pace"; msg = "Off pace — let's get moving"; }
+    el.className = "card light light-" + light;
+    el.querySelector("b").textContent = label;
+    el.querySelector(".sub").textContent = `${msg} · ${done}/${total} done today`;
   }
 }
 function isTodayPerfect() {

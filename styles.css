@@ -189,6 +189,16 @@ main { flex: 1; padding: 16px 16px 96px; }
 .lib-row .item-text { font-size: 14px; }
 .lib-macro { color: var(--muted); font-size: 12px; }
 
+/* on-track traffic light */
+.light { display: flex; align-items: center; gap: 12px; border-left: 4px solid var(--line); }
+.light .light-dot { flex: 0 0 14px; width: 14px; height: 14px; border-radius: 50%; }
+.light-green { border-left-color: var(--accent); }
+.light-green .light-dot { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.light-amber { border-left-color: var(--warn); }
+.light-amber .light-dot { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+.light-red { border-left-color: #f87171; }
+.light-red .light-dot { background: #f87171; box-shadow: 0 0 10px #f87171; }
+
 /* quick-action button row (cheat / reschedule) */
 .step-quick { display: flex; gap: 6px; }
 .step-quick .btn { flex: 1; min-height: 40px; padding: 8px 4px; }
