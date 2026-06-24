@@ -104,7 +104,27 @@ function getStartDate() {
 function dayNumber() {
   const start = new Date(getStartDate() + "T00:00:00");
   const now = new Date(todayKey() + "T00:00:00");
-  return Math.floor((now - start) / 86400000); // 0-based
+  return Math.floor((now - start) / 86400000) - LS.get("pt_shift", 0); // 0-based, minus any reschedule
+}
+// day index (effective) for an arbitrary date — used by cheat-meal payback
+function effDnForDate(dateStr) {
+  const start = new Date(getStartDate() + "T00:00:00");
+  return Math.floor((new Date(dateStr + "T00:00:00") - start) / 86400000) - LS.get("pt_shift", 0);
+}
+const CHEAT_SPREAD = 3; // days to balance an off-plan surplus over
+function paybackForDay(dn) {
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.indexOf("pt_cheat_") === 0) {
+      const c = effDnForDate(key.slice(9)), surplus = LS.get(key, 0);
+      if (dn > c && dn <= c + CHEAT_SPREAD) total += surplus / CHEAT_SPREAD;
+    }
+  }
+  return Math.round(total);
+}
+function dailyAim(pos) {
+  return Math.max(1400, Math.round((adjustedAim(pos.phase) - paybackForDay(pos.dn)) / 10) * 10);
 }
 function position() {
   const dn = dayNumber();
@@ -119,7 +139,7 @@ function position() {
 // reveal day = the morning after the final day of week 12
 function revealInfo() {
   const start = new Date(getStartDate() + "T00:00:00");
-  const end = new Date(start); end.setDate(end.getDate() + PLAN.meta.weeks * 7);
+  const end = new Date(start); end.setDate(end.getDate() + PLAN.meta.weeks * 7 + LS.get("pt_shift", 0));
   const today = new Date(todayKey() + "T00:00:00");
   return { end, daysLeft: Math.round((end - today) / 86400000),
     endStr: end.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) };
@@ -339,9 +359,41 @@ function renderToday() {
         <span>Day ${i + 1} · ${m.name}</span><span class="swap-kcal">${m.totals.kcal} kcal</span></button>`).join("")}
     </div></details>`;
 
-  // TDEE-adjusted calorie aim (recomputes as weight drops)
-  const aim = adjustedAim(pos.phase);
+  // calorie aim: TDEE-adjusted, minus any payback owed from a recent treat
+  const payback = paybackForDay(pos.dn);
+  const aim = dailyAim(pos);
   const aimAdj = aim !== pos.phase.calories;
+
+  // off-plan / cheat logging
+  const cheatToday = LS.get("pt_cheat_" + key, 0);
+  const cheatCard = `<div class="card">
+    <h2>🍔 Eating out / treat</h2>
+    <p class="sub">No stress — log it and I'll balance the next ${CHEAT_SPREAD} days</p>
+    ${cheatToday
+      ? `<p class="note">Logged <b>+${cheatToday} kcal</b> today, spread over the next ${CHEAT_SPREAD} days. <button type="button" class="btn" id="clearCheatBtn" style="min-height:auto;padding:6px 10px;margin-left:6px">Clear</button></p>`
+      : `<div class="step-quick">
+          <button type="button" class="btn" data-cheat="300">+300 treat</button>
+          <button type="button" class="btn" data-cheat="600">+600 meal out</button>
+          <button type="button" class="btn" data-cheat="1000">+1000 big day</button>
+        </div>
+        <div class="tracker-row" style="margin-top:8px">
+          <input class="field" id="cheatInput" type="number" inputmode="numeric" placeholder="custom +kcal" style="max-width:150px" />
+          <button type="button" class="btn accent" id="setCheatBtn">Log</button>
+        </div>`}
+  </div>`;
+
+  // reschedule (missed/skipped a day)
+  const shift = LS.get("pt_shift", 0);
+  const reschedule = `<div class="card">
+    <h2>📅 Can't train today?</h2>
+    <p class="sub">Push the plan back a day so you don't lose the session</p>
+    <div class="step-quick">
+      <button type="button" class="btn" id="pushDayBtn">⏭ Push plan back a day</button>
+      ${shift > 0 ? `<button type="button" class="btn" id="undoShiftBtn">Undo</button>` : ""}
+    </div>
+    ${shift > 0 ? `<p class="note" style="margin-top:8px">Plan pushed back <b>${shift} day${shift > 1 ? "s" : ""}</b> — now finishing ${revealInfo().endStr}. <button type="button" class="btn" id="resetShiftBtn" style="min-height:auto;padding:5px 9px;margin-left:4px">Reset</button></p>` : ""}
+    <p class="note" style="margin-top:6px">Your Telegram reminders stay on the original calendar.</p>
+  </div>`;
 
   // reveal-day countdown
   const rv = revealInfo();
@@ -388,10 +440,15 @@ function renderToday() {
       <div class="macro"><div class="val">${meal.totals.fat}g</div><div class="lbl">fat</div></div>
     </div>
     <p class="note" style="margin:10px 0 0">🎯 Phase ${pos.phase.id} aim ~${aim} kcal${aimAdj ? ' <span class="swap-tag">recalc</span>' : ""} · ${pos.phase.adjust}</p>
+    ${payback > 0 ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">⤵️ Balancing ${payback} kcal from a recent treat — today's aim trimmed to keep your week on track.</p>` : ""}
     <ul class="checklist">${mealItems}</ul>
     ${recipeBlock(meal)}
     ${swapPicker}
   </div>
+
+  ${cheatCard}
+
+  ${reschedule}
 
   ${tomorrowCard}
 
@@ -936,6 +993,8 @@ function onViewClick(e) {
   if (restBtn) { startRest(+restBtn.dataset.rest); return; }
   const stepBtn = e.target.closest("[data-steps]");
   if (stepBtn) { addSteps(+stepBtn.dataset.steps); return; }
+  const cheatBtn = e.target.closest("[data-cheat]");
+  if (cheatBtn) { logCheat(+cheatBtn.dataset.cheat); return; }
 
   const tagged = e.target.closest("[data-act]");
   if (tagged && tagged.dataset.act === "swap") { haptic(6); swapMeal(+tagged.dataset.i); return; }
@@ -978,6 +1037,11 @@ function onViewClick(e) {
   if (e.target.id === "setStepsBtn") return setStepsFromInput();
   if (e.target.id === "saveStepGoalBtn") return saveStepGoal();
   if (e.target.id === "addSuppBtn") return addSupp();
+  if (e.target.id === "setCheatBtn") return setCheatFromInput();
+  if (e.target.id === "clearCheatBtn") { localStorage.removeItem("pt_cheat_" + todayKey()); haptic(8); repaintKeepScroll(); return; }
+  if (e.target.id === "pushDayBtn") { LS.set("pt_shift", LS.get("pt_shift", 0) + 1); haptic(8); toast("Plan pushed back a day"); repaintKeepScroll(); return; }
+  if (e.target.id === "undoShiftBtn") { LS.set("pt_shift", Math.max(0, LS.get("pt_shift", 0) - 1)); haptic(8); repaintKeepScroll(); return; }
+  if (e.target.id === "resetShiftBtn") { localStorage.removeItem("pt_shift"); haptic(8); toast("Reschedule reset"); repaintKeepScroll(); return; }
   if (e.target.id === "resetLibBtn") { localStorage.removeItem("pt_library"); haptic(8); toast("Back to the default plan"); repaintKeepScroll(); return; }
   if (e.target.id === "playTimelapse") return playTimelapse();
   if (e.target.id === "saveStartBtn") {
@@ -1032,6 +1096,16 @@ function addSupp() {
   LS.set("pt_supps", arr); haptic(8); repaintKeepScroll();
 }
 function delSupp(name) { LS.set("pt_supps", getSupps().filter(s => s !== name)); repaintKeepScroll(); }
+/* cheat / eating-out balancing */
+function logCheat(amount) {
+  LS.set("pt_cheat_" + todayKey(), amount); haptic(8);
+  toast(`Logged +${amount} kcal — balanced over ${CHEAT_SPREAD} days`); repaintKeepScroll();
+}
+function setCheatFromInput() {
+  const el = document.getElementById("cheatInput"); const v = parseInt(el.value, 10);
+  if (isNaN(v) || v <= 0) { el.focus(); return; }
+  logCheat(v);
+}
 /* batch-prep ticks (Shop tab) */
 function toggleBatch(li) {
   const wk = Math.max(1, Math.min(position().week, PLAN.meta.weeks));
@@ -1252,6 +1326,7 @@ async function boot() {
     else if (e.target.id === "stepsInput") { e.preventDefault(); setStepsFromInput(); }
     else if (e.target.id === "stepGoalInput") { e.preventDefault(); saveStepGoal(); }
     else if (e.target.id === "suppInput") { e.preventDefault(); addSupp(); }
+    else if (e.target.id === "cheatInput") { e.preventDefault(); setCheatFromInput(); }
   });
   view.addEventListener("change", (e) => {
     if (e.target.id === "photoInput") addPhotoFromFile(e.target.files && e.target.files[0]);
