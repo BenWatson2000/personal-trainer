@@ -189,6 +189,13 @@ main { flex: 1; padding: 16px 16px 96px; }
 .lib-row .item-text { font-size: 14px; }
 .lib-macro { color: var(--muted); font-size: 12px; }
 
+/* steps ring */
+.steps-row { display: flex; align-items: center; gap: 16px; }
+.ring { flex: 0 0 80px; }
+.steps-ctl { flex: 1; }
+.step-quick { display: flex; gap: 6px; }
+.step-quick .btn { flex: 1; min-height: 40px; padding: 8px 4px; }
+
 /* toast */
 .toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%);
   background: var(--bg-card-2); border: 1px solid var(--line); color: var(--text);

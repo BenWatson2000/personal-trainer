@@ -104,7 +104,27 @@ function getStartDate() {
 function dayNumber() {
   const start = new Date(getStartDate() + "T00:00:00");
   const now = new Date(todayKey() + "T00:00:00");
-  return Math.floor((now - start) / 86400000); // 0-based
+  return Math.floor((now - start) / 86400000) - LS.get("pt_shift", 0); // 0-based, minus any reschedule
+}
+// day index (effective) for an arbitrary date — used by cheat-meal payback
+function effDnForDate(dateStr) {
+  const start = new Date(getStartDate() + "T00:00:00");
+  return Math.floor((new Date(dateStr + "T00:00:00") - start) / 86400000) - LS.get("pt_shift", 0);
+}
+const CHEAT_SPREAD = 3; // days to balance an off-plan surplus over
+function paybackForDay(dn) {
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.indexOf("pt_cheat_") === 0) {
+      const c = effDnForDate(key.slice(9)), surplus = LS.get(key, 0);
+      if (dn > c && dn <= c + CHEAT_SPREAD) total += surplus / CHEAT_SPREAD;
+    }
+  }
+  return Math.round(total);
+}
+function dailyAim(pos) {
+  return Math.max(1400, Math.round((adjustedAim(pos.phase) - paybackForDay(pos.dn)) / 10) * 10);
 }
 function position() {
   const dn = dayNumber();
@@ -119,7 +139,7 @@ function position() {
 // reveal day = the morning after the final day of week 12
 function revealInfo() {
   const start = new Date(getStartDate() + "T00:00:00");
-  const end = new Date(start); end.setDate(end.getDate() + PLAN.meta.weeks * 7);
+  const end = new Date(start); end.setDate(end.getDate() + PLAN.meta.weeks * 7 + LS.get("pt_shift", 0));
   const today = new Date(todayKey() + "T00:00:00");
   return { end, daysLeft: Math.round((end - today) / 86400000),
     endStr: end.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) };
@@ -154,6 +174,19 @@ function recipeBlock(meal) {
       <ol class="recipe-steps">${r.steps.map(x => `<li>${x}</li>`).join("")}</ol>
     </div></details>`;
 }
+
+/* ---------- metabolism (TDEE auto-recalc) ---------- */
+function bmr(w) { const s = PLAN.meta.stats; return 10 * w + 6.25 * s.heightCm - 5 * s.age + 5; }
+function activityFactor() { return (PLAN.meta.maintenance || bmr(PLAN.meta.stats.weightKg)) / bmr(PLAN.meta.stats.weightKg); }
+function latestWeight() { const w = LS.get("pt_weights", []); return w.length ? w[w.length - 1].kg : PLAN.meta.stats.weightKg; }
+function currentMaintenance() { return Math.round(bmr(latestWeight()) * activityFactor()); }
+function adjustedAim(phase) {
+  const deficit = (PLAN.meta.maintenance || 2250) - phase.calories;
+  return Math.round((currentMaintenance() - deficit) / 10) * 10;
+}
+const DEFAULT_SUPPS = ["Whey protein", "Creatine 5g", "Vitamin D"];
+function getSupps() { return LS.get("pt_supps", DEFAULT_SUPPS); }
+function stepGoal() { return LS.get("pt_stepgoal", 8000); }
 
 /* ---------- TODAY ---------- */
 // Prep-ahead notes for a meal: explicit prep fields + an auto defrost hint for meat dinners.
@@ -282,6 +315,42 @@ function renderToday() {
       </div>
     </div>` : "";
 
+  // steps / NEAT
+  const steps = LS.get("pt_steps_" + key, 0);
+  const goalSteps = stepGoal();
+  const stepsCard = `<div class="card">
+    <h2>👣 Steps</h2>
+    <p class="sub">Goal ${goalSteps.toLocaleString()} · low-impact NEAT</p>
+    <div class="steps-row">
+      ${ring(Math.min(1, steps / goalSteps), steps.toLocaleString())}
+      <div class="steps-ctl">
+        <div class="step-quick">
+          <button type="button" class="btn" data-steps="1000">+1k</button>
+          <button type="button" class="btn" data-steps="2000">+2k</button>
+          <button type="button" class="btn" data-steps="-1000">−1k</button>
+        </div>
+        <div class="tracker-row" style="margin-top:8px">
+          <input class="field" id="stepsInput" type="number" inputmode="numeric" placeholder="set total" value="${steps || ""}" style="max-width:120px" />
+          <button type="button" class="btn accent" id="setStepsBtn">Set</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  // supplements
+  const supps = getSupps();
+  const suppChecks = LS.get("pt_supp_" + key, {});
+  const suppsCard = supps.length ? `<div class="card">
+    <h2>💊 Supplements</h2>
+    <p class="sub">Tick as you take them</p>
+    <ul class="checklist">${supps.map((s, i) => {
+      const on = suppChecks[s];
+      return `<li class="${on ? "done" : ""}" data-act="supp" data-name="${encodeURIComponent(s)}">
+        <span class="checkbox">${on ? "✓" : ""}</span><span class="item-text">${s}</span></li>`;
+    }).join("")}</ul>
+    <p class="note" style="margin-top:6px">Edit your list in Settings → Supplements.</p>
+  </div>` : "";
+
   // meal swap picker
   const swapPicker = `<details class="swap"><summary>🔀 ${swapped ? "Swapped today — change or reset" : "Not feeling it? Swap today's meal"}</summary>
     <div class="swap-list">
@@ -289,6 +358,42 @@ function renderToday() {
       ${PLAN.meals.map((m, i) => `<button type="button" class="swap-opt ${swapped && swapIdx === i ? "cur" : ""}" data-act="swap" data-i="${i}">
         <span>Day ${i + 1} · ${m.name}</span><span class="swap-kcal">${m.totals.kcal} kcal</span></button>`).join("")}
     </div></details>`;
+
+  // calorie aim: TDEE-adjusted, minus any payback owed from a recent treat
+  const payback = paybackForDay(pos.dn);
+  const aim = dailyAim(pos);
+  const aimAdj = aim !== pos.phase.calories;
+
+  // off-plan / cheat logging
+  const cheatToday = LS.get("pt_cheat_" + key, 0);
+  const cheatCard = `<div class="card">
+    <h2>🍔 Eating out / treat</h2>
+    <p class="sub">No stress — log it and I'll balance the next ${CHEAT_SPREAD} days</p>
+    ${cheatToday
+      ? `<p class="note">Logged <b>+${cheatToday} kcal</b> today, spread over the next ${CHEAT_SPREAD} days. <button type="button" class="btn" id="clearCheatBtn" style="min-height:auto;padding:6px 10px;margin-left:6px">Clear</button></p>`
+      : `<div class="step-quick">
+          <button type="button" class="btn" data-cheat="300">+300 treat</button>
+          <button type="button" class="btn" data-cheat="600">+600 meal out</button>
+          <button type="button" class="btn" data-cheat="1000">+1000 big day</button>
+        </div>
+        <div class="tracker-row" style="margin-top:8px">
+          <input class="field" id="cheatInput" type="number" inputmode="numeric" placeholder="custom +kcal" style="max-width:150px" />
+          <button type="button" class="btn accent" id="setCheatBtn">Log</button>
+        </div>`}
+  </div>`;
+
+  // reschedule (missed/skipped a day)
+  const shift = LS.get("pt_shift", 0);
+  const reschedule = `<div class="card">
+    <h2>📅 Can't train today?</h2>
+    <p class="sub">Push the plan back a day so you don't lose the session</p>
+    <div class="step-quick">
+      <button type="button" class="btn" id="pushDayBtn">⏭ Push plan back a day</button>
+      ${shift > 0 ? `<button type="button" class="btn" id="undoShiftBtn">Undo</button>` : ""}
+    </div>
+    ${shift > 0 ? `<p class="note" style="margin-top:8px">Plan pushed back <b>${shift} day${shift > 1 ? "s" : ""}</b> — now finishing ${revealInfo().endStr}. <button type="button" class="btn" id="resetShiftBtn" style="min-height:auto;padding:5px 9px;margin-left:4px">Reset</button></p>` : ""}
+    <p class="note" style="margin-top:6px">Your Telegram reminders stay on the original calendar.</p>
+  </div>`;
 
   // reveal-day countdown
   const rv = revealInfo();
@@ -334,13 +439,22 @@ function renderToday() {
       <div class="macro"><div class="val">${meal.totals.carbs}g</div><div class="lbl">carbs</div></div>
       <div class="macro"><div class="val">${meal.totals.fat}g</div><div class="lbl">fat</div></div>
     </div>
-    <p class="note" style="margin:10px 0 0">🎯 Phase ${pos.phase.id} aim ~${pos.phase.calories} kcal · ${pos.phase.adjust}</p>
+    <p class="note" style="margin:10px 0 0">🎯 Phase ${pos.phase.id} aim ~${aim} kcal${aimAdj ? ' <span class="swap-tag">recalc</span>' : ""} · ${pos.phase.adjust}</p>
+    ${payback > 0 ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">⤵️ Balancing ${payback} kcal from a recent treat — today's aim trimmed to keep your week on track.</p>` : ""}
     <ul class="checklist">${mealItems}</ul>
     ${recipeBlock(meal)}
     ${swapPicker}
   </div>
 
+  ${cheatCard}
+
+  ${reschedule}
+
   ${tomorrowCard}
+
+  ${stepsCard}
+
+  ${suppsCard}
 
   <div class="card">
     <h2>💧 Water</h2>
@@ -462,6 +576,20 @@ function renderShop() {
   const custom = LS.get("pt_shopcustom_w" + wk, []);
   const libActive = !!getLibrary();
 
+  // batch-cookable dinners this week
+  const batchMap = new Map();
+  for (let d = 0; d < 7; d++) { const din = dayMeal(startDn + d).items.Dinner; if (din && din.batch) batchMap.set(din.text, din.text.split(" — ")[0].split(" + ")[0]); }
+  const batchChecks = LS.get("pt_batch_w" + wk, {});
+  const batchCard = batchMap.size ? `<div class="card">
+    <h2>🧊 Batch prep</h2>
+    <p class="sub">These freeze/reheat well — cook a big batch (e.g. Sunday) to save time</p>
+    <ul class="checklist">${[...batchMap.values()].map((name, i) => {
+      const k = "b" + i, on = batchChecks[k];
+      return `<li class="${on ? "done" : ""}" data-act="batch" data-k="${k}">
+        <span class="checkbox" style="border-radius:6px">${on ? "✓" : ""}</span><span class="item-text">Cook ahead: ${name}</span></li>`;
+    }).join("")}</ul>
+  </div>` : "";
+
   let total = 0, done = 0;
   buckets.forEach(b => b.items.forEach(it => { total++; if (checks[slug(it.label)]) done++; }));
   custom.forEach((_, i) => { total++; if (checks["x" + i]) done++; });
@@ -507,6 +635,8 @@ function renderShop() {
     </div>
     <p class="note" style="margin-top:8px">Quantities depend on your portions — this is the what-to-buy list for the week. Telegram's Sunday list still uses the default plan.</p>
   </div>
+
+  ${batchCard}
 
   <div class="card">
     <h2>⏭️ Next week</h2>
@@ -624,6 +754,14 @@ function renderProgress() {
 
   ${goalCard}
 
+  <div class="card"><h2>🔥 Metabolism</h2>
+    <div class="stat-grid">
+      <div class="stat"><div class="big">${currentMaintenance().toLocaleString()}</div><div class="cap">maintenance now</div></div>
+      <div class="stat"><div class="big">${(PLAN.meta.maintenance || 2250).toLocaleString()}</div><div class="cap">at start (${start}kg)</div></div>
+    </div>
+    <p class="note" style="margin-top:8px">As you lose weight your body burns a little less, so your calorie aim auto-recalculates to hold the same deficit. Today's aim: <b>${adjustedAim(pos.phase).toLocaleString()} kcal</b>.</p>
+  </div>
+
   <div class="card"><h2>⚖️ Weight trend</h2>${chart}
     <ul class="weight-list">${weights.slice().reverse().slice(0, 8).map(w =>
       `<li><span>${w.kg} kg</span><span>${w.date}</span></li>`).join("")}</ul>
@@ -672,6 +810,15 @@ function renderPhotos() {
   </div>`;
 }
 
+function ring(frac, label) {
+  const r = 34, c = 2 * Math.PI * r, off = c * (1 - Math.max(0, Math.min(1, frac)));
+  return `<svg class="ring" viewBox="0 0 80 80" width="80" height="80">
+    <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--bg-card-2)" stroke-width="8"/>
+    <circle cx="40" cy="40" r="${r}" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round"
+      stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 40 40)"/>
+    <text x="40" y="44" text-anchor="middle" font-size="14" font-weight="800" fill="var(--text)">${label}</text>
+  </svg>`;
+}
 function sparkline(vals) {
   const w = 320, h = 140, pad = 10;
   const min = Math.min(...vals), max = Math.max(...vals);
@@ -717,6 +864,25 @@ function renderSettings() {
   </div>
 
   ${renderLibrary()}
+
+  <div class="card"><h2>👣 Daily step goal</h2>
+    <div class="tracker-row" style="margin-top:6px">
+      <input class="field" id="stepGoalInput" type="number" inputmode="numeric" value="${stepGoal()}" style="max-width:160px" />
+      <button type="button" class="btn accent" id="saveStepGoalBtn">Save</button>
+    </div>
+    <p class="note" style="margin-top:8px">Cycling counts toward fitness but not steps — set this to whatever's realistic for your foot.</p>
+  </div>
+
+  <div class="card"><h2>💊 Supplements</h2>
+    <p class="sub">What you tick off daily on the Today screen</p>
+    <ul class="checklist">${getSupps().map(s => `<li style="cursor:default">
+      <span class="item-text">${s}</span>
+      <button type="button" class="x-del" data-act="delsupp" data-name="${encodeURIComponent(s)}">✕</button></li>`).join("")}</ul>
+    <div class="tracker-row" style="margin-top:10px">
+      <input class="field" id="suppInput" placeholder="Add a supplement…" />
+      <button type="button" class="btn accent" id="addSuppBtn">Add</button>
+    </div>
+  </div>
 
   <div class="card"><h2>📲 Daily reminders on Telegram</h2>
     <p class="note">A free GitHub Action sends you the day's workout + meals every morning. To switch it on:</p>
@@ -825,12 +991,19 @@ function onViewClick(e) {
 
   const restBtn = e.target.closest("[data-rest]");
   if (restBtn) { startRest(+restBtn.dataset.rest); return; }
+  const stepBtn = e.target.closest("[data-steps]");
+  if (stepBtn) { addSteps(+stepBtn.dataset.steps); return; }
+  const cheatBtn = e.target.closest("[data-cheat]");
+  if (cheatBtn) { logCheat(+cheatBtn.dataset.cheat); return; }
 
   const tagged = e.target.closest("[data-act]");
   if (tagged && tagged.dataset.act === "swap") { haptic(6); swapMeal(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delcustom") { haptic(6); delCustom(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delphoto") { haptic(6); delPhoto(tagged.dataset.date); return; }
   if (tagged && tagged.dataset.act === "lib") { libToggle(tagged.dataset.slot, tagged.dataset.id); return; }
+  if (tagged && tagged.dataset.act === "supp") { haptic(8); toggleSupp(decodeURIComponent(tagged.dataset.name), tagged); return; }
+  if (tagged && tagged.dataset.act === "delsupp") { haptic(6); delSupp(decodeURIComponent(tagged.dataset.name)); return; }
+  if (tagged && tagged.dataset.act === "batch") { haptic(8); toggleBatch(tagged); return; }
   if (tagged && tagged.dataset.act === "shop") { haptic(8); toggleShop(tagged); return; }
   if (tagged && (tagged.dataset.act === "workout" || tagged.dataset.act === "meals" || tagged.dataset.act === "water")) {
     const act = tagged.dataset.act, i = parseInt(tagged.dataset.i, 10);
@@ -861,6 +1034,14 @@ function onViewClick(e) {
   if (e.target.id === "useSuggestedGoal") { LS.set("pt_goal", suggestedGoal()); haptic(8); repaintKeepScroll(); return; }
   if (e.target.id === "clearGoalBtn") { localStorage.removeItem("pt_goal"); repaintKeepScroll(); return; }
   if (e.target.id === "addCustomBtn") return addCustom();
+  if (e.target.id === "setStepsBtn") return setStepsFromInput();
+  if (e.target.id === "saveStepGoalBtn") return saveStepGoal();
+  if (e.target.id === "addSuppBtn") return addSupp();
+  if (e.target.id === "setCheatBtn") return setCheatFromInput();
+  if (e.target.id === "clearCheatBtn") { localStorage.removeItem("pt_cheat_" + todayKey()); haptic(8); repaintKeepScroll(); return; }
+  if (e.target.id === "pushDayBtn") { LS.set("pt_shift", LS.get("pt_shift", 0) + 1); haptic(8); toast("Plan pushed back a day"); repaintKeepScroll(); return; }
+  if (e.target.id === "undoShiftBtn") { LS.set("pt_shift", Math.max(0, LS.get("pt_shift", 0) - 1)); haptic(8); repaintKeepScroll(); return; }
+  if (e.target.id === "resetShiftBtn") { localStorage.removeItem("pt_shift"); haptic(8); toast("Reschedule reset"); repaintKeepScroll(); return; }
   if (e.target.id === "resetLibBtn") { localStorage.removeItem("pt_library"); haptic(8); toast("Back to the default plan"); repaintKeepScroll(); return; }
   if (e.target.id === "playTimelapse") return playTimelapse();
   if (e.target.id === "saveStartBtn") {
@@ -885,6 +1066,53 @@ function swapMeal(i) {
   const key = todayKey();
   if (i < 0) localStorage.removeItem("pt_swap_" + key); else LS.set("pt_swap_" + key, i);
   repaintKeepScroll();
+}
+/* steps / NEAT */
+function addSteps(delta) {
+  const key = "pt_steps_" + todayKey();
+  LS.set(key, Math.max(0, LS.get(key, 0) + delta)); haptic(8); repaintKeepScroll();
+}
+function setStepsFromInput() {
+  const el = document.getElementById("stepsInput"); const v = parseInt(el.value, 10);
+  if (isNaN(v) || v < 0) { el.focus(); return; }
+  LS.set("pt_steps_" + todayKey(), v); haptic(8); el.blur(); repaintKeepScroll();
+}
+function saveStepGoal() {
+  const el = document.getElementById("stepGoalInput"); const v = parseInt(el.value, 10);
+  if (isNaN(v) || v < 1000) { el.focus(); return; }
+  LS.set("pt_stepgoal", v); haptic(8); toast("Step goal updated"); repaintKeepScroll();
+}
+/* supplements */
+function toggleSupp(name, li) {
+  const key = "pt_supp_" + todayKey(); const c = LS.get(key, {});
+  c[name] = !c[name]; if (!c[name]) delete c[name]; LS.set(key, c);
+  const on = !!c[name]; li.classList.toggle("done", on);
+  const cb = li.querySelector(".checkbox"); if (cb) cb.textContent = on ? "✓" : "";
+}
+function addSupp() {
+  const el = document.getElementById("suppInput"); const v = (el.value || "").trim();
+  if (!v) { el.focus(); return; }
+  const arr = getSupps().slice(); if (!arr.includes(v)) arr.push(v);
+  LS.set("pt_supps", arr); haptic(8); repaintKeepScroll();
+}
+function delSupp(name) { LS.set("pt_supps", getSupps().filter(s => s !== name)); repaintKeepScroll(); }
+/* cheat / eating-out balancing */
+function logCheat(amount) {
+  LS.set("pt_cheat_" + todayKey(), amount); haptic(8);
+  toast(`Logged +${amount} kcal — balanced over ${CHEAT_SPREAD} days`); repaintKeepScroll();
+}
+function setCheatFromInput() {
+  const el = document.getElementById("cheatInput"); const v = parseInt(el.value, 10);
+  if (isNaN(v) || v <= 0) { el.focus(); return; }
+  logCheat(v);
+}
+/* batch-prep ticks (Shop tab) */
+function toggleBatch(li) {
+  const wk = Math.max(1, Math.min(position().week, PLAN.meta.weeks));
+  const key = "pt_batch_w" + wk; const map = LS.get(key, {}); const k = li.dataset.k;
+  map[k] = !map[k]; if (!map[k]) delete map[k]; LS.set(key, map);
+  const on = !!map[k]; li.classList.toggle("done", on);
+  const cb = li.querySelector(".checkbox"); if (cb) cb.textContent = on ? "✓" : "";
 }
 function saveGoal() {
   const el = document.getElementById("goalWeight"); const kg = parseFloat(el.value);
@@ -1095,6 +1323,10 @@ async function boot() {
     if (e.target.id === "quickWeight") { e.preventDefault(); logWeight(); }
     else if (e.target.id === "goalWeight") { e.preventDefault(); saveGoal(); }
     else if (e.target.id === "customItem") { e.preventDefault(); addCustom(); }
+    else if (e.target.id === "stepsInput") { e.preventDefault(); setStepsFromInput(); }
+    else if (e.target.id === "stepGoalInput") { e.preventDefault(); saveStepGoal(); }
+    else if (e.target.id === "suppInput") { e.preventDefault(); addSupp(); }
+    else if (e.target.id === "cheatInput") { e.preventDefault(); setCheatFromInput(); }
   });
   view.addEventListener("change", (e) => {
     if (e.target.id === "photoInput") addPhotoFromFile(e.target.files && e.target.files[0]);
