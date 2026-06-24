@@ -467,7 +467,8 @@
               "Soften garlic, add tomatoes + herbs, simmer 10 min.",
               "Return meatballs to sauce 5 min; serve over cooked pasta with parmesan."
             ]
-          }
+          },
+          "batch": true
         },
         "Evening": {
           "text": "Whey shake + 1 rice cake",
@@ -519,7 +520,8 @@
               "Simmer 20–25 min until thick.",
               "Serve with boiled rice."
             ]
-          }
+          },
+          "batch": true
         },
         "Evening": {
           "text": "100g cottage cheese + 4 wholegrain crackers",
@@ -721,7 +723,8 @@
               "Cook spaghetti.",
               "Combine; top with parmesan."
             ]
-          }
+          },
+          "batch": true
         },
         "Evening": {
           "text": "Whey shake",
@@ -771,7 +774,8 @@
               "Pour in coconut milk + veg; simmer 15 min.",
               "Serve with rice."
             ]
-          }
+          },
+          "batch": true
         },
         "Evening": {
           "text": "Square dark chocolate + casein shake",
@@ -972,7 +976,8 @@
               "Roast 25–30 min at 200°C until pork cooked.",
               "Serve with green veg."
             ]
-          }
+          },
+          "batch": true
         },
         "Evening": {
           "text": "200g Greek yogurt + 1 scoop whey + honey",
@@ -1700,7 +1705,8 @@
             "Soften garlic, add tomatoes + herbs, simmer 10 min.",
             "Return meatballs to sauce 5 min; serve over cooked pasta with parmesan."
           ]
-        }
+        },
+        "batch": true
       },
       {
         "id": "d2",
@@ -1722,7 +1728,8 @@
             "Simmer 20–25 min until thick.",
             "Serve with boiled rice."
           ]
-        }
+        },
+        "batch": true
       },
       {
         "id": "d3",
@@ -1803,7 +1810,8 @@
             "Cook spaghetti.",
             "Combine; top with parmesan."
           ]
-        }
+        },
+        "batch": true
       },
       {
         "id": "d7",
@@ -1823,7 +1831,8 @@
             "Pour in coconut milk + veg; simmer 15 min.",
             "Serve with rice."
           ]
-        }
+        },
+        "batch": true
       },
       {
         "id": "d8",
@@ -1904,7 +1913,8 @@
             "Roast 25–30 min at 200°C until pork cooked.",
             "Serve with green veg."
           ]
-        }
+        },
+        "batch": true
       },
       {
         "id": "d12",
@@ -1986,7 +1996,8 @@
             "Stir in tomatoes + beans; simmer 20 min.",
             "Serve with rice."
           ]
-        }
+        },
+        "batch": true
       },
       {
         "id": "d16",
@@ -2007,7 +2018,8 @@
             "Top with mash; bake 20 min at 200°C.",
             "Serve with peas."
           ]
-        }
+        },
+        "batch": true
       },
       {
         "id": "d17",
@@ -2027,7 +2039,8 @@
             "Simmer in garlicky passata 12 min.",
             "Serve over pasta."
           ]
-        }
+        },
+        "batch": true
       },
       {
         "id": "d18",
@@ -2047,7 +2060,8 @@
             "Stir in rice + stock.",
             "Cover and simmer 15 min."
           ]
-        }
+        },
+        "batch": true
       },
       {
         "id": "d19",
