@@ -163,13 +163,19 @@ function suggestedGoal() {
   const g = (proj != null && proj < start) ? proj : Math.round(start * 0.91);
   return Math.max(floor, Math.round(g));
 }
-function recipeBlock(meal) {
+function recipeBlock(meal, factor = 1) {
   const d = meal.items.Dinner; if (!d || !d.recipe) return "";
   const r = d.recipe, title = d.text.split(" — ")[0];
-  return `<details class="recipe"><summary>📖 Tonight's recipe — ${title}</summary>
+  const scale = factor > 1.02;
+  // scale gram/ml quantities in ingredient lines for a bigger portion
+  const ing = r.ingredients.map((x) => scale
+    ? x.replace(/(\d+)\s?(g|ml)\b/gi, (_, n, u) => Math.round(n * factor) + u)
+    : x);
+  return `<details class="recipe"><summary>📖 Tonight's recipe — ${title}${scale ? ` <span class="swap-tag">×${factor.toFixed(1)}</span>` : ""}</summary>
     <div class="recipe-body">
+      ${scale ? `<p class="note" style="margin:0 0 6px">Quantities scaled ×${factor.toFixed(1)} for your bigger portion.</p>` : ""}
       <div class="section-label">Ingredients</div>
-      <ul class="recipe-ing">${r.ingredients.map(x => `<li>${x}</li>`).join("")}</ul>
+      <ul class="recipe-ing">${ing.map(x => `<li>${x}</li>`).join("")}</ul>
       <div class="section-label">Method</div>
       <ol class="recipe-steps">${r.steps.map(x => `<li>${x}</li>`).join("")}</ol>
     </div></details>`;
@@ -234,15 +240,26 @@ function renderToday() {
       <span class="checkbox">${done ? "✓" : ""}</span><span class="item-text">${t}</span></li>`;
   }).join("");
 
-  // meals checklist
+  // meals checklist — with skip + redistribution of a missed meal across the rest
   const mealKeys = Object.keys(meal.items);
+  const skipped = LS.get("pt_skip_" + key, {});
+  const anySkipped = mealKeys.some((k) => skipped[k]);
+  const remainBaseKcal = mealKeys.filter((k) => !skipped[k]).reduce((s, k) => s + meal.items[k].kcal, 0);
+  const portionFactor = (anySkipped && remainBaseKcal > 0) ? Math.min(1.8, meal.totals.kcal / remainBaseKcal) : 1;
   const mealItems = mealKeys.map((k, i) => {
     const done = checks.meals[i];
     const m = meal.items[k];
-    return `<li class="${done ? "done" : ""}" data-act="meals" data-i="${i}">
+    const isSkip = !!skipped[k];
+    const kc = Math.round(m.kcal * portionFactor), pr = Math.round(m.p * portionFactor);
+    const label = isSkip ? `${k} · skipped` : `${k} · ${kc} kcal · ${pr}g P${portionFactor > 1.02 ? ` · ×${portionFactor.toFixed(1)}` : ""}`;
+    return `<li class="${done ? "done" : ""} ${isSkip ? "skipped-meal" : ""}" data-act="meals" data-i="${i}">
       <span class="checkbox">${done ? "✓" : ""}</span>
-      <span class="item-text"><span class="meal-label">${k} · ${m.kcal} kcal · ${m.p}g P</span>${m.text}</span></li>`;
+      <span class="item-text"><span class="meal-label">${label}</span>${m.text}</span>
+      <button type="button" class="x-del meal-skip" data-act="skipmeal" data-slot="${encodeURIComponent(k)}" title="${isSkip ? "Restore" : "Skip & redistribute"}">${isSkip ? "↺" : "⊘"}</button></li>`;
   }).join("");
+  const skipNote = anySkipped
+    ? `<p class="note" style="margin:6px 0 0;color:var(--accent-2)">⊘ Skipped ${mealKeys.filter(k => skipped[k]).join(", ")} — portions bumped <b>×${portionFactor.toFixed(1)}</b> on the rest${portionFactor >= 1.79 ? " (capped — consider a protein shake to top up)" : ""} to keep your ${meal.totals.kcal} kcal.</p>`
+    : "";
 
   // water dots (target ~8 glasses)
   const waterDots = Array.from({ length: 8 }, (_, i) =>
@@ -256,7 +273,7 @@ function renderToday() {
 
   // today at a glance
   const wDone = exercises.filter((_, i) => checks.workout[i]).length;
-  const mDone = mealKeys.filter((_, i) => checks.meals[i]).length;
+  const mDone = mealKeys.filter((k, i) => checks.meals[i] || skipped[k]).length;
   const chips = `<div class="today-chips">
     <span class="chip ${wDone === exercises.length ? "on" : ""}">${day.type === "rest" ? "😴" : "🏋️"} ${wDone}/${exercises.length}</span>
     <span class="chip ${mDone === mealKeys.length ? "on" : ""}">🍽️ ${mDone}/${mealKeys.length}</span>
@@ -431,8 +448,9 @@ function renderToday() {
     <p class="note" style="margin:10px 0 0">🎯 Phase ${pos.phase.id} aim ~${aim} kcal${aimAdj ? ' <span class="swap-tag">recalc</span>' : ""} · ${pos.phase.adjust}</p>
     ${payback > 0 ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">⤵️ Balancing ${payback} kcal from a recent treat.</p>` : ""}
     ${cookTwice}
+    ${skipNote}
     <ul class="checklist">${mealItems}</ul>
-    ${recipeBlock(meal)}
+    ${recipeBlock(meal, skipped.Dinner ? 0 : portionFactor)}
     ${swapPicker}
   </div>
 
@@ -967,6 +985,7 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "delphoto") { haptic(6); delPhoto(tagged.dataset.date); return; }
   if (tagged && tagged.dataset.act === "lib") { libToggle(tagged.dataset.slot, tagged.dataset.id); return; }
   if (tagged && tagged.dataset.act === "supp") { haptic(8); toggleSupp(decodeURIComponent(tagged.dataset.name), tagged); return; }
+  if (tagged && tagged.dataset.act === "skipmeal") { haptic(6); toggleSkip(decodeURIComponent(tagged.dataset.slot)); return; }
   if (tagged && tagged.dataset.act === "delsupp") { haptic(6); delSupp(decodeURIComponent(tagged.dataset.name)); return; }
   if (tagged && tagged.dataset.act === "batch") { haptic(8); toggleBatch(tagged); return; }
   if (tagged && tagged.dataset.act === "shop") { haptic(8); toggleShop(tagged); return; }
@@ -1031,6 +1050,11 @@ function swapMeal(i) {
   repaintKeepScroll();
 }
 /* supplements */
+function toggleSkip(slot) {
+  const key = "pt_skip_" + todayKey(); const s = LS.get(key, {});
+  s[slot] = !s[slot]; if (!s[slot]) delete s[slot]; LS.set(key, s);
+  repaintKeepScroll();
+}
 function toggleSupp(name, el) {
   const key = "pt_supp_" + todayKey(); const c = LS.get(key, {});
   c[name] = !c[name]; if (!c[name]) delete c[name]; LS.set(key, c);
@@ -1141,7 +1165,7 @@ function updateTodayChips() {
   const meal = (sw != null && sw >= 0 && sw < PLAN.meals.length) ? PLAN.meals[sw] : dayMeal(pos.dn);
   const mKeys = Object.keys(meal.items);
   const wDone = ex.filter((_, i) => c.workout[i]).length;
-  const mDone = mKeys.filter((_, i) => c.meals[i]).length;
+  const sk = LS.get("pt_skip_" + key, {}); const mDone = mKeys.filter((k, i) => c.meals[i] || sk[k]).length;
   const chips = document.querySelectorAll(".today-chips .chip");
   if (chips.length === 3) {
     chips[0].classList.toggle("on", wDone === ex.length); chips[0].textContent = `${day.type === "rest" ? "😴" : "🏋️"} ${wDone}/${ex.length}`;
@@ -1172,7 +1196,7 @@ function isTodayPerfect() {
   const meal = (sw != null && sw >= 0 && sw < PLAN.meals.length) ? PLAN.meals[sw] : dayMeal(pos.dn);
   const mKeys = Object.keys(meal.items);
   const wDone = ex.filter((_, i) => c.workout[i]).length;
-  const mDone = mKeys.filter((_, i) => c.meals[i]).length;
+  const sk = LS.get("pt_skip_" + key, {}); const mDone = mKeys.filter((k, i) => c.meals[i] || sk[k]).length;
   return wDone === ex.length && mDone === mKeys.length && c.water >= 8;
 }
 
