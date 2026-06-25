@@ -19,6 +19,7 @@ let PLAN = null;
 let CURRENT_TAB = "today";
 let PHOTOS = [];           // [{date, data(dataURL)}] loaded from IndexedDB
 let COMPARE_T = 50;        // before/after slider position
+let SWAP_SLOT = null;      // which meal slot's swap picker is open
 
 /* ---------- progress photos: IndexedDB (blobs are too big for localStorage) ---------- */
 function idb() {
@@ -79,20 +80,46 @@ function getLibrary() {
   }
   return lib;
 }
-// the meal for a given day index — assembled from your library, else the curated plan
+// calendar date key for a given (effective) day index — for per-day overrides
+function dateKeyForDn(dn) {
+  const d = new Date(getStartDate() + "T00:00:00");
+  d.setDate(d.getDate() + dn + LS.get("pt_shift", 0));
+  return todayKey(d);
+}
+function mealTotals(items) {
+  let kcal = 0, protein = 0;
+  for (const v of Object.values(items)) { kcal += v.kcal; protein += v.p; }
+  const fat = Math.round(0.28 * kcal / 9);
+  return { kcal, protein, carbs: Math.round((kcal - 4 * protein - 9 * fat) / 4), fat };
+}
+// the meal for a given day index — assembled from your library, else the curated plan,
+// then any per-slot swaps you made for that day applied on top
 function dayMeal(dn) {
   const idx = ((dn % PLAN.meals.length) + PLAN.meals.length) % PLAN.meals.length;
   const lib = getLibrary();
-  if (!lib) return PLAN.meals[idx];
-  const items = {}; let kcal = 0, protein = 0;
-  for (const [label, k] of SLOTS) {
-    const sel = lib[k].filter(id => BANK[k].byId[id]).map(id => BANK[k].byId[id]);
-    const pick = sel[((dn % sel.length) + sel.length) % sel.length];
-    items[label] = pick; kcal += pick.kcal; protein += pick.p;
+  let base;
+  if (!lib) base = PLAN.meals[idx];
+  else {
+    const items = {};
+    for (const [label, k] of SLOTS) {
+      const sel = lib[k].filter(id => BANK[k].byId[id]).map(id => BANK[k].byId[id]);
+      items[label] = sel[((dn % sel.length) + sel.length) % sel.length];
+    }
+    base = { name: "Your mix", totals: mealTotals(items), items };
   }
-  const fat = Math.round(0.28 * kcal / 9);
-  const carbs = Math.round((kcal - 4 * protein - 9 * fat) / 4);
-  return { name: "Your mix", totals: { kcal, protein, carbs, fat }, items };
+  return applyMealOverrides(base, dateKeyForDn(dn));
+}
+// apply per-slot swaps stored for a given calendar day onto a base meal
+function applyMealOverrides(base, dateKey) {
+  const ov = BANK ? LS.get("pt_mealswap_" + dateKey, null) : null;
+  if (!ov) return base;
+  const items = { ...base.items }; let changed = false;
+  for (const [label, k] of SLOTS) {
+    const it = ov[label] && BANK[k].byId[ov[label]];
+    if (it) { items[label] = it; changed = true; }
+  }
+  if (!changed) return base;
+  return { name: base.name, totals: mealTotals(items), items };
 }
 
 function todayKey(d = new Date()) {
@@ -227,7 +254,7 @@ function renderToday() {
   const day = pos.phase.schedule[pos.weekday];
   const swapIdx = LS.get("pt_swap_" + key, null);
   const swapped = swapIdx != null && swapIdx >= 0 && swapIdx < PLAN.meals.length;
-  const meal = swapped ? PLAN.meals[swapIdx] : dayMeal(pos.dn);
+  const meal = swapped ? applyMealOverrides(PLAN.meals[swapIdx], key) : dayMeal(pos.dn);
   const quote = QUOTES[pos.dn % QUOTES.length];
 
   // gym vs home variant
@@ -248,16 +275,32 @@ function renderToday() {
   const anySkipped = mealKeys.some((k) => skipped[k]);
   const remainBaseKcal = mealKeys.filter((k) => !skipped[k]).reduce((s, k) => s + meal.items[k].kcal, 0);
   const portionFactor = (anySkipped && remainBaseKcal > 0) ? Math.min(1.8, meal.totals.kcal / remainBaseKcal) : 1;
+  const slotKeyOf = Object.fromEntries(SLOTS);
+  const libNow = getLibrary();
   const mealItems = mealKeys.map((k, i) => {
     const done = checks.meals[i];
     const m = meal.items[k];
     const isSkip = !!skipped[k];
     const kc = Math.round(m.kcal * portionFactor), pr = Math.round(m.p * portionFactor);
     const label = isSkip ? `${k} · skipped` : `${k} · ${kc} kcal · ${pr}g P${portionFactor > 1.02 ? ` · ×${portionFactor.toFixed(1)}` : ""}`;
-    return `<li class="${done ? "done" : ""} ${isSkip ? "skipped-meal" : ""}" data-act="meals" data-i="${i}">
+    let row = `<li class="${done ? "done" : ""} ${isSkip ? "skipped-meal" : ""}" data-act="meals" data-i="${i}">
       <span class="checkbox">${done ? "✓" : ""}</span>
       <span class="item-text"><span class="meal-label">${label}</span>${isSkip ? m.text : scaleAmounts(m.text, portionFactor)}</span>
-      <button type="button" class="x-del meal-skip" data-act="skipmeal" data-slot="${encodeURIComponent(k)}" title="${isSkip ? "Restore" : "Skip & redistribute"}">${isSkip ? "↺" : "⊘"}</button></li>`;
+      <span class="meal-actions">
+        <button type="button" class="x-del" data-act="openswap" data-slot="${encodeURIComponent(k)}" title="Swap this meal">${SWAP_SLOT === k ? "▲" : "🔀"}</button>
+        <button type="button" class="x-del meal-skip" data-act="skipmeal" data-slot="${encodeURIComponent(k)}" title="${isSkip ? "Restore" : "Skip & redistribute"}">${isSkip ? "↺" : "⊘"}</button>
+      </span></li>`;
+    if (SWAP_SLOT === k && BANK) {
+      const sk = slotKeyOf[k];
+      const pool = libNow ? libNow[sk].map(id => BANK[sk].byId[id]).filter(Boolean) : BANK[sk].list;
+      const curId = m.id;
+      row += `<li class="swap-inline"><div class="swap-list">
+        <button type="button" class="swap-opt reset" data-act="pickmeal" data-slot="${encodeURIComponent(k)}" data-id="__default">↩︎ Back to default</button>
+        ${pool.map(o => `<button type="button" class="swap-opt ${o.id === curId ? "cur" : ""}" data-act="pickmeal" data-slot="${encodeURIComponent(k)}" data-id="${o.id}">
+          <span>${o.text.split(" — ")[0]}</span><span class="swap-kcal">${o.kcal} kcal · ${o.p}g P</span></button>`).join("")}
+      </div></li>`;
+    }
+    return row;
   }).join("");
   const skipNote = anySkipped
     ? `<p class="note" style="margin:6px 0 0;color:var(--accent-2)">⊘ Skipped ${mealKeys.filter(k => skipped[k]).join(", ")} — portions bumped <b>×${portionFactor.toFixed(1)}</b> on the rest${portionFactor >= 1.79 ? " (capped — consider a protein shake to top up)" : ""} to keep your ${meal.totals.kcal} kcal.</p>`
@@ -988,6 +1031,8 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "lib") { libToggle(tagged.dataset.slot, tagged.dataset.id); return; }
   if (tagged && tagged.dataset.act === "supp") { haptic(8); toggleSupp(decodeURIComponent(tagged.dataset.name), tagged); return; }
   if (tagged && tagged.dataset.act === "skipmeal") { haptic(6); toggleSkip(decodeURIComponent(tagged.dataset.slot)); return; }
+  if (tagged && tagged.dataset.act === "openswap") { haptic(6); const s = decodeURIComponent(tagged.dataset.slot); SWAP_SLOT = SWAP_SLOT === s ? null : s; repaintKeepScroll(); return; }
+  if (tagged && tagged.dataset.act === "pickmeal") { haptic(8); pickMeal(decodeURIComponent(tagged.dataset.slot), tagged.dataset.id); return; }
   if (tagged && tagged.dataset.act === "delsupp") { haptic(6); delSupp(decodeURIComponent(tagged.dataset.name)); return; }
   if (tagged && tagged.dataset.act === "batch") { haptic(8); toggleBatch(tagged); return; }
   if (tagged && tagged.dataset.act === "shop") { haptic(8); toggleShop(tagged); return; }
@@ -1056,6 +1101,12 @@ function toggleSkip(slot) {
   const key = "pt_skip_" + todayKey(); const s = LS.get(key, {});
   s[slot] = !s[slot]; if (!s[slot]) delete s[slot]; LS.set(key, s);
   repaintKeepScroll();
+}
+// swap a single meal slot for another option (from your library pool, or the full bank)
+function pickMeal(slot, id) {
+  const key = "pt_mealswap_" + todayKey(); const ov = LS.get(key, {});
+  if (id === "__default") delete ov[slot]; else ov[slot] = id;
+  LS.set(key, ov); SWAP_SLOT = null; repaintKeepScroll();
 }
 function toggleSupp(name, el) {
   const key = "pt_supp_" + todayKey(); const c = LS.get(key, {});
@@ -1303,7 +1354,7 @@ async function boot() {
   buildBank();
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
     if (CURRENT_TAB === t.dataset.tab) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-    CURRENT_TAB = t.dataset.tab; setActiveTab(); navigate();
+    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; setActiveTab(); navigate();
   }));
   const view = document.getElementById("view");
   view.addEventListener("click", onViewClick);

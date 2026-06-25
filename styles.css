@@ -199,6 +199,12 @@ main { flex: 1; padding: 16px 16px 96px; }
 .light-red { border-left-color: #f87171; }
 .light-red .light-dot { background: #f87171; box-shadow: 0 0 10px #f87171; }
 
+/* per-meal actions + inline swap picker */
+.meal-actions { margin-left: auto; display: flex; gap: 2px; align-self: center; }
+.meal-actions .x-del { margin-left: 0; }
+.swap-inline { padding: 6px 0 10px !important; cursor: default !important; }
+.swap-inline .swap-list { width: 100%; }
+
 /* skipped / redistributed meal */
 .skipped-meal .item-text { opacity: .5; text-decoration: line-through; }
 .skipped-meal .meal-label { text-decoration: none; }
