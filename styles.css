@@ -211,8 +211,15 @@ main { flex: 1; padding: 16px 16px 96px; }
 .lift-stats { list-style: none; margin: 6px 0 0; padding: 0; }
 .lift-stats li { padding: 9px 0; border-bottom: 1px solid var(--line); }
 .lift-stats li:last-child { border-bottom: none; }
-.lift-name { display: block; font-size: 14px; font-weight: 600; }
+.lift-name { font-size: 14px; font-weight: 600; }
 .lift-figs { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.lift-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mini-spark { flex: 0 0 auto; }
+.mbar-row { display: flex; align-items: center; gap: 8px; margin: 7px 0; }
+.mbar-label { flex: 0 0 72px; font-size: 13px; color: var(--muted); }
+.mbar-track { flex: 1; height: 8px; background: var(--bg-card-2); border-radius: 6px; overflow: hidden; }
+.mbar-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.mbar-val { flex: 0 0 34px; text-align: right; font-size: 12px; color: var(--muted); font-weight: 600; }
 
 /* per-meal actions + inline swap picker */
 .meal-actions { margin-left: auto; display: flex; gap: 2px; align-self: center; }
