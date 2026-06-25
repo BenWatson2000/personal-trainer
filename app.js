@@ -152,7 +152,9 @@ function paybackForDay(dn) {
   }
   return Math.round(total);
 }
+function isDietBreak(week) { return LS.get("pt_dietbreaks", []).includes(week); }
 function dailyAim(pos) {
+  if (isDietBreak(pos.week)) return Math.round(currentMaintenance() / 10) * 10; // maintenance week
   return Math.max(1400, Math.round((adjustedAim(pos.phase) - paybackForDay(pos.dn) + LS.get("pt_adaptkcal", 0)) / 10) * 10);
 }
 // adaptive coach: read the recent weight trend and decide if the plan needs changing
@@ -660,6 +662,17 @@ function renderToday() {
     ${restTimer}
   </div>
 
+  ${day.type === "strength" ? `<details class="card fold"><summary>🏋️ Plate calculator</summary>
+    <div class="fold-body">
+      <div class="tracker-row">
+        <input class="field" id="plateWeight" type="number" inputmode="decimal" placeholder="total kg" style="max-width:120px" />
+        <select class="field" id="plateBar" style="max-width:140px">
+          <option value="20">20kg bar</option><option value="15">15kg bar</option><option value="10">10kg / EZ</option><option value="0">No bar / DB</option>
+        </select>
+      </div>
+      <p class="note" id="plateResult" style="margin-top:10px">Enter a total weight to see plates per side.</p>
+    </div></details>` : ""}
+
   <div class="card">
     <h2>🍽️ Today's Fuel${swapped ? ' <span class="swap-tag">swapped</span>' : ""}</h2>
     <p class="sub">${meal.name} · tick each meal as you eat it</p>
@@ -669,7 +682,7 @@ function renderToday() {
       <div class="macro"><div class="val">${meal.totals.carbs}g</div><div class="lbl">carbs</div></div>
       <div class="macro"><div class="val">${meal.totals.fat}g</div><div class="lbl">fat</div></div>
     </div>
-    <p class="note" style="margin:10px 0 0">🎯 Phase ${pos.phase.id} aim ~${aim} kcal${aimAdj ? ' <span class="swap-tag">recalc</span>' : ""} · ${pos.phase.adjust}</p>
+    <p class="note" style="margin:10px 0 0">🎯 ${isDietBreak(pos.week) ? `<b style="color:var(--accent-2)">🏖️ Diet-break week</b> · eat to ~${aim} kcal (maintenance) to recharge` : `Phase ${pos.phase.id} aim ~${aim} kcal${aimAdj ? ' <span class="swap-tag">recalc</span>' : ""} · ${pos.phase.adjust}`}</p>
     ${payback > 0 ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">⤵️ Balancing ${payback} kcal from a recent treat.</p>` : ""}
     ${cookTwice}
     ${skipNote}
@@ -915,7 +928,8 @@ function renderProgress() {
   let best = 0, run = 0; active.forEach(a => { run = a ? run + 1 : 0; best = Math.max(best, run); });
 
   const daysIn = Math.max(0, pos.dn + (pos.beforeStart ? 0 : 1));
-  const chart = weights.length >= 2 ? sparkline(weights.map(w => w.kg)) : `<p class="note">Log a few weigh-ins and your trend line appears here.</p>`;
+  const smoothNow = weights.length ? smoothSeries(weights).slice(-1)[0] : null;
+  const chart = weights.length >= 2 ? weightChart(weights) : `<p class="note">Log a few weigh-ins and your smoothed trend line appears here.</p>`;
 
   // weight goal + projection
   const goal = LS.get("pt_goal", null);
@@ -1033,7 +1047,7 @@ function renderProgress() {
     </div>
   </details>
 
-  <div class="card"><h2>⚖️ Weight trend</h2>${chart}
+  <div class="card"><h2>⚖️ Weight trend${smoothNow != null ? ` <small style="color:var(--muted);font-weight:600">trend ${smoothNow} kg</small>` : ""}</h2>${chart}
     <ul class="weight-list">${weights.slice().reverse().slice(0, 8).map(w =>
       `<li><span>${w.kg} kg</span><span>${w.date}</span></li>`).join("")}</ul>
     <div class="tracker-row" style="margin-top:12px">
@@ -1226,6 +1240,29 @@ function renderPhotos() {
   ${photoOverlay()}`;
 }
 
+// 7-day trailing moving average of weigh-ins (smooths daily water-weight noise)
+function smoothSeries(weights) {
+  return weights.map((w) => {
+    const t = new Date(w.date + "T00:00:00").getTime();
+    const win = weights.filter((x) => { const dt = (t - new Date(x.date + "T00:00:00").getTime()) / 86400000; return dt >= 0 && dt < 7; });
+    return +(win.reduce((s, x) => s + x.kg, 0) / win.length).toFixed(2);
+  });
+}
+function weightChart(weights) {
+  const w = 320, h = 140, pad = 10;
+  const raw = weights.map((x) => x.kg), sm = smoothSeries(weights);
+  const all = raw.concat(sm), min = Math.min(...all), max = Math.max(...all), range = (max - min) || 1;
+  const X = (i) => pad + (i / (weights.length - 1)) * (w - 2 * pad);
+  const Y = (v) => pad + (1 - (v - min) / range) * (h - 2 * pad);
+  const rawPts = raw.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`);
+  const smPts = sm.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`);
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polyline fill="none" stroke="#3a4150" stroke-width="2" points="${rawPts.join(" ")}" />
+    ${rawPts.map(p => `<circle cx="${p.split(",")[0]}" cy="${p.split(",")[1]}" r="2.5" fill="#6b7280"/>`).join("")}
+    <polyline fill="none" stroke="#34d399" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" points="${smPts.join(" ")}" />
+  </svg>
+  <div class="chart-legend"><span><span class="lg-dot raw"></span> scale</span><span><span class="lg-dot sm"></span> 7-day trend</span></div>`;
+}
 function sparkline(vals) {
   const w = 320, h = 140, pad = 10;
   const min = Math.min(...vals), max = Math.max(...vals);
@@ -1280,6 +1317,14 @@ function renderSettings() {
     <div class="tracker-row" style="margin-top:10px">
       <input class="field" id="suppInput" placeholder="Add a supplement…" />
       <button type="button" class="btn accent" id="addSuppBtn">Add</button>
+    </div>
+  </div>
+
+  <div class="card"><h2>🏖️ Diet-break weeks</h2>
+    <p class="note">On a diet-break week you eat at <b>maintenance (~${currentMaintenance().toLocaleString()} kcal)</b> instead of a deficit — it restores hormones, energy and willpower, and often kick-starts fat loss again. Handy mid-cut. Tap a week to schedule one.</p>
+    <div class="week-chips" style="margin-top:10px">
+      ${Array.from({ length: PLAN.meta.weeks }, (_, i) => i + 1).map((wk) =>
+        `<button type="button" class="wk-chip ${isDietBreak(wk) ? "on" : ""} ${wk === position().week ? "now" : ""}" data-act="dietbreak" data-wk="${wk}">${wk}</button>`).join("")}
     </div>
   </div>
 
@@ -1398,6 +1443,7 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "closephoto") { VIEW_PHOTO = null; repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "exportphoto") { haptic(8); exportPhoto(tagged.dataset.date); return; }
   if (tagged && tagged.dataset.act === "noop") return;
+  if (tagged && tagged.dataset.act === "dietbreak") { haptic(8); const wk = +tagged.dataset.wk; const b = LS.get("pt_dietbreaks", []); const i = b.indexOf(wk); if (i >= 0) b.splice(i, 1); else b.push(wk); LS.set("pt_dietbreaks", b); repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "lib") { libToggle(tagged.dataset.slot, tagged.dataset.id); return; }
   if (tagged && tagged.dataset.act === "supp") { haptic(8); toggleSupp(decodeURIComponent(tagged.dataset.name), tagged); return; }
   if (tagged && tagged.dataset.act === "skipmeal") { haptic(6); toggleSkip(decodeURIComponent(tagged.dataset.slot)); return; }
@@ -1537,6 +1583,25 @@ function delCustom(i) {
   repaintKeepScroll();
 }
 /* ---------- progress photos ---------- */
+/* ---------- plate calculator ---------- */
+function platesPerSide(total, bar) {
+  let per = (total - bar) / 2; if (per <= 0) return { plates: [], rem: 0 };
+  const sizes = [25, 20, 15, 10, 5, 2.5, 1.25]; const out = [];
+  for (const s of sizes) while (per >= s - 1e-9) { out.push(s); per = +(per - s).toFixed(3); }
+  return { plates: out, rem: +per.toFixed(2) };
+}
+function updatePlates() {
+  const wEl = document.getElementById("plateWeight"), bEl = document.getElementById("plateBar"), res = document.getElementById("plateResult");
+  if (!res) return;
+  const total = parseFloat(wEl.value), bar = parseFloat(bEl.value);
+  if (isNaN(total) || total <= 0) { res.textContent = "Enter a total weight to see plates per side."; return; }
+  if (total < bar) { res.textContent = "That's lighter than the bar."; return; }
+  const { plates, rem } = platesPerSide(total, bar);
+  const counts = {}; plates.forEach((p) => counts[p] = (counts[p] || 0) + 1);
+  const txt = Object.keys(counts).sort((a, b) => b - a).map((p) => `${counts[p]}×${p}`).join(" + ") || "just the bar";
+  res.innerHTML = `<b>Per side:</b> ${txt}${rem > 0 ? ` <span style="color:var(--warn)">(+${rem}kg short)</span>` : ""}`;
+}
+
 // nearest logged bodyweight to a given date
 function closestWeight(dateKey) {
   const w = LS.get("pt_weights", []); if (!w.length) return null;
@@ -1787,9 +1852,11 @@ async function boot() {
   view.addEventListener("change", (e) => {
     if (e.target.id === "photoInput") addPhotoFromFile(e.target.files && e.target.files[0]);
     if (e.target.id === "importFile") importData(e.target.files && e.target.files[0]);
+    if (e.target.id === "plateBar") updatePlates();
   });
   view.addEventListener("input", (e) => {
     if (e.target.id === "compareRange") setCompare(e.target.value);
+    if (e.target.id === "plateWeight") updatePlates();
   });
   try { PHOTOS = await photosAll(); } catch { PHOTOS = []; }
   render();
