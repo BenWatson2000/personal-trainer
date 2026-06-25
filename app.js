@@ -1017,6 +1017,8 @@ function renderProgress() {
 
   ${adCard}
 
+  ${renderReport()}
+
   ${goalCard}
 
   <details class="card fold">
@@ -1047,6 +1049,97 @@ function renderProgress() {
   ${renderStrength()}
 
   ${renderPhotos()}`;
+}
+
+/* ---------- shareable weekly report ---------- */
+function weeklyReport() {
+  const pos = position();
+  const wk = Math.max(1, Math.min(pos.week, PLAN.meta.weeks));
+  const start = (wk - 1) * 7;
+  const d0 = new Date(getStartDate() + "T00:00:00"); d0.setDate(d0.getDate() + start + LS.get("pt_shift", 0));
+  const d6 = new Date(d0); d6.setDate(d6.getDate() + 6);
+  const fmt = (d) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const phase = PLAN.phases.find((p) => wk >= p.weekStart && wk <= p.weekEnd) || PLAN.phases[0];
+  const weights = LS.get("pt_weights", []);
+  const inWeek = weights.filter((w) => { const dn = effDnForDate(w.date); return dn >= start && dn <= start + 6; });
+  let weightStr = "—", weightDelta = null;
+  if (inWeek.length >= 2) { weightDelta = +(inWeek[inWeek.length - 1].kg - inWeek[0].kg).toFixed(1); weightStr = (weightDelta <= 0 ? "" : "+") + weightDelta + " kg"; }
+  else if (inWeek.length === 1) weightStr = inWeek[0].kg + " kg";
+  let workouts = 0, perfect = 0, mealTicks = 0, mealPoss = 0, water8 = 0;
+  for (let d = 0; d < 7; d++) {
+    const dn = start + d; if (dn > pos.dn) break;
+    const c = LS.get("pt_checks_" + dateKeyForDn(dn), null);
+    const wq = c ? Object.values(c.workout || {}).filter(Boolean).length : 0;
+    const mq = c ? Object.values(c.meals || {}).filter(Boolean).length : 0;
+    const wat = c ? (c.water || 0) : 0;
+    if (wq >= 1) workouts++; if (wq >= 3 && mq >= 5 && wat >= 8) perfect++;
+    mealTicks += mq; mealPoss += 5; if (wat >= 8) water8++;
+  }
+  const adherence = mealPoss ? Math.round(mealTicks / mealPoss * 100) : 0;
+  const wv = weekVolume();
+  const pbNames = [];
+  for (const n of allLiftNames()) {
+    const series = liftSeries(n); if (!series.length) continue;
+    const best = Math.max(...series.map((p) => p.e));
+    const bestPt = series.find((p) => p.e === best);
+    if (bestPt && effDnForDate(bestPt.date) >= start && effDnForDate(bestPt.date) <= start + 6) pbNames.push(n);
+  }
+  let streak = 0;
+  for (let i = 0; i < 200; i++) { const dd = new Date(); dd.setDate(dd.getDate() - i); const c = LS.get("pt_checks_" + todayKey(dd), null); const any = c && (Object.values(c.workout || {}).some(Boolean) || Object.values(c.meals || {}).some(Boolean) || c.water > 0); if (any) streak++; else if (i > 0) break; }
+  return { week: wk, range: fmt(d0) + "–" + fmt(d6), phase: phase.name, weightStr, weightDelta, workouts, perfect, adherence, water8, volume: wv.vol, sets: wv.sets, pbs: pbNames.length, pbNames, streak, overall: +(PLAN.meta.stats.weightKg - latestWeight()).toFixed(1), day: Math.max(0, pos.dn + 1) };
+}
+function renderReport() {
+  const r = weeklyReport();
+  const tiles = [["Weight", r.weightStr], ["Workouts", String(r.workouts)], ["Volume", r.volume.toLocaleString() + "kg"], ["Perfect", String(r.perfect)], ["Streak", "🔥 " + r.streak], ["New PBs", String(r.pbs)]];
+  return `<div class="card">
+    <h2>🗓️ Week ${r.week} report</h2>
+    <p class="sub">${r.range} · ${r.phase}</p>
+    <div class="rep-grid">${tiles.map((t) => `<div class="rep-tile"><div class="rep-cap">${t[0]}</div><div class="rep-val">${t[1]}</div></div>`).join("")}</div>
+    ${r.pbNames.length ? `<p class="note" style="margin-top:8px">🏅 New PBs: <b>${r.pbNames.join(", ")}</b></p>` : ""}
+    <button type="button" class="btn accent block" id="shareReportBtn" style="margin-top:10px">📤 Share my week</button>
+  </div>`;
+}
+function reportCanvas(r) {
+  const W = 1080, H = 1350, P = 64;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const x = cv.getContext("2d");
+  const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#141b26"); g.addColorStop(1, "#0b0f15");
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.fillStyle = "#34d399"; x.fillRect(0, 0, W, 14);
+  const F = (w, s) => x.font = `${w} ${s}px -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif`;
+  F(600, 32); x.fillStyle = "#9aa3b2"; x.fillText("BEN'S 12-WEEK SHRED", P, 120);
+  F(800, 84); x.fillStyle = "#eef1f6"; x.fillText("Week " + r.week + " Report", P, 208);
+  F(400, 34); x.fillStyle = "#9aa3b2"; x.fillText(r.range + "   ·   " + r.phase, P, 260);
+  const tiles = [["WEIGHT", r.weightStr], ["WORKOUTS", String(r.workouts)], ["VOLUME", r.volume.toLocaleString() + " kg"], ["PERFECT DAYS", String(r.perfect)], ["STREAK", "🔥 " + r.streak], ["NEW PBs", String(r.pbs)]];
+  const gx = P, gy = 320, gw = (W - 2 * P - 32) / 2, gh = 198, gap = 32;
+  const rr = (X, Y, Wd, Ht, rad) => { x.beginPath(); x.moveTo(X + rad, Y); x.arcTo(X + Wd, Y, X + Wd, Y + Ht, rad); x.arcTo(X + Wd, Y + Ht, X, Y + Ht, rad); x.arcTo(X, Y + Ht, X, Y, rad); x.arcTo(X, Y, X + Wd, Y, rad); x.closePath(); };
+  tiles.forEach((t, i) => {
+    const X = gx + (i % 2) * (gw + gap), Y = gy + (i / 2 | 0) * (gh + gap);
+    x.fillStyle = "#1a212c"; rr(X, Y, gw, gh, 24); x.fill();
+    F(700, 27); x.fillStyle = "#9aa3b2"; x.fillText(t[0], X + 34, Y + 56);
+    F(800, 70); x.fillStyle = "#eef1f6"; x.fillText(t[1], X + 34, Y + 138);
+  });
+  const oy = gy + 3 * gh + 2 * gap + 76;
+  F(800, 54); x.fillStyle = "#34d399"; x.fillText((r.overall >= 0 ? "−" : "+") + Math.abs(r.overall) + " kg overall", P, oy);
+  F(400, 34); x.fillStyle = "#9aa3b2"; x.fillText("Day " + r.day + " of 84   ·   " + r.adherence + "% nutrition adherence", P, oy + 52);
+  if (r.pbNames.length) { F(700, 32); x.fillStyle = "#fbbf24"; x.fillText("🏅 " + r.pbNames.slice(0, 3).join(", "), P, oy + 112); }
+  F(600, 30); x.fillStyle = "#9aa3b2"; x.fillText("My PT — get ripped in 12 weeks 💪", P, H - 56);
+  return cv;
+}
+function shareReport() {
+  const r = weeklyReport();
+  let cv;
+  try { cv = reportCanvas(r); } catch { toast("Couldn't build the image"); return; }
+  const text = `Week ${r.week} done 💪 ${r.weightStr} · ${r.workouts} workouts · ${r.volume.toLocaleString()}kg lifted${r.pbs ? ` · ${r.pbs} PB` : ""}`;
+  cv.toBlob(async (blob) => {
+    if (!blob) { toast("Couldn't build the image"); return; }
+    const file = new File([blob], "week-" + r.week + "-report.png", { type: "image/png" });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return; }
+    } catch { /* user cancelled or unsupported */ }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000); toast("Report image saved");
+  }, "image/png");
 }
 
 function renderStrength() {
@@ -1342,6 +1435,7 @@ function onViewClick(e) {
   if (e.target.id === "addCustomBtn") return addCustom();
   if (e.target.id === "addSuppBtn") return addSupp();
   if (e.target.id === "exportBtn") return exportData();
+  if (e.target.id === "shareReportBtn") return shareReport();
   if (e.target.id === "setCheatBtn") return setCheatFromInput();
   if (e.target.id === "clearCheatBtn") { localStorage.removeItem("pt_cheat_" + todayKey()); haptic(8); repaintKeepScroll(); return; }
   if (e.target.id === "pushDayBtn") { LS.set("pt_shift", LS.get("pt_shift", 0) + 1); haptic(8); toast("Plan pushed back a day"); repaintKeepScroll(); return; }
