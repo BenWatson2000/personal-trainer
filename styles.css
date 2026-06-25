@@ -199,6 +199,12 @@ main { flex: 1; padding: 16px 16px 96px; }
 .light-red { border-left-color: #f87171; }
 .light-red .light-dot { background: #f87171; box-shadow: 0 0 10px #f87171; }
 
+/* weekly report card */
+.rep-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.rep-tile { background: var(--bg-card-2); border-radius: 12px; padding: 12px 8px; text-align: center; }
+.rep-cap { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.rep-val { font-size: 20px; font-weight: 800; margin-top: 3px; }
+
 /* strength logging */
 .lift-sug { color: var(--accent); font-weight: 600; font-size: 13px; }
 .lift-done { color: var(--accent-2); font-weight: 600; font-size: 13px; }
