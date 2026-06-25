@@ -258,7 +258,16 @@ main { flex: 1; padding: 16px 16px 96px; }
 /* strength logging */
 .lift-sug { color: var(--accent); font-weight: 600; font-size: 13px; }
 .lift-done { color: var(--accent-2); font-weight: 600; font-size: 13px; }
-.lift-logger { cursor: default !important; padding: 10px 0 12px !important; }
+/* a loggable exercise wraps so its "log weight" button sits full-width below */
+ul.checklist li.wlog { flex-wrap: wrap; }
+.log-btn { flex: 0 0 100%; margin-top: 10px; padding: 11px; border-radius: 10px; text-align: center;
+  font-weight: 700; font-size: 13px; cursor: pointer;
+  background: rgba(56,189,248,.12); border: 1px solid rgba(56,189,248,.45); color: var(--accent-2); }
+.log-btn.logged { background: rgba(52,211,153,.10); border-color: rgba(52,211,153,.4); color: var(--accent); }
+.log-btn.open { background: var(--bg-card-2); border-color: var(--line); color: var(--muted); }
+.log-btn:active { transform: scale(.98); }
+.lift-logger { cursor: default !important; padding: 4px 0 12px !important; }
+.log-title { margin: 0 0 4px; font-weight: 800; font-size: 14px; }
 .set-rows { display: flex; flex-direction: column; gap: 8px; }
 .set-row { display: flex; align-items: center; gap: 8px; }
 .set-n { font-size: 13px; color: var(--muted); flex: 0 0 44px; }
@@ -375,11 +384,18 @@ li.done .item-text { color: var(--muted); text-decoration: line-through; }
 
 /* Trackers */
 .tracker-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.water-dots { display: flex; gap: 6px; flex-wrap: wrap; }
-.water-dots { gap: 8px; }
-.water-dot { width: 34px; height: 40px; border-radius: 8px; border: 2px solid var(--line);
-  cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
-.water-dot.filled { background: rgba(56,189,248,.25); border-color: var(--accent-2); }
+.water-count { color: var(--accent-2); font-weight: 800; }
+.water-vol { float: right; color: var(--muted); font-weight: 700; font-size: 13px; }
+.water-row { display: flex; align-items: stretch; gap: 8px; margin-top: 10px; }
+.water-step { flex: 0 0 46px; border-radius: 12px; background: var(--bg-card-2); border: 1px solid var(--line);
+  color: var(--accent-2); font-size: 24px; font-weight: 800; line-height: 1; cursor: pointer; }
+.water-step:disabled { opacity: .3; }
+.water-step:active:not(:disabled) { transform: scale(.93); }
+.water-dots { display: flex; gap: 5px; flex: 1 1 auto; }
+.water-dot { flex: 1 1 0; min-width: 0; height: 48px; border-radius: 9px; border: 2px solid var(--line);
+  cursor: pointer; font-size: 15px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px;
+  background: linear-gradient(to top, rgba(56,189,248,.07), transparent); transition: background .18s, border-color .18s; }
+.water-dot.filled { background: linear-gradient(to top, rgba(56,189,248,.5), rgba(56,189,248,.16)); border-color: var(--accent-2); }
 .btn { background: var(--bg-card-2); color: var(--text); border: 1px solid var(--line);
   border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 600; cursor: pointer;
   min-height: 44px; }
