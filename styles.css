@@ -99,6 +99,19 @@ main { flex: 1; padding: 16px 16px 96px; }
   font-weight: 700; font-size: 13px; background: rgba(52,211,153,.14); border: 1px solid rgba(52,211,153,.35);
   color: var(--accent); }
 
+/* folded plan reference (in Settings) */
+.phase-block { padding: 12px 0; border-top: 1px solid var(--line); }
+.phase-block:first-of-type { border-top: none; padding-top: 4px; }
+
+/* inline text-link button (e.g. jump to strength stats) */
+.link-btn { display: block; width: 100%; background: none; border: none; color: var(--accent-2);
+  font-weight: 700; font-size: 13px; padding: 8px; text-align: center; }
+.link-btn:active { opacity: .6; }
+
+/* keyboard focus ring for interactive rows */
+#view [data-act]:focus-visible, .day-nav-btn:focus-visible, .link-btn:focus-visible {
+  outline: 2px solid var(--accent-2); outline-offset: 2px; border-radius: 8px; }
+
 /* tomorrow prep heads-up */
 /* rest timer */
 .rest-timer { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);

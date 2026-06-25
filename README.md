@@ -32,14 +32,17 @@ It works offline and remembers everything on your device.
 
 ## ✨ What's in the app
 
-- **Today** — workout (with rest timer, Gym/Home toggle), meals (with recipes &
-  swap), water, steps, supplements, tomorrow preview, and a Reveal-Day countdown.
-- **Plan** — the full 12-week blueprint + meal rotation + recipes.
-- **Shop** — a weekly shopping list **auto-built from your meals**, with batch-prep
-  and custom items.
-- **Progress** — weight trend, goal + ETA, achievements, metabolism (TDEE), photos.
-- **Settings** — start date, **Recipe Library** (pick your meals), step goal,
-  supplements.
+- **Today** — workout (with rest timer, Gym/Home toggle, set logging), meals (with
+  recipes & per-meal swap), water, supplements, tomorrow preview, a Reveal-Day
+  countdown, and **back/forward day navigation** to review past days (read-only).
+- **Shop** — a weekly shopping list **auto-built from your meals**, with batch-prep,
+  custom items and **carry-over weekly staples**.
+- **Progress** — adaptive coach (+ metabolism/TDEE), diet-break scheduler, weekly
+  report card, weight trend, goal + ETA, achievements and the strength log.
+- **Photos** — your own tab: progress photos with weight watermark, before/after
+  compare slider and timelapse.
+- **Settings** — start date, **Recipe Library** (pick your meals), supplements,
+  backup/restore, and the full 12-week plan reference (blueprint + recipes).
 
 **Flexible by design:** log an eating-out **treat** and it balances the next few
 days; **miss a day** and push the whole plan back without losing a session.

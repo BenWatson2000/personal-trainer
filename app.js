@@ -672,7 +672,9 @@ function renderToday() {
   const totalTargets = exercises.length + mealKeys.length + 8;
   const doneTargets = wDone + mDone + Math.min(checks.water, 8);
   const frac = totalTargets ? doneTargets / totalTargets : 0;
-  const expected = Math.max(0, Math.min(0.95, (new Date().getHours() - 7) / 15));
+  // expected progress ramps up gently through the day — forgiving in the morning so
+  // it doesn't show red before you've had a chance to do anything (starts ~10am).
+  const expected = Math.max(0, Math.min(0.9, (new Date().getHours() - 10) / 12));
   const light = frac >= expected ? "green" : frac >= expected * 0.6 ? "amber" : "red";
 
   // cook once, eat twice — leftover-friendly dinner → tomorrow's lunch
@@ -713,12 +715,11 @@ function renderToday() {
     </div>` : "";
 
   // meal swap picker
-  const swapPicker = `<details class="swap"><summary>🔀 ${swapped ? "Swapped today — change or reset" : "Not feeling it? Swap today's meal"}</summary>
-    <div class="swap-list">
-      ${swapped ? `<button type="button" class="swap-opt reset" data-act="swap" data-i="-1">↩︎ Reset to my plan</button>` : ""}
-      ${PLAN.meals.map((m, i) => `<button type="button" class="swap-opt ${swapped && swapIdx === i ? "cur" : ""}" data-act="swap" data-i="${i}">
-        <span>Day ${i + 1} · ${m.name}</span><span class="swap-kcal">${m.totals.kcal} kcal</span></button>`).join("")}
-    </div></details>`;
+  // (Whole-day meal swapping was removed — the per-meal 🔀 swapper above is more granular.)
+  // If an old whole-day swap is still stored, offer a one-tap reset so nothing gets stuck.
+  const swapPicker = swapped
+    ? `<button type="button" class="btn block" data-act="swap" data-i="-1" style="margin-top:10px">↩︎ Reset today's swapped meals to plan</button>`
+    : "";
 
   // calorie aim: TDEE-adjusted, minus any payback owed from a recent treat
   const payback = paybackForDay(pos.dn);
@@ -782,6 +783,7 @@ function renderToday() {
     <ul class="checklist">${workItems}</ul>
     <p class="note" style="margin:10px 0 0">${stepHint}</p>
     ${restTimer}
+    ${(day.type === "strength" && allLiftNames().length) ? `<button type="button" class="link-btn" data-act="gotostats" style="margin-top:12px">📊 View your strength stats — PBs, e1RM &amp; volume →</button>` : ""}
   </div>
 
   ${day.type === "strength" ? `<details class="card fold"><summary>🏋️ Plate calculator</summary>
@@ -834,20 +836,14 @@ function renderToday() {
   ${adjustFold}`;
 }
 
-/* ---------- PLAN ---------- */
-function renderPlan() {
-  let html = `<div class="card hero"><span class="phase-tag">The blueprint</span>
-    <h1>12-Week Shred</h1><p>${PLAN.meta.goal}</p>
-    <div class="pill-row">${PLAN.meta.dislikes.map(d => `<span class="tag">no ${d}</span>`).join("")}
-      <span class="tag">low-impact</span></div>
-    ${PLAN.meta.notes ? `<p class="quote" style="font-style:normal;font-size:13px;color:var(--muted)">🦶 ${PLAN.meta.notes}</p>` : ""}</div>`;
-
-  PLAN.phases.forEach((p) => {
-    html += `<div class="card">
-      <div class="phase-head"><h2>Phase ${p.id}: ${p.name}</h2><small>Weeks ${p.weekStart}–${p.weekEnd}</small></div>
-      <p class="sub">${p.tagline}</p>
-      <p class="note">${p.focus}</p>
-      <div class="macros" style="margin:12px 0">
+/* ---------- PLAN (reference, shown folded inside Settings) ---------- */
+function renderPlanSection() {
+  const phases = PLAN.phases.map((p) => `
+    <div class="phase-block">
+      <div class="phase-head"><h3 style="margin:0">Phase ${p.id}: ${p.name}</h3><small>Weeks ${p.weekStart}–${p.weekEnd}</small></div>
+      <p class="sub" style="margin:4px 0 0">${p.tagline}</p>
+      <p class="note" style="margin:6px 0">${p.focus}</p>
+      <div class="macros" style="margin:10px 0">
         <div class="macro"><div class="val">${p.calories}</div><div class="lbl">kcal</div></div>
         <div class="macro"><div class="val">${p.protein}g</div><div class="lbl">protein</div></div>
         <div class="macro"><div class="val">${p.carbs}g</div><div class="lbl">carbs</div></div>
@@ -857,14 +853,11 @@ function renderPlan() {
         ${p.schedule.map(d => `<div class="daychip"><div class="d">${d.day.slice(0,3)}</div>
           <div class="e">${d.emoji}</div><div class="n">${d.name}</div></div>`).join("")}
       </div>
-    </div>`;
-  });
+    </div>`).join("");
 
-  html += `<h2 class="section-head">🍽️ Meal rotation</h2>
-    <p class="sub section-sub">${PLAN.meals.length} days, looping · tap a day for meals + recipe · no fish, beans only in the chilli</p>`;
-  PLAN.meals.forEach((m, di) => {
+  const meals = PLAN.meals.map((m, di) => {
     const t = m.totals;
-    html += `<details class="card fold meal-day">
+    return `<details class="fold meal-day" style="border:1px solid var(--line);border-radius:12px;margin-bottom:8px">
       <summary>
         <span class="meal-day-title"><b>Day ${di + 1}</b> · ${m.name}</span>
         <span class="meal-day-macro">${t.kcal} kcal · ${t.protein}g P</span>
@@ -875,14 +868,30 @@ function renderPlan() {
         ${recipeBlock(m)}
       </div>
     </details>`;
-  });
+  }).join("");
 
-  html += `<div class="card"><h2>🛒 Shopping list</h2>
-    <p class="note">Your tickable weekly list lives on the <b>Shop</b> tab — auto-built from the meals in your plan that week.</p></div>`;
+  return `
+  <details class="card fold"><summary>🗓️ The 12-week blueprint</summary>
+    <div class="fold-body">
+      <p class="sub">${PLAN.meta.goal}</p>
+      <div class="pill-row" style="margin-bottom:10px">${PLAN.meta.dislikes.map(d => `<span class="tag">no ${d}</span>`).join("")}
+        <span class="tag">low-impact</span></div>
+      ${PLAN.meta.notes ? `<p class="note">🦶 ${PLAN.meta.notes}</p>` : ""}
+      ${phases}
+    </div>
+  </details>
 
-  html += `<div class="card"><h2>📋 Golden rules</h2><ul class="note" style="padding-left:18px;line-height:1.8">
-    ${PLAN.meta.principles.map(r => `<li>${r}</li>`).join("")}</ul></div>`;
-  return html;
+  <details class="card fold"><summary>🍽️ Meal rotation <span class="swap-tag">${PLAN.meals.length} days</span></summary>
+    <div class="fold-body">
+      <p class="sub">${PLAN.meals.length} days, looping · tap a day for meals + recipe · no fish, beans only in the chilli</p>
+      ${meals}
+    </div>
+  </details>
+
+  <details class="card fold"><summary>📋 Golden rules</summary>
+    <div class="fold-body"><ul class="note" style="padding-left:18px;line-height:1.8;margin:0">
+      ${PLAN.meta.principles.map(r => `<li>${r}</li>`).join("")}</ul></div>
+  </details>`;
 }
 
 /* ---------- SHOP (auto-generated from the week's actual meals) ---------- */
@@ -958,9 +967,12 @@ function renderShop() {
     }).join("")}</ul>
   </div>` : "";
 
+  const staples = LS.get("pt_staples", []);
+
   let total = 0, done = 0;
   buckets.forEach(b => b.items.forEach(it => { total++; if (checks[slug(it.label)]) done++; }));
   custom.forEach((_, i) => { total++; if (checks["x" + i]) done++; });
+  staples.forEach((_, i) => { total++; if (checks["s" + i]) done++; });
   const pct = total ? Math.round((done / total) * 100) : 0;
 
   const cats = buckets.map(b => `
@@ -980,6 +992,22 @@ function renderShop() {
         <span class="item-text">${it}</span>
         <button type="button" class="x-del" data-act="delcustom" data-i="${ii}">✕</button></li>`;
     }).join("")}</ul>` : "";
+
+  const staplesCard = `<div class="card">
+    <h2>🔁 Weekly staples</h2>
+    <p class="sub">The things you buy every week — these carry over and appear on every list.</p>
+    ${staples.length ? `<ul class="checklist">${staples.map((it, ii) => {
+      const on = checks["s" + ii];
+      return `<li class="${on ? "done" : ""}" data-act="shop" data-k="s${ii}">
+        <span class="checkbox" style="border-radius:6px">${on ? "✓" : ""}</span>
+        <span class="item-text">${it}</span>
+        <button type="button" class="x-del" data-act="delstaple" data-i="${ii}">✕</button></li>`;
+    }).join("")}</ul>` : `<p class="note">No staples yet — add milk, coffee, eggs… anything you restock every week.</p>`}
+    <div class="tracker-row" style="margin-top:10px">
+      <input class="field" id="stapleItem" placeholder="Add a weekly staple…" />
+      <button type="button" class="btn accent" id="addStapleBtn">Add</button>
+    </div>
+  </div>`;
 
   return `
   <div class="card hero">
@@ -1003,6 +1031,8 @@ function renderShop() {
     </div>
     <p class="note" style="margin-top:8px">Quantities depend on your portions — this is the what-to-buy list for the week.</p>
   </div>
+
+  ${staplesCard}
 
   ${batchCard}
 
@@ -1140,7 +1170,25 @@ function renderProgress() {
   if (adapt !== 0) {
     adBody += `<p class="note" style="margin-top:10px">Active adaptive tweak: <b>${adapt > 0 ? "+" : ""}${adapt} kcal/day</b> → today's aim <b>${todayAim} kcal</b>. <button type="button" class="btn" data-act="adaptreset" style="min-height:auto;padding:5px 9px;margin-left:4px">Reset</button></p>`;
   }
-  const adCard = `<div class="card"><h2>🧭 Adaptive coach</h2>${adBody}</div>`;
+  const adCard = `<div class="card"><h2>🧭 Adaptive coach</h2>${adBody}
+    <details class="fold" style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
+      <summary>🔥 Metabolism — maintenance ~${currentMaintenance().toLocaleString()} kcal</summary>
+      <div class="fold-body">
+        <div class="stat-grid">
+          <div class="stat"><div class="big">${currentMaintenance().toLocaleString()}</div><div class="cap">maintenance now</div></div>
+          <div class="stat"><div class="big">${(PLAN.meta.maintenance || 2250).toLocaleString()}</div><div class="cap">at start (${start}kg)</div></div>
+        </div>
+        <p class="note" style="margin-top:8px">As you lose weight your body burns a little less, so your calorie aim auto-recalculates to hold the same deficit. Today's aim: <b>${adjustedAim(pos.phase).toLocaleString()} kcal</b>.</p>
+      </div>
+    </details></div>`;
+
+  // diet-break scheduler (moved here from Settings — it's a coaching decision)
+  const breakCard = `<div class="card"><h2>🏖️ Diet-break weeks</h2>
+    <p class="note">On a diet-break week you eat at <b>maintenance (~${currentMaintenance().toLocaleString()} kcal)</b> instead of a deficit — it restores hormones, energy and willpower, and often restarts fat loss. Tap a week to schedule one.</p>
+    <div class="week-chips" style="margin-top:10px">
+      ${Array.from({ length: PLAN.meta.weeks }, (_, i) => i + 1).map((wk) =>
+        `<button type="button" class="wk-chip ${isDietBreak(wk) ? "on" : ""} ${wk === pos.week ? "now" : ""}" data-act="dietbreak" data-wk="${wk}">${wk}</button>`).join("")}
+    </div></div>`;
 
   return `
   <div class="card hero"><span class="phase-tag">Your numbers</span><h1>Progress</h1>
@@ -1154,24 +1202,13 @@ function renderProgress() {
 
   ${adCard}
 
+  ${breakCard}
+
   ${renderReport()}
 
   ${goalCard}
 
-  <details class="card fold">
-    <summary>🔥 Metabolism — maintenance ~${currentMaintenance().toLocaleString()} kcal</summary>
-    <div class="fold-body">
-      <div class="stat-grid">
-        <div class="stat"><div class="big">${currentMaintenance().toLocaleString()}</div><div class="cap">maintenance now</div></div>
-        <div class="stat"><div class="big">${(PLAN.meta.maintenance || 2250).toLocaleString()}</div><div class="cap">at start (${start}kg)</div></div>
-      </div>
-      <p class="note" style="margin-top:8px">As you lose weight your body burns a little less, so your calorie aim auto-recalculates to hold the same deficit. Today's aim: <b>${adjustedAim(pos.phase).toLocaleString()} kcal</b>.</p>
-    </div>
-  </details>
-
   <div class="card"><h2>⚖️ Weight trend${smoothNow != null ? ` <small style="color:var(--muted);font-weight:600">trend ${smoothNow} kg</small>` : ""}</h2>${chart}
-    <ul class="weight-list">${weights.slice().reverse().slice(0, 8).map(w =>
-      `<li><span>${w.kg} kg</span><span>${w.date}</span></li>`).join("")}</ul>
     <div class="tracker-row" style="margin-top:12px">
       <input class="field" id="quickWeight" type="number" step="0.1" inputmode="decimal" placeholder="kg" style="max-width:140px" />
       <button type="button" class="btn accent" id="logWeightBtn">Log weigh-in</button>
@@ -1183,9 +1220,7 @@ function renderProgress() {
     <div class="fold-body"><div class="badge-grid">${badges}</div></div>
   </details>
 
-  ${renderStrength()}
-
-  ${renderPhotos()}`;
+  ${renderStrength()}`;
 }
 
 /* ---------- shareable weekly report ---------- */
@@ -1329,6 +1364,15 @@ async function importData(file) {
   } catch { toast("Couldn't read that backup file"); }
 }
 
+// Photos get their own tab now — a hero plus the photo card/lightbox.
+function renderPhotosTab() {
+  return `
+  <div class="card hero"><span class="phase-tag">Transformation</span>
+    <h1>📸 Progress photos</h1>
+    <p>One a week is plenty. Each shot is stamped with your nearest weight and stored only on this device — swipe the compare slider to watch the change build up.</p></div>
+  ${renderPhotos()}`;
+}
+
 function renderPhotos() {
   const has = PHOTOS.length;
   const compare = PHOTOS.length >= 2 ? (() => {
@@ -1446,14 +1490,6 @@ function renderSettings() {
     </div>
   </div>
 
-  <div class="card"><h2>🏖️ Diet-break weeks</h2>
-    <p class="note">On a diet-break week you eat at <b>maintenance (~${currentMaintenance().toLocaleString()} kcal)</b> instead of a deficit — it restores hormones, energy and willpower, and often kick-starts fat loss again. Handy mid-cut. Tap a week to schedule one.</p>
-    <div class="week-chips" style="margin-top:10px">
-      ${Array.from({ length: PLAN.meta.weeks }, (_, i) => i + 1).map((wk) =>
-        `<button type="button" class="wk-chip ${isDietBreak(wk) ? "on" : ""} ${wk === position().week ? "now" : ""}" data-act="dietbreak" data-wk="${wk}">${wk}</button>`).join("")}
-    </div>
-  </div>
-
   <div class="card"><h2>💾 Backup &amp; restore</h2>
     <p class="note">All your data lives on this device. Export a backup file you can keep safe or move to a new phone — includes check-ins, weigh-ins, lift logs, library, photos and settings.</p>
     <div class="step-quick" style="margin-top:8px">
@@ -1472,6 +1508,8 @@ function renderSettings() {
     <p class="note">${PLAN.meta.athlete} · ${PLAN.meta.stats.age}y · ${PLAN.meta.stats.weightKg}kg / ${PLAN.meta.stats.heightCm}cm${PLAN.meta.maintenance ? ` · est. maintenance <b>~${PLAN.meta.maintenance.toLocaleString()} kcal</b>` : ""}.</p>
     ${PLAN.meta.calcNote ? `<p class="note" style="margin-top:6px">${PLAN.meta.calcNote}</p>` : ""}
   </div>
+
+  ${renderPlanSection()}
 
   <div class="card"><h2>ℹ️ About</h2>
     <p class="note">Everything is stored on your device — no account, no tracking. Add this page to your home screen for an app-like experience.</p>
@@ -1565,8 +1603,10 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "prevday") { if (tagged.disabled) return; haptic(6); VIEW_OFFSET -= 1; navigate(); return; }
   if (tagged && tagged.dataset.act === "nextday") { if (tagged.disabled) return; haptic(6); VIEW_OFFSET = Math.min(0, VIEW_OFFSET + 1); navigate(); return; }
   if (tagged && tagged.dataset.act === "todayview") { haptic(8); VIEW_OFFSET = 0; navigate(); return; }
+  if (tagged && tagged.dataset.act === "gotostats") { haptic(6); CURRENT_TAB = "progress"; VIEW_OFFSET = 0; setActiveTab(); navigate(); return; }
   if (tagged && tagged.dataset.act === "swap") { haptic(6); swapMeal(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delcustom") { haptic(6); delCustom(+tagged.dataset.i); return; }
+  if (tagged && tagged.dataset.act === "delstaple") { haptic(6); delStaple(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delphoto") { haptic(6); delPhoto(tagged.dataset.date); return; }
   if (tagged && tagged.dataset.act === "viewphoto") { haptic(6); VIEW_PHOTO = tagged.dataset.date; repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "closephoto") { VIEW_PHOTO = null; repaintKeepScroll(); return; }
@@ -1614,6 +1654,7 @@ function onViewClick(e) {
   if (e.target.id === "useSuggestedGoal") { LS.set("pt_goal", suggestedGoal()); haptic(8); repaintKeepScroll(); return; }
   if (e.target.id === "clearGoalBtn") { localStorage.removeItem("pt_goal"); repaintKeepScroll(); return; }
   if (e.target.id === "addCustomBtn") return addCustom();
+  if (e.target.id === "addStapleBtn") return addStaple();
   if (e.target.id === "addSuppBtn") return addSupp();
   if (e.target.id === "exportBtn") return exportData();
   if (e.target.id === "shareReportBtn") return shareReport();
@@ -1709,6 +1750,21 @@ function delCustom(i) {
   const arr = LS.get("pt_shopcustom_w" + wk, []); arr.splice(i, 1); LS.set("pt_shopcustom_w" + wk, arr);
   const ck = LS.get("pt_shop_w" + wk, {});
   Object.keys(ck).filter(k => k[0] === "x").forEach(k => delete ck[k]); // indices shift, clear custom ticks
+  LS.set("pt_shop_w" + wk, ck);
+  repaintKeepScroll();
+}
+// weekly staples persist across every week's list (pt_staples)
+function addStaple() {
+  const el = document.getElementById("stapleItem"); const v = (el.value || "").trim();
+  if (!v) { el.focus(); return; }
+  const arr = LS.get("pt_staples", []); arr.push(v); LS.set("pt_staples", arr);
+  haptic(8); repaintKeepScroll();
+}
+function delStaple(i) {
+  const arr = LS.get("pt_staples", []); arr.splice(i, 1); LS.set("pt_staples", arr);
+  const wk = Math.max(1, Math.min(position().week, PLAN.meta.weeks));
+  const ck = LS.get("pt_shop_w" + wk, {});
+  Object.keys(ck).filter(k => k[0] === "s").forEach(k => delete ck[k]); // indices shift, clear staple ticks
   LS.set("pt_shop_w" + wk, ck);
   repaintKeepScroll();
 }
@@ -1954,9 +2010,9 @@ function render() {
   clearInterval(REST_INT); clearInterval(TL_INT); // a repaint replaces those elements
   const view = document.getElementById("view");
   if (CURRENT_TAB === "today") view.innerHTML = renderToday();
-  else if (CURRENT_TAB === "plan") view.innerHTML = renderPlan();
   else if (CURRENT_TAB === "shop") view.innerHTML = renderShop();
   else if (CURRENT_TAB === "progress") view.innerHTML = renderProgress();
+  else if (CURRENT_TAB === "photos") view.innerHTML = renderPhotosTab();
   else view.innerHTML = renderSettings();
 
   // header
@@ -1967,6 +2023,17 @@ function render() {
     pos.beforeStart ? "Soon" : pos.finished ? "Done" : `Day ${pos.dn + 1} · Wk ${pos.week}`;
   const pct = Math.max(0, Math.min(100, ((pos.dn + 1) / (PLAN.meta.weeks * 7)) * 100));
   document.getElementById("overallProgress").style.width = pct + "%";
+  enhanceA11y();
+}
+// Make non-button interactive rows (checklists, water dots, library/shop items) keyboard-operable.
+function enhanceA11y() {
+  document.querySelectorAll("#view [data-act]").forEach((el) => {
+    const t = el.tagName;
+    if (t === "BUTTON" || t === "INPUT" || t === "A" || t === "SELECT") return;
+    if (el.dataset.act === "noop" || el.dataset.act === "closephoto") return;
+    if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "0");
+    if (!el.hasAttribute("role")) el.setAttribute("role", "button");
+  });
 }
 // navigate() is for tab switches: repaint, animate in, and return to top.
 function navigate() {
@@ -1996,10 +2063,16 @@ async function boot() {
   const view = document.getElementById("view");
   view.addEventListener("click", onViewClick);
   view.addEventListener("keydown", (e) => {
+    // keyboard activation for non-button interactive rows (checklists, dots, lib/shop items)
+    if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches("[data-act]") &&
+        e.target.tagName !== "BUTTON" && e.target.tagName !== "INPUT" && e.target.tagName !== "SELECT") {
+      e.preventDefault(); onViewClick(e); return;
+    }
     if (e.key !== "Enter") return;
     if (e.target.id === "quickWeight") { e.preventDefault(); logWeight(); }
     else if (e.target.id === "goalWeight") { e.preventDefault(); saveGoal(); }
     else if (e.target.id === "customItem") { e.preventDefault(); addCustom(); }
+    else if (e.target.id === "stapleItem") { e.preventDefault(); addStaple(); }
     else if (e.target.id === "suppInput") { e.preventDefault(); addSupp(); }
     else if (e.target.id === "cheatInput") { e.preventDefault(); setCheatFromInput(); }
   });
