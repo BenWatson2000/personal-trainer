@@ -163,14 +163,16 @@ function suggestedGoal() {
   const g = (proj != null && proj < start) ? proj : Math.round(start * 0.91);
   return Math.max(floor, Math.round(g));
 }
+// scale g/ml quantities in a text string for a bigger/smaller portion
+function scaleAmounts(text, factor) {
+  if (!factor || Math.abs(factor - 1) < 0.02) return text;
+  return text.replace(/(\d+(?:\.\d+)?)\s?(g|ml)\b/gi, (_, n, u) => Math.round(n * factor) + u);
+}
 function recipeBlock(meal, factor = 1) {
   const d = meal.items.Dinner; if (!d || !d.recipe) return "";
   const r = d.recipe, title = d.text.split(" — ")[0];
   const scale = factor > 1.02;
-  // scale gram/ml quantities in ingredient lines for a bigger portion
-  const ing = r.ingredients.map((x) => scale
-    ? x.replace(/(\d+)\s?(g|ml)\b/gi, (_, n, u) => Math.round(n * factor) + u)
-    : x);
+  const ing = r.ingredients.map((x) => scaleAmounts(x, factor));
   return `<details class="recipe"><summary>📖 Tonight's recipe — ${title}${scale ? ` <span class="swap-tag">×${factor.toFixed(1)}</span>` : ""}</summary>
     <div class="recipe-body">
       ${scale ? `<p class="note" style="margin:0 0 6px">Quantities scaled ×${factor.toFixed(1)} for your bigger portion.</p>` : ""}
@@ -254,7 +256,7 @@ function renderToday() {
     const label = isSkip ? `${k} · skipped` : `${k} · ${kc} kcal · ${pr}g P${portionFactor > 1.02 ? ` · ×${portionFactor.toFixed(1)}` : ""}`;
     return `<li class="${done ? "done" : ""} ${isSkip ? "skipped-meal" : ""}" data-act="meals" data-i="${i}">
       <span class="checkbox">${done ? "✓" : ""}</span>
-      <span class="item-text"><span class="meal-label">${label}</span>${m.text}</span>
+      <span class="item-text"><span class="meal-label">${label}</span>${isSkip ? m.text : scaleAmounts(m.text, portionFactor)}</span>
       <button type="button" class="x-del meal-skip" data-act="skipmeal" data-slot="${encodeURIComponent(k)}" title="${isSkip ? "Restore" : "Skip & redistribute"}">${isSkip ? "↺" : "⊘"}</button></li>`;
   }).join("");
   const skipNote = anySkipped
