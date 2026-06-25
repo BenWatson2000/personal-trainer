@@ -199,6 +199,21 @@ main { flex: 1; padding: 16px 16px 96px; }
 .light-red { border-left-color: #f87171; }
 .light-red .light-dot { background: #f87171; box-shadow: 0 0 10px #f87171; }
 
+/* strength logging */
+.lift-sug { color: var(--accent); font-weight: 600; font-size: 13px; }
+.lift-done { color: var(--accent-2); font-weight: 600; font-size: 13px; }
+.lift-logger { cursor: default !important; padding: 10px 0 12px !important; }
+.set-rows { display: flex; flex-direction: column; gap: 8px; }
+.set-row { display: flex; align-items: center; gap: 8px; }
+.set-n { font-size: 13px; color: var(--muted); flex: 0 0 44px; }
+.set-row .field { max-width: 70px; text-align: center; padding: 8px; height: 40px; }
+.set-x { font-size: 13px; color: var(--muted); }
+.lift-stats { list-style: none; margin: 6px 0 0; padding: 0; }
+.lift-stats li { padding: 9px 0; border-bottom: 1px solid var(--line); }
+.lift-stats li:last-child { border-bottom: none; }
+.lift-name { display: block; font-size: 14px; font-weight: 600; }
+.lift-figs { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
 /* per-meal actions + inline swap picker */
 .meal-actions { margin-left: auto; display: flex; gap: 2px; align-self: center; }
 .meal-actions .x-del { margin-left: 0; }
