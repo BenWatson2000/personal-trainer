@@ -22,6 +22,7 @@ let COMPARE_T = 50;        // before/after slider position
 let SWAP_SLOT = null;      // which meal slot's swap picker is open
 let OPEN_LIFT = null;      // which exercise's set-logger is open
 let VIEW_PHOTO = null;     // date of the photo open in the lightbox
+let VIEW_OFFSET = 0;       // Today tab: 0 = today, negative = read-only past days
 
 /* ---------- progress photos: IndexedDB (blobs are too big for localStorage) ---------- */
 function idb() {
@@ -401,8 +402,128 @@ function prepNotes(meal) {
   return out;
 }
 
+// ---- day navigation (read-only past days) ----
+function dayNav(pos) {
+  const vdn = pos.dn + VIEW_OFFSET;
+  const canBack = vdn > 0;            // don't browse before program day 1
+  const canFwd = VIEW_OFFSET < 0;     // can't go past today
+  const vkey = dateKeyForDn(vdn);
+  const label = VIEW_OFFSET === 0
+    ? "Today"
+    : new Date(vkey + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  return `<div class="day-nav">
+    <button type="button" class="day-nav-btn" data-act="prevday"${canBack ? "" : " disabled"} aria-label="Previous day">‹</button>
+    <div class="day-nav-label">${VIEW_OFFSET !== 0 ? "🔒 " : ""}${label}${VIEW_OFFSET !== 0 ? ` · Day ${vdn + 1}` : ""}</div>
+    <button type="button" class="day-nav-btn" data-act="nextday"${canFwd ? "" : " disabled"} aria-label="Next day">›</button>
+    ${VIEW_OFFSET !== 0 ? `<button type="button" class="day-nav-today" data-act="todayview">Jump to today</button>` : ""}
+  </div>`;
+}
+
+// Read-only recap of a past program day — no interactive controls, history is locked.
+function renderDayRecap(pos) {
+  const vdn = pos.dn + VIEW_OFFSET;
+  const vkey = dateKeyForDn(vdn);
+  const week = Math.floor(vdn / 7) + 1;
+  const weekday = (new Date(vkey + "T00:00:00").getDay() + 6) % 7;
+  const phase = PLAN.phases.find((p) => week >= p.weekStart && week <= p.weekEnd) || PLAN.phases[PLAN.phases.length - 1];
+  const day = phase.schedule[weekday];
+  const checks = LS.get("pt_checks_" + vkey, { workout: {}, meals: {}, water: 0 });
+  const dateStr = new Date(vkey + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+
+  // workout that day (respect saved gym/home mode), with done state + any logged sets
+  const mode = LS.get("pt_mode", "gym");
+  const exercises = (mode === "home" && day.homeItems) ? day.homeItems : day.items;
+  const liftLog = LS.get("pt_lift_" + vkey, {});
+  const workItems = exercises.map((t, i) => {
+    const done = checks.workout[i];
+    const lf = day.type === "strength" ? parseLift(t) : { loggable: false };
+    let suffix = "";
+    if (lf.loggable && liftLog[lf.name] && liftLog[lf.name].length) {
+      const sets = liftLog[lf.name];
+      const top = Math.max(0, ...sets.map((s) => e1rm(s.w, s.r)));
+      suffix = `<span class="lift-done"> ✓ ${setSummary(sets)}${top ? ` · e1RM ${top}` : ""}</span>`;
+    }
+    return `<li class="${done ? "done" : ""}" style="cursor:default">
+      <span class="checkbox">${done ? "✓" : ""}</span>
+      <span class="item-text">${t}${suffix}</span></li>`;
+  }).join("");
+  const wDone = exercises.filter((_, i) => checks.workout[i]).length;
+
+  // meals that day (with the swaps that were applied), done/skipped state
+  const swapIdx = LS.get("pt_swap_" + vkey, null);
+  const swapped = swapIdx != null && swapIdx >= 0 && swapIdx < PLAN.meals.length;
+  const meal = swapped ? applyMealOverrides(PLAN.meals[swapIdx], vkey) : dayMeal(vdn);
+  const mealKeys = Object.keys(meal.items);
+  const skipped = LS.get("pt_skip_" + vkey, {});
+  const mealItems = mealKeys.map((k, i) => {
+    const done = checks.meals[i];
+    const m = meal.items[k];
+    const isSkip = !!skipped[k];
+    const label = isSkip ? `${k} · skipped` : `${k} · ${m.kcal} kcal · ${m.p}g P`;
+    return `<li class="${done ? "done" : ""} ${isSkip ? "skipped-meal" : ""}" style="cursor:default">
+      <span class="checkbox">${done ? "✓" : ""}</span>
+      <span class="item-text"><span class="meal-label">${label}</span>${m.text}</span></li>`;
+  }).join("");
+  const mDone = mealKeys.filter((k, i) => checks.meals[i] || skipped[k]).length;
+
+  // the rest of the day's log
+  const supps = getSupps();
+  const suppChecks = LS.get("pt_supp_" + vkey, {});
+  const tookSupps = supps.filter((s) => suppChecks[s]);
+  const wIn = LS.get("pt_weights", []).find((w) => w.date === vkey);
+  const cheat = LS.get("pt_cheat_" + vkey, 0);
+  const perfect = wDone === exercises.length && mDone === mealKeys.length && checks.water >= 8;
+  const anyLogged = wDone || mDone || checks.water || tookSupps.length || wIn || cheat;
+
+  return `
+  <div class="card hero">
+    <div class="hero-top">
+      <span class="phase-tag">Phase ${phase.id} · ${phase.name}</span>
+      <span class="light-pill">🔒 Locked</span>
+    </div>
+    <p class="greet">${dateStr}</p>
+    <h1>${day.emoji} ${day.name}</h1>
+    <p class="hero-meta">Week ${week}/12 · Day ${vdn + 1}${perfect ? " · 🎉 perfect day" : ""}</p>
+    <div class="today-chips">
+      <span class="chip ${wDone === exercises.length && exercises.length ? "on" : ""}">${day.type === "rest" ? "😴" : "🏋️"} ${wDone}/${exercises.length}</span>
+      <span class="chip ${mDone === mealKeys.length ? "on" : ""}">🍽️ ${mDone}/${mealKeys.length}</span>
+      <span class="chip ${checks.water >= 8 ? "on" : ""}">💧 ${checks.water}/8</span>
+    </div>
+  </div>
+
+  ${!anyLogged ? `<div class="card"><p class="note" style="margin:0">📭 Nothing was logged on this day.</p></div>` : ""}
+
+  <div class="card">
+    <div class="work-head">
+      <span class="work-emoji">${day.emoji}</span>
+      <div><h2 style="margin:0">${day.name}</h2>
+      <span class="type-badge type-${day.type}">${day.type.toUpperCase()}</span></div>
+    </div>
+    <ul class="checklist">${workItems}</ul>
+  </div>
+
+  <div class="card">
+    <h2>🍽️ Fuel${swapped ? ' <span class="swap-tag">swapped</span>' : ""}</h2>
+    <p class="sub">${meal.name} · ${meal.totals.kcal} kcal · ${meal.totals.protein}g P</p>
+    <ul class="checklist">${mealItems}</ul>
+  </div>
+
+  <div class="card">
+    <h2>📋 Day log</h2>
+    <div class="log-sec"><div class="log-label">💧 Water · ${checks.water}/8</div></div>
+    ${supps.length ? `<div class="log-sec"><div class="log-label">💊 Supplements</div>
+      <div class="supp-chips">${supps.map((s) => `<span class="supp-chip ${suppChecks[s] ? "on" : ""}">${suppChecks[s] ? "✓ " : ""}${s}</span>`).join("")}</div></div>` : ""}
+    <div class="log-sec"><div class="log-label">⚖️ Weigh-in</div>
+      <p class="note" style="margin:0">${wIn ? `<b>${wIn.kg} kg</b>` : "— not logged"}</p></div>
+    ${cheat ? `<div class="log-sec"><div class="log-label">🍔 Treat logged</div><p class="note" style="margin:0">+${cheat} kcal</p></div>` : ""}
+  </div>
+
+  <p class="note" style="text-align:center;margin:4px 0 0">🔒 Past days are read-only — you can look back but not change them.</p>`;
+}
+
 function renderToday() {
   const pos = position();
+  if (VIEW_OFFSET !== 0) return dayNav(pos) + renderDayRecap(pos);
   const key = todayKey();
   const checks = LS.get("pt_checks_" + key, { workout: {}, meals: {}, water: 0 });
 
@@ -413,7 +534,7 @@ function renderToday() {
       <p>Your 12-week shred begins ${getStartDate()}. Want to start today instead? Go to Settings → Start date.</p></div>`;
   }
   if (pos.finished) {
-    return `<div class="card hero celebrate"><div class="big">🏆</div>
+    return `${dayNav(pos)}<div class="card hero celebrate"><div class="big">🏆</div>
       <h1>12 weeks done!</h1><p>You finished the program. Log a final weigh-in on the Progress tab and take some photos — then either reset your start date to run it again, or move to a maintenance phase.</p></div>`;
   }
 
@@ -634,6 +755,7 @@ function renderToday() {
   const rv = revealInfo();
 
   return `
+  ${dayNav(pos)}
   ${perfectBanner}
   <div class="card hero light-${light}">
     <div class="hero-top">
@@ -1221,10 +1343,13 @@ function renderPhotos() {
       <div class="cmp-labels"><span>${a.date}</span><span>${b.date}</span></div>` ;
   })() : "";
 
-  const thumbs = PHOTOS.map(p =>
-    `<button type="button" class="photo-thumb" data-act="viewphoto" data-date="${p.date}">
+  const thumbs = PHOTOS.map(p => {
+    const kg = p.kg != null ? p.kg : closestWeight(p.date);
+    return `<button type="button" class="photo-thumb" data-act="viewphoto" data-date="${p.date}">
       <img src="${p.data}" alt="${p.date}" />
-      <span class="photo-date">${p.kg != null ? "~" + p.kg + "kg" : p.date.slice(5)}</span></button>`).join("");
+      <span class="photo-date">${kg != null ? "~" + kg + "kg" : p.date.slice(5)}</span></button>`;
+  }).join("");
+  const unstamped = PHOTOS.some(p => !p.wm);
 
   return `<div class="card"><h2>📸 Progress photos</h2>
     <p class="sub">Stored only on this device · tap a photo to view, share or delete</p>
@@ -1234,6 +1359,7 @@ function renderPhotos() {
       <label class="btn accent" for="photoInput" style="cursor:pointer">📷 Add photo</label>
       <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" />
       ${PHOTOS.length >= 2 ? `<button type="button" class="btn" id="playTimelapse">▶ Timelapse</button>` : ""}
+      ${unstamped ? `<button type="button" class="btn" id="stampPhotosBtn">🏷️ Stamp weights</button>` : ""}
     </div>
     <img id="timelapseStage" class="timelapse-stage" style="display:none" />
   </div>
@@ -1436,6 +1562,9 @@ function onViewClick(e) {
   if (cheatBtn) { logCheat(+cheatBtn.dataset.cheat); return; }
 
   const tagged = e.target.closest("[data-act]");
+  if (tagged && tagged.dataset.act === "prevday") { if (tagged.disabled) return; haptic(6); VIEW_OFFSET -= 1; navigate(); return; }
+  if (tagged && tagged.dataset.act === "nextday") { if (tagged.disabled) return; haptic(6); VIEW_OFFSET = Math.min(0, VIEW_OFFSET + 1); navigate(); return; }
+  if (tagged && tagged.dataset.act === "todayview") { haptic(8); VIEW_OFFSET = 0; navigate(); return; }
   if (tagged && tagged.dataset.act === "swap") { haptic(6); swapMeal(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delcustom") { haptic(6); delCustom(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delphoto") { haptic(6); delPhoto(tagged.dataset.date); return; }
@@ -1495,6 +1624,7 @@ function onViewClick(e) {
   if (e.target.id === "resetShiftBtn") { localStorage.removeItem("pt_shift"); haptic(8); toast("Reschedule reset"); repaintKeepScroll(); return; }
   if (e.target.id === "resetLibBtn") { localStorage.removeItem("pt_library"); haptic(8); toast("Back to the default plan"); repaintKeepScroll(); return; }
   if (e.target.id === "playTimelapse") return playTimelapse();
+  if (e.target.id === "stampPhotosBtn") return restampPhotos();
   if (e.target.id === "saveStartBtn") {
     LS.set("pt_startDate", document.getElementById("startDateInput").value);
     CURRENT_TAB = "today"; setActiveTab(); navigate(); return;
@@ -1610,6 +1740,17 @@ function closestWeight(dateKey) {
   for (const x of w) { const d = Math.abs(new Date(x.date + "T00:00:00").getTime() - t); if (d < bd) { bd = d; best = x.kg; } }
   return best;
 }
+// draw the weight+date watermark, bottom-left, scaled to the image
+function drawWatermark(ctx, w, h, kg, dateKey) {
+  const cap = (kg != null ? "~" + kg + " kg · " : "") + new Date(dateKey + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const fs = Math.max(18, Math.round(h * 0.04));
+  ctx.font = `800 ${fs}px -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif`;
+  const tw = ctx.measureText(cap).width, pad = Math.round(h * 0.028);
+  ctx.fillStyle = "rgba(0,0,0,0.6)";
+  ctx.fillRect(pad - 10, h - pad - fs - 16, tw + 30, fs + 24);
+  ctx.fillStyle = "#34d399"; ctx.fillRect(pad - 10, h - pad - fs - 16, 6, fs + 24);
+  ctx.fillStyle = "#fff"; ctx.fillText(cap, pad + 8, h - pad - 7);
+}
 function addPhotoFromFile(file) {
   if (!file) return;
   const reader = new FileReader();
@@ -1620,24 +1761,36 @@ function addPhotoFromFile(file) {
       const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
       const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
       const ctx = cv.getContext("2d"); ctx.drawImage(img, 0, 0, w, h);
-      // watermark: nearest weight + date, bottom-left
       const kg = closestWeight(todayKey());
-      const cap = (kg != null ? "~" + kg + " kg · " : "") + new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-      const fs = Math.max(16, Math.round(h * 0.035));
-      ctx.font = `700 ${fs}px -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif`;
-      const tw = ctx.measureText(cap).width, pad = Math.round(h * 0.025);
-      ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.fillRect(pad - 8, h - pad - fs - 14, tw + 24, fs + 20);
-      ctx.fillStyle = "#34d399"; ctx.fillRect(pad - 8, h - pad - fs - 14, 5, fs + 20);
-      ctx.fillStyle = "#fff"; ctx.fillText(cap, pad + 6, h - pad - 6);
-      const data = cv.toDataURL("image/jpeg", 0.78);
-      await photoPut({ date: todayKey(), data, kg });
+      drawWatermark(ctx, w, h, kg, todayKey());
+      await photoPut({ date: todayKey(), data: cv.toDataURL("image/jpeg", 0.8), kg, wm: true });
       PHOTOS = await photosAll();
       haptic(8); repaintKeepScroll();
     };
     img.src = reader.result;
   };
   reader.readAsDataURL(file);
+}
+// re-stamp older photos that were saved before watermarking (or before a weigh-in existed)
+function stampOnce(dataUrl, kg, dateKey) {
+  return new Promise((res) => {
+    const img = new Image();
+    img.onload = () => { const cv = document.createElement("canvas"); cv.width = img.width; cv.height = img.height; const ctx = cv.getContext("2d"); ctx.drawImage(img, 0, 0); drawWatermark(ctx, img.width, img.height, kg, dateKey); res(cv.toDataURL("image/jpeg", 0.82)); };
+    img.onerror = () => res(null);
+    img.src = dataUrl;
+  });
+}
+async function restampPhotos() {
+  let n = 0;
+  for (const p of PHOTOS) {
+    if (p.wm) continue;
+    const kg = closestWeight(p.date);
+    const data = await stampOnce(p.data, kg, p.date);
+    if (data) { await photoPut({ date: p.date, data, kg, wm: true }); n++; }
+  }
+  PHOTOS = await photosAll();
+  toast(n ? `Stamped ${n} photo${n > 1 ? "s" : ""}` : "All photos already stamped");
+  repaintKeepScroll();
 }
 async function delPhoto(date) {
   if (!confirm("Delete this photo?")) return;
@@ -1656,7 +1809,8 @@ async function exportPhoto(date) {
 function photoOverlay() {
   if (!VIEW_PHOTO) return "";
   const p = PHOTOS.find((x) => x.date === VIEW_PHOTO); if (!p) return "";
-  const cap = (p.kg != null ? `~${p.kg} kg · ` : "") + p.date;
+  const kg = p.kg != null ? p.kg : closestWeight(p.date);
+  const cap = (kg != null ? `~${kg} kg · ` : "") + p.date;
   return `<div class="lightbox" data-act="closephoto">
     <div class="lb-inner" data-act="noop">
       <img src="${p.data}" alt="${p.date}" />
@@ -1837,7 +1991,7 @@ async function boot() {
   buildBank();
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
     if (CURRENT_TAB === t.dataset.tab) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; VIEW_PHOTO = null; setActiveTab(); navigate();
+    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; VIEW_PHOTO = null; VIEW_OFFSET = 0; setActiveTab(); navigate();
   }));
   const view = document.getElementById("view");
   view.addEventListener("click", onViewClick);

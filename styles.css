@@ -86,6 +86,19 @@ main { flex: 1; padding: 16px 16px 96px; }
   background: var(--bg-card-2); border: 1px solid var(--line); color: var(--muted); }
 .chip.on { background: rgba(52,211,153,.16); border-color: rgba(52,211,153,.4); color: var(--accent); }
 
+/* day navigation (read-only past days) */
+.day-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.day-nav-btn { width: 40px; height: 40px; flex: 0 0 auto; border-radius: 12px; font-size: 22px;
+  font-weight: 800; line-height: 1; background: var(--bg-card); border: 1px solid var(--line);
+  color: var(--accent); display: flex; align-items: center; justify-content: center; }
+.day-nav-btn:disabled { color: var(--line); opacity: .5; }
+.day-nav-btn:active:not(:disabled) { transform: scale(.92); }
+.day-nav-label { flex: 1 1 auto; text-align: center; font-weight: 800; font-size: 14px;
+  color: var(--muted); }
+.day-nav-today { flex: 0 0 100%; order: 3; text-align: center; padding: 8px; border-radius: 10px;
+  font-weight: 700; font-size: 13px; background: rgba(52,211,153,.14); border: 1px solid rgba(52,211,153,.35);
+  color: var(--accent); }
+
 /* tomorrow prep heads-up */
 /* rest timer */
 .rest-timer { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);
