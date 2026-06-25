@@ -236,6 +236,47 @@ function weekVolume() {
   }
   return { vol: Math.round(vol), sets };
 }
+// e1RM series over time for one exercise (best set per day)
+function liftSeries(name) {
+  const pts = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.indexOf("pt_lift_") === 0) {
+      const sets = LS.get(k, {})[name];
+      if (sets && sets.length) { const best = Math.max(0, ...sets.map((s) => e1rm(s.w, s.r))); if (best > 0) pts.push({ date: k.slice(8), e: best }); }
+    }
+  }
+  return pts.sort((a, b) => a.date.localeCompare(b.date));
+}
+function miniSpark(vals, w = 130, h = 34) {
+  if (vals.length < 2) return "";
+  const min = Math.min(...vals), max = Math.max(...vals), range = (max - min) || 1, pad = 3;
+  const pts = vals.map((v, i) => `${(pad + i / (vals.length - 1) * (w - 2 * pad)).toFixed(1)},${(pad + (1 - (v - min) / range) * (h - 2 * pad)).toFixed(1)}`);
+  const up = vals[vals.length - 1] >= vals[0];
+  return `<svg class="mini-spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"><polyline fill="none" stroke="${up ? "var(--accent)" : "#f87171"}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${pts.join(" ")}"/></svg>`;
+}
+// map an exercise to a muscle group for volume balance
+function muscleOf(n) {
+  n = n.toLowerCase();
+  if (/bench|chest|push-?up|incline.*press|floor press|\bfly\b|\bdip/.test(n)) return "Chest";
+  if (/row|pulldown|pull-?up|face pull|lat /.test(n)) return "Back";
+  if (/deadlift|rdl|romanian|hip thrust|glute|leg curl|nordic/.test(n)) return "Posterior";
+  if (/shoulder press|overhead|lateral raise|pike/.test(n)) return "Shoulders";
+  if (/curl|tricep|extension/.test(n)) return "Arms";
+  if (/squat|leg press|lunge|split|sit-to-stand|wall sit/.test(n)) return "Legs";
+  return "Other";
+}
+function weeklyMuscleVolume() {
+  const m = {}; const start = (Math.max(1, position().week) - 1) * 7;
+  for (let d = 0; d < 7; d++) {
+    const log = LS.get("pt_lift_" + dateKeyForDn(start + d), {});
+    for (const [n, sets] of Object.entries(log)) {
+      const g = muscleOf(n), v = sets.reduce((s, x) => s + (x.w || 0) * x.r, 0);
+      if (v > 0) m[g] = (m[g] || 0) + v;
+    }
+  }
+  return m;
+}
 function liftLogger(lf, dn) {
   const logged = todayLift(lf.name);
   const sug = suggestLift(lf.name, dn, lf.repLow, lf.repHigh);
@@ -273,6 +314,7 @@ function saveLift(name) {
   if (newBest > prevBest && newBest > 0) { toast("🏅 New PB! e1RM " + newBest + "kg"); }
   else if (sets.length) toast("Saved · " + setSummary(sets));
   repaintKeepScroll();
+  if (sets.length) startRest(LS.get("pt_restsecs", 90)); // auto-start rest after logging
 }
 function position() {
   const dn = dayNumber();
@@ -395,7 +437,7 @@ function renderToday() {
         suffix = `<span class="lift-done"> ✓ ${setSummary(logged)}${top ? ` · e1RM ${top}` : ""}</span>`;
       } else {
         const sug = suggestLift(lf.name, pos.dn, lf.repLow, lf.repHigh);
-        if (sug) suffix = `<span class="lift-sug"> 🎯 ${sug.w ? sug.w + "kg" : "BW"} × ${sug.reps}${sug.progress ? " ⤴" : ""}</span>`;
+        if (sug) suffix = `<span class="lift-sug"> · 🎯 ${sug.w ? sug.w + "kg" : "BW"} × ${sug.reps}${sug.progress ? " ⤴" : ""}</span>`;
       }
       logBtn = `<button type="button" class="x-del" data-act="openlift" data-name="${encodeURIComponent(lf.name)}" title="Log sets">${OPEN_LIFT === lf.name ? "▲" : "📊"}</button>`;
       if (OPEN_LIFT === lf.name) logger = liftLogger(lf, pos.dn);
@@ -1010,17 +1052,30 @@ function renderProgress() {
 function renderStrength() {
   const names = allLiftNames();
   if (!names.length) return `<details class="card fold"><summary>💪 Strength log</summary>
-    <div class="fold-body"><p class="note">Tap the 📊 next to any exercise on the Today screen to log your sets (weight × reps). Your PBs, estimated 1-rep maxes, ×bodyweight ratios and weekly volume build up here — and the app suggests next session's load automatically.</p></div></details>`;
+    <div class="fold-body"><p class="note">Tap the 📊 next to any exercise on the Today screen to log your sets (weight × reps). Your PBs, estimated 1-rep maxes, ×bodyweight ratios, trend charts and weekly volume build up here — and the app suggests next session's load automatically.</p></div></details>`;
   const bw = latestWeight();
-  const rows = names.map((n) => ({ n, best: bestE1rm(n), last: lastLiftBefore(n, dayNumber() + 1) })).sort((a, b) => b.best - a.best);
+  const rows = names.map((n) => ({ n, best: bestE1rm(n), last: lastLiftBefore(n, dayNumber() + 1), series: liftSeries(n) })).sort((a, b) => b.best - a.best);
   const wv = weekVolume();
+  // muscle balance
+  const mv = weeklyMuscleVolume();
+  const mTotal = Object.values(mv).reduce((s, v) => s + v, 0);
+  const mOrder = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Posterior", "Other"].filter((g) => mv[g]);
+  const balance = mTotal ? `<div class="section-label" style="margin-top:14px">This week's volume by muscle group</div>
+    ${mOrder.map((g) => `<div class="mbar-row"><span class="mbar-label">${g}</span>
+      <span class="mbar-track"><span class="mbar-fill" style="width:${Math.round(mv[g] / mTotal * 100)}%"></span></span>
+      <span class="mbar-val">${Math.round(mv[g] / mTotal * 100)}%</span></div>`).join("")}` : "";
+
   return `<details class="card fold"><summary>💪 Strength log <span class="swap-tag">${names.length} lifts</span></summary>
     <div class="fold-body">
-      <p class="sub">Estimated 1-rep max (Epley) per lift · ×bodyweight</p>
+      <p class="sub">Estimated 1-rep max (Epley) · ×bodyweight · trend</p>
       <ul class="lift-stats">${rows.map((r) => `<li>
-        <span class="lift-name">${r.n}</span>
-        <span class="lift-figs">${r.best ? `<b>${r.best}kg</b>${bw ? ` · ×${(r.best / bw).toFixed(2)}` : ""}` : "—"}${r.last ? ` · ${setSummary(r.last.sets)}` : ""}</span></li>`).join("")}</ul>
-      <p class="note" style="margin-top:8px">This week: <b>${wv.vol.toLocaleString()} kg</b> total volume across ${wv.sets} sets.</p>
+        <div class="lift-row-top">
+          <span class="lift-name">${r.n}</span>
+          ${r.series.length >= 2 ? miniSpark(r.series.map((p) => p.e)) : ""}
+        </div>
+        <span class="lift-figs">${r.best ? `<b>${r.best}kg</b> e1RM${bw ? ` · ×${(r.best / bw).toFixed(2)} BW` : ""}` : "—"}${r.last ? ` · last ${setSummary(r.last.sets)}` : ""}</span></li>`).join("")}</ul>
+      ${balance}
+      <p class="note" style="margin-top:10px">This week: <b>${wv.vol.toLocaleString()} kg</b> total volume across ${wv.sets} sets.</p>
     </div></details>`;
 }
 
