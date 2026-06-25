@@ -629,14 +629,15 @@ function renderShop() {
 
   ${batchCard}
 
-  <div class="card">
-    <h2>⏭️ Next week</h2>
-    <p class="sub">A peek so you can plan ahead</p>
+  <details class="card fold">
+    <summary>⏭️ Next week — plan ahead</summary>
+    <div class="fold-body">
     ${nextBuckets.map(b =>
       `<div class="section-label">${b.name}</div>
        <ul class="checklist">${b.items.map(it =>
         `<li style="cursor:default"><span class="checkbox" style="border-radius:6px"></span><span class="item-text">${it.label}</span></li>`).join("")}</ul>`).join("")}
-  </div>`;
+    </div>
+  </details>`;
 }
 
 /* ---------- PROGRESS ---------- */
@@ -745,13 +746,16 @@ function renderProgress() {
 
   ${goalCard}
 
-  <div class="card"><h2>🔥 Metabolism</h2>
-    <div class="stat-grid">
-      <div class="stat"><div class="big">${currentMaintenance().toLocaleString()}</div><div class="cap">maintenance now</div></div>
-      <div class="stat"><div class="big">${(PLAN.meta.maintenance || 2250).toLocaleString()}</div><div class="cap">at start (${start}kg)</div></div>
+  <details class="card fold">
+    <summary>🔥 Metabolism — maintenance ~${currentMaintenance().toLocaleString()} kcal</summary>
+    <div class="fold-body">
+      <div class="stat-grid">
+        <div class="stat"><div class="big">${currentMaintenance().toLocaleString()}</div><div class="cap">maintenance now</div></div>
+        <div class="stat"><div class="big">${(PLAN.meta.maintenance || 2250).toLocaleString()}</div><div class="cap">at start (${start}kg)</div></div>
+      </div>
+      <p class="note" style="margin-top:8px">As you lose weight your body burns a little less, so your calorie aim auto-recalculates to hold the same deficit. Today's aim: <b>${adjustedAim(pos.phase).toLocaleString()} kcal</b>.</p>
     </div>
-    <p class="note" style="margin-top:8px">As you lose weight your body burns a little less, so your calorie aim auto-recalculates to hold the same deficit. Today's aim: <b>${adjustedAim(pos.phase).toLocaleString()} kcal</b>.</p>
-  </div>
+  </details>
 
   <div class="card"><h2>⚖️ Weight trend</h2>${chart}
     <ul class="weight-list">${weights.slice().reverse().slice(0, 8).map(w =>
@@ -762,9 +766,10 @@ function renderProgress() {
     </div>
   </div>
 
-  <div class="card"><h2>🏅 Achievements <small style="color:var(--muted);font-weight:600">${earned}/${A.length}</small></h2>
-    <div class="badge-grid">${badges}</div>
-  </div>
+  <details class="card fold">
+    <summary>🏅 Achievements <span class="swap-tag">${earned}/${A.length}</span></summary>
+    <div class="fold-body"><div class="badge-grid">${badges}</div></div>
+  </details>
 
   ${renderPhotos()}`;
 }
