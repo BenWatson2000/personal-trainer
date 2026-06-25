@@ -21,6 +21,7 @@ let PHOTOS = [];           // [{date, data(dataURL)}] loaded from IndexedDB
 let COMPARE_T = 50;        // before/after slider position
 let SWAP_SLOT = null;      // which meal slot's swap picker is open
 let OPEN_LIFT = null;      // which exercise's set-logger is open
+let VIEW_PHOTO = null;     // date of the photo open in the lightbox
 
 /* ---------- progress photos: IndexedDB (blobs are too big for localStorage) ---------- */
 function idb() {
@@ -1207,21 +1208,22 @@ function renderPhotos() {
   })() : "";
 
   const thumbs = PHOTOS.map(p =>
-    `<div class="photo-thumb"><img src="${p.data}" alt="${p.date}" />
-      <span class="photo-date">${p.date.slice(5)}</span>
-      <button type="button" class="photo-del" data-act="delphoto" data-date="${p.date}">✕</button></div>`).join("");
+    `<button type="button" class="photo-thumb" data-act="viewphoto" data-date="${p.date}">
+      <img src="${p.data}" alt="${p.date}" />
+      <span class="photo-date">${p.kg != null ? "~" + p.kg + "kg" : p.date.slice(5)}</span></button>`).join("");
 
   return `<div class="card"><h2>📸 Progress photos</h2>
-    <p class="sub">Stored only on this device · the scale lies, photos don't</p>
-    ${has ? `<div class="photo-grid" id="photoStage">${thumbs}</div>` : `<p class="note">Add a photo each week to build your transformation.</p>`}
+    <p class="sub">Stored only on this device · tap a photo to view, share or delete</p>
+    ${has ? `<div class="photo-grid" id="photoStage">${thumbs}</div>` : `<p class="note">Add a photo each week to build your transformation — each is stamped with your nearest weight.</p>`}
     ${compare}
     <div class="tracker-row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
       <label class="btn accent" for="photoInput" style="cursor:pointer">📷 Add photo</label>
       <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" />
-      ${PHOTOS.length >= 2 ? `<button type="button" class="btn" id="playTimelapse">▶ Play timelapse</button>` : ""}
+      ${PHOTOS.length >= 2 ? `<button type="button" class="btn" id="playTimelapse">▶ Timelapse</button>` : ""}
     </div>
     <img id="timelapseStage" class="timelapse-stage" style="display:none" />
-  </div>`;
+  </div>
+  ${photoOverlay()}`;
 }
 
 function sparkline(vals) {
@@ -1392,6 +1394,10 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "swap") { haptic(6); swapMeal(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delcustom") { haptic(6); delCustom(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delphoto") { haptic(6); delPhoto(tagged.dataset.date); return; }
+  if (tagged && tagged.dataset.act === "viewphoto") { haptic(6); VIEW_PHOTO = tagged.dataset.date; repaintKeepScroll(); return; }
+  if (tagged && tagged.dataset.act === "closephoto") { VIEW_PHOTO = null; repaintKeepScroll(); return; }
+  if (tagged && tagged.dataset.act === "exportphoto") { haptic(8); exportPhoto(tagged.dataset.date); return; }
+  if (tagged && tagged.dataset.act === "noop") return;
   if (tagged && tagged.dataset.act === "lib") { libToggle(tagged.dataset.slot, tagged.dataset.id); return; }
   if (tagged && tagged.dataset.act === "supp") { haptic(8); toggleSupp(decodeURIComponent(tagged.dataset.name), tagged); return; }
   if (tagged && tagged.dataset.act === "skipmeal") { haptic(6); toggleSkip(decodeURIComponent(tagged.dataset.slot)); return; }
@@ -1531,19 +1537,36 @@ function delCustom(i) {
   repaintKeepScroll();
 }
 /* ---------- progress photos ---------- */
+// nearest logged bodyweight to a given date
+function closestWeight(dateKey) {
+  const w = LS.get("pt_weights", []); if (!w.length) return null;
+  const t = new Date(dateKey + "T00:00:00").getTime();
+  let best = null, bd = Infinity;
+  for (const x of w) { const d = Math.abs(new Date(x.date + "T00:00:00").getTime() - t); if (d < bd) { bd = d; best = x.kg; } }
+  return best;
+}
 function addPhotoFromFile(file) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
     const img = new Image();
     img.onload = async () => {
-      // downscale to max 800px long edge, JPEG ~0.7, to keep storage sane
-      const max = 800, scale = Math.min(1, max / Math.max(img.width, img.height));
+      const max = 1000, scale = Math.min(1, max / Math.max(img.width, img.height));
       const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
       const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
-      cv.getContext("2d").drawImage(img, 0, 0, w, h);
-      const data = cv.toDataURL("image/jpeg", 0.7);
-      await photoPut({ date: todayKey(), data });
+      const ctx = cv.getContext("2d"); ctx.drawImage(img, 0, 0, w, h);
+      // watermark: nearest weight + date, bottom-left
+      const kg = closestWeight(todayKey());
+      const cap = (kg != null ? "~" + kg + " kg · " : "") + new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+      const fs = Math.max(16, Math.round(h * 0.035));
+      ctx.font = `700 ${fs}px -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif`;
+      const tw = ctx.measureText(cap).width, pad = Math.round(h * 0.025);
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillRect(pad - 8, h - pad - fs - 14, tw + 24, fs + 20);
+      ctx.fillStyle = "#34d399"; ctx.fillRect(pad - 8, h - pad - fs - 14, 5, fs + 20);
+      ctx.fillStyle = "#fff"; ctx.fillText(cap, pad + 6, h - pad - 6);
+      const data = cv.toDataURL("image/jpeg", 0.78);
+      await photoPut({ date: todayKey(), data, kg });
       PHOTOS = await photosAll();
       haptic(8); repaintKeepScroll();
     };
@@ -1553,7 +1576,32 @@ function addPhotoFromFile(file) {
 }
 async function delPhoto(date) {
   if (!confirm("Delete this photo?")) return;
+  VIEW_PHOTO = null;
   await photoDel(date); PHOTOS = await photosAll(); repaintKeepScroll();
+}
+async function exportPhoto(date) {
+  const p = PHOTOS.find((x) => x.date === date); if (!p) return;
+  try {
+    const blob = await (await fetch(p.data)).blob();
+    const file = new File([blob], "progress-" + date + ".jpg", { type: blob.type || "image/jpeg" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: `Progress · ${p.kg != null ? "~" + p.kg + "kg · " : ""}${date}` }); return; }
+  } catch { /* fall through to download */ }
+  const a = document.createElement("a"); a.href = p.data; a.download = "progress-" + date + ".jpg"; a.click(); toast("Photo saved");
+}
+function photoOverlay() {
+  if (!VIEW_PHOTO) return "";
+  const p = PHOTOS.find((x) => x.date === VIEW_PHOTO); if (!p) return "";
+  const cap = (p.kg != null ? `~${p.kg} kg · ` : "") + p.date;
+  return `<div class="lightbox" data-act="closephoto">
+    <div class="lb-inner" data-act="noop">
+      <img src="${p.data}" alt="${p.date}" />
+      <div class="lb-bar"><span>${cap}</span>
+        <span class="lb-actions">
+          <button type="button" class="btn" data-act="exportphoto" data-date="${p.date}">📤</button>
+          <button type="button" class="btn" data-act="delphoto" data-date="${p.date}">🗑</button>
+          <button type="button" class="btn accent" data-act="closephoto">Done</button>
+        </span></div>
+    </div></div>`;
 }
 let TL_INT = null;
 function playTimelapse() {
@@ -1724,7 +1772,7 @@ async function boot() {
   buildBank();
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
     if (CURRENT_TAB === t.dataset.tab) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; setActiveTab(); navigate();
+    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; VIEW_PHOTO = null; setActiveTab(); navigate();
   }));
   const view = document.getElementById("view");
   view.addEventListener("click", onViewClick);
