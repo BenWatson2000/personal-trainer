@@ -151,7 +151,29 @@ function paybackForDay(dn) {
   return Math.round(total);
 }
 function dailyAim(pos) {
-  return Math.max(1400, Math.round((adjustedAim(pos.phase) - paybackForDay(pos.dn)) / 10) * 10);
+  return Math.max(1400, Math.round((adjustedAim(pos.phase) - paybackForDay(pos.dn) + LS.get("pt_adaptkcal", 0)) / 10) * 10);
+}
+// adaptive coach: read the recent weight trend and decide if the plan needs changing
+function weeklyRate() {
+  const w = LS.get("pt_weights", []);
+  if (w.length < 2) return null;
+  const last = w[w.length - 1];
+  const cutoff = new Date(last.date + "T00:00:00"); cutoff.setDate(cutoff.getDate() - 16);
+  let win = w.filter((x) => new Date(x.date + "T00:00:00") >= cutoff);
+  if (win.length < 2) win = w.slice(-2);
+  const a = win[0], b = win[win.length - 1];
+  const days = (new Date(b.date) - new Date(a.date)) / 86400000;
+  if (days < 4) return null;
+  return (b.kg - a.kg) / (days / 7); // kg/week (negative = losing)
+}
+function adaptiveStatus() {
+  const pos = position();
+  const daysIn = Math.max(0, pos.dn + 1);
+  const rate = weeklyRate();
+  if (rate == null || daysIn < 7) return { state: "new", rate: null };
+  if (rate > -0.15) return { state: "stall", rate };
+  if (rate < -1.0) return { state: "fast", rate };
+  return { state: "good", rate };
 }
 function position() {
   const dn = dayNumber();
@@ -797,6 +819,36 @@ function renderProgress() {
   const badges = A.map(([e, label, on]) =>
     `<div class="badge ${on ? "earned" : ""}"><div class="badge-e">${e}</div><div class="badge-l">${label}</div></div>`).join("");
 
+  // adaptive coach
+  const ad = adaptiveStatus();
+  const adapt = LS.get("pt_adaptkcal", 0);
+  const todayAim = dailyAim(pos);
+  let adBody;
+  if (ad.state === "new") {
+    adBody = `<p class="note">Log weigh-ins for a week or two and I'll read your trend and adjust your plan to your <b>actual</b> progress — not just the calendar.</p>`;
+  } else if (ad.state === "stall") {
+    adBody = `<p class="note">⚠️ Your weight's basically flat (<b>${ad.rate >= 0 ? "+" : ""}${ad.rate.toFixed(2)} kg/wk</b>). Time to change the stimulus:</p>
+      <ul class="note" style="padding-left:18px;line-height:1.8">
+        <li><b>Nutrition:</b> trim ~150 kcal/day to restart fat loss.</li>
+        <li><b>Training:</b> progress your main lifts (+1 rep or +2.5 kg) and add one extra 25-min low-impact cardio this week.</li>
+        <li><b>Check the basics:</b> sleep, hidden snacks, and weigh-in consistency — stalls usually hide there.</li>
+      </ul>
+      <button type="button" class="btn accent block" data-act="adapt" data-kcal="-150">Apply −150 kcal/day</button>`;
+  } else if (ad.state === "fast") {
+    adBody = `<p class="note">🏃 You're dropping fast (<b>${ad.rate.toFixed(2)} kg/wk</b>) — ease up so you keep muscle and energy:</p>
+      <ul class="note" style="padding-left:18px;line-height:1.8">
+        <li><b>Nutrition:</b> add ~150 kcal/day (mostly protein + carbs around training).</li>
+        <li><b>Training:</b> keep lifting heavy to hold muscle; don't add more cardio.</li>
+      </ul>
+      <button type="button" class="btn accent block" data-act="adapt" data-kcal="150">Apply +150 kcal/day</button>`;
+  } else {
+    adBody = `<p class="note">✅ On track — losing <b>${Math.abs(ad.rate).toFixed(2)} kg/wk</b>. No changes needed; keep doing what you're doing.</p>`;
+  }
+  if (adapt !== 0) {
+    adBody += `<p class="note" style="margin-top:10px">Active adaptive tweak: <b>${adapt > 0 ? "+" : ""}${adapt} kcal/day</b> → today's aim <b>${todayAim} kcal</b>. <button type="button" class="btn" data-act="adaptreset" style="min-height:auto;padding:5px 9px;margin-left:4px">Reset</button></p>`;
+  }
+  const adCard = `<div class="card"><h2>🧭 Adaptive coach</h2>${adBody}</div>`;
+
   return `
   <div class="card hero"><span class="phase-tag">Your numbers</span><h1>Progress</h1>
     <p>Down <b style="color:var(--accent)">${lost} kg</b> since you started.</p></div>
@@ -806,6 +858,8 @@ function renderProgress() {
     <div class="stat"><div class="big">${workoutsDone}</div><div class="cap">workouts logged</div></div>
     <div class="stat"><div class="big">✨ ${perfectDays}</div><div class="cap">perfect days</div></div>
   </div></div>
+
+  ${adCard}
 
   ${goalCard}
 
@@ -1033,6 +1087,8 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "skipmeal") { haptic(6); toggleSkip(decodeURIComponent(tagged.dataset.slot)); return; }
   if (tagged && tagged.dataset.act === "openswap") { haptic(6); const s = decodeURIComponent(tagged.dataset.slot); SWAP_SLOT = SWAP_SLOT === s ? null : s; repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "pickmeal") { haptic(8); pickMeal(decodeURIComponent(tagged.dataset.slot), tagged.dataset.id); return; }
+  if (tagged && tagged.dataset.act === "adapt") { haptic(8); LS.set("pt_adaptkcal", Math.max(-300, Math.min(300, LS.get("pt_adaptkcal", 0) + (+tagged.dataset.kcal)))); toast("Targets adjusted"); repaintKeepScroll(); return; }
+  if (tagged && tagged.dataset.act === "adaptreset") { haptic(6); localStorage.removeItem("pt_adaptkcal"); repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "delsupp") { haptic(6); delSupp(decodeURIComponent(tagged.dataset.name)); return; }
   if (tagged && tagged.dataset.act === "batch") { haptic(8); toggleBatch(tagged); return; }
   if (tagged && tagged.dataset.act === "shop") { haptic(8); toggleShop(tagged); return; }
