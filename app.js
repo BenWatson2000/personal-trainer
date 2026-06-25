@@ -296,9 +296,10 @@ function liftLogger(lf, dn) {
   }
   const best = bestE1rm(lf.name);
   return `<li class="lift-logger"><div style="width:100%">
-    <p class="sub" style="margin:0 0 8px">Target ${lf.presc}${best ? ` · best e1RM ${best}kg` : ""}${sug ? ` · last ${sug.last}` : ""}</p>
+    <p class="log-title">⚖️ Enter weight (kg) &amp; reps for each set</p>
+    <p class="sub" style="margin:0 0 10px">Target ${lf.presc}${best ? ` · best e1RM ${best}kg` : ""}${sug ? ` · last ${sug.last}` : ""}</p>
     <div class="set-rows">${rows}</div>
-    <button type="button" class="btn accent block" data-act="savelift" data-name="${encodeURIComponent(lf.name)}" style="margin-top:8px">Save sets</button>
+    <button type="button" class="btn accent block" data-act="savelift" data-name="${encodeURIComponent(lf.name)}" style="margin-top:10px">Save sets</button>
   </div></li>`;
 }
 function saveLift(name) {
@@ -556,6 +557,7 @@ function renderToday() {
     let suffix = "", logBtn = "", logger = "";
     if (lf.loggable) {
       const logged = todayLift(lf.name);
+      const open = OPEN_LIFT === lf.name;
       if (logged.length) {
         const top = Math.max(0, ...logged.map((s) => e1rm(s.w, s.r)));
         suffix = `<span class="lift-done"> ✓ ${setSummary(logged)}${top ? ` · e1RM ${top}` : ""}</span>`;
@@ -563,10 +565,11 @@ function renderToday() {
         const sug = suggestLift(lf.name, pos.dn, lf.repLow, lf.repHigh);
         if (sug) suffix = `<span class="lift-sug"> · 🎯 ${sug.w ? sug.w + "kg" : "BW"} × ${sug.reps}${sug.progress ? " ⤴" : ""}</span>`;
       }
-      logBtn = `<button type="button" class="x-del" data-act="openlift" data-name="${encodeURIComponent(lf.name)}" title="Log sets">${OPEN_LIFT === lf.name ? "▲" : "📊"}</button>`;
-      if (OPEN_LIFT === lf.name) logger = liftLogger(lf, pos.dn);
+      const lbl = open ? "✕ Close" : logged.length ? `✎ Edit weights` : `🏋️ Log weight & reps`;
+      logBtn = `<button type="button" class="log-btn ${open ? "open" : logged.length ? "logged" : ""}" data-act="openlift" data-name="${encodeURIComponent(lf.name)}">${lbl}</button>`;
+      if (open) logger = liftLogger(lf, pos.dn);
     }
-    return `<li class="${done ? "done" : ""}" data-act="workout" data-i="${i}">
+    return `<li class="${done ? "done" : ""} ${lf.loggable ? "wlog" : ""}" data-act="workout" data-i="${i}">
       <span class="checkbox">${done ? "✓" : ""}</span>
       <span class="item-text">${t}${suffix}</span>${logBtn}</li>${logger}`;
   }).join("");
@@ -608,9 +611,9 @@ function renderToday() {
     ? `<p class="note" style="margin:6px 0 0;color:var(--accent-2)">⊘ Skipped ${mealKeys.filter(k => skipped[k]).join(", ")} — portions bumped <b>×${portionFactor.toFixed(1)}</b> on the rest${portionFactor >= 1.79 ? " (capped — consider a protein shake to top up)" : ""} to keep your ${meal.totals.kcal} kcal.</p>`
     : "";
 
-  // water dots (target ~8 glasses)
+  // water glasses (target ~8 × 250ml = 2L) — tap a glass to set your level
   const waterDots = Array.from({ length: 8 }, (_, i) =>
-    `<div class="water-dot ${i < checks.water ? "filled" : ""}" data-act="water" data-i="${i}">${i < checks.water ? "💧" : ""}</div>`
+    `<div class="water-dot ${i < checks.water ? "filled" : ""}" data-act="water" data-i="${i}" aria-label="${i + 1} glasses">${i < checks.water ? "💧" : ""}</div>`
   ).join("");
 
   // time-aware greeting + date
@@ -786,17 +789,6 @@ function renderToday() {
     ${(day.type === "strength" && allLiftNames().length) ? `<button type="button" class="link-btn" data-act="gotostats" style="margin-top:12px">📊 View your strength stats — PBs, e1RM &amp; volume →</button>` : ""}
   </div>
 
-  ${day.type === "strength" ? `<details class="card fold"><summary>🏋️ Plate calculator</summary>
-    <div class="fold-body">
-      <div class="tracker-row">
-        <input class="field" id="plateWeight" type="number" inputmode="decimal" placeholder="total kg" style="max-width:120px" />
-        <select class="field" id="plateBar" style="max-width:140px">
-          <option value="20">20kg bar</option><option value="15">15kg bar</option><option value="10">10kg / EZ</option><option value="0">No bar / DB</option>
-        </select>
-      </div>
-      <p class="note" id="plateResult" style="margin-top:10px">Enter a total weight to see plates per side.</p>
-    </div></details>` : ""}
-
   <div class="card">
     <h2>🍽️ Today's Fuel${swapped ? ' <span class="swap-tag">swapped</span>' : ""}</h2>
     <p class="sub">${meal.name} · tick each meal as you eat it</p>
@@ -817,9 +809,14 @@ function renderToday() {
 
   <div class="card">
     <h2>📋 Daily log</h2>
-    <div class="log-sec">
-      <div class="log-label">💧 Water · ${checks.water}/8</div>
-      <div class="water-dots">${waterDots}</div>
+    <div class="log-sec water-sec">
+      <div class="log-label">💧 Water <span class="water-count" id="waterCount">${checks.water}/8</span>
+        <span class="water-vol" id="waterVol">${waterVolStr(checks.water)}</span></div>
+      <div class="water-row">
+        <button type="button" class="water-step" data-act="waterdec" aria-label="Remove a glass"${checks.water <= 0 ? " disabled" : ""}>−</button>
+        <div class="water-dots">${waterDots}</div>
+        <button type="button" class="water-step" data-act="waterinc" aria-label="Add a glass"${checks.water >= 8 ? " disabled" : ""}>＋</button>
+      </div>
     </div>
     ${suppRow}
     <div class="log-sec">
@@ -1625,6 +1622,16 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "delsupp") { haptic(6); delSupp(decodeURIComponent(tagged.dataset.name)); return; }
   if (tagged && tagged.dataset.act === "batch") { haptic(8); toggleBatch(tagged); return; }
   if (tagged && tagged.dataset.act === "shop") { haptic(8); toggleShop(tagged); return; }
+  if (tagged && (tagged.dataset.act === "waterinc" || tagged.dataset.act === "waterdec")) {
+    const key = todayKey();
+    const checks = LS.get("pt_checks_" + key, { workout: {}, meals: {}, water: 0 });
+    const delta = tagged.dataset.act === "waterinc" ? 1 : -1;
+    checks.water = Math.max(0, Math.min(8, (checks.water || 0) + delta));
+    LS.set("pt_checks_" + key, checks);
+    haptic(8); updateWater(checks.water); updateTodayChips();
+    if (CURRENT_TAB === "today" && isTodayPerfect() && !document.querySelector(".perfect")) { haptic([100, 50, 100, 50, 220]); repaintKeepScroll(); }
+    return;
+  }
   if (tagged && (tagged.dataset.act === "workout" || tagged.dataset.act === "meals" || tagged.dataset.act === "water")) {
     const act = tagged.dataset.act, i = parseInt(tagged.dataset.i, 10);
     const key = todayKey();
@@ -1769,25 +1776,6 @@ function delStaple(i) {
   repaintKeepScroll();
 }
 /* ---------- progress photos ---------- */
-/* ---------- plate calculator ---------- */
-function platesPerSide(total, bar) {
-  let per = (total - bar) / 2; if (per <= 0) return { plates: [], rem: 0 };
-  const sizes = [25, 20, 15, 10, 5, 2.5, 1.25]; const out = [];
-  for (const s of sizes) while (per >= s - 1e-9) { out.push(s); per = +(per - s).toFixed(3); }
-  return { plates: out, rem: +per.toFixed(2) };
-}
-function updatePlates() {
-  const wEl = document.getElementById("plateWeight"), bEl = document.getElementById("plateBar"), res = document.getElementById("plateResult");
-  if (!res) return;
-  const total = parseFloat(wEl.value), bar = parseFloat(bEl.value);
-  if (isNaN(total) || total <= 0) { res.textContent = "Enter a total weight to see plates per side."; return; }
-  if (total < bar) { res.textContent = "That's lighter than the bar."; return; }
-  const { plates, rem } = platesPerSide(total, bar);
-  const counts = {}; plates.forEach((p) => counts[p] = (counts[p] || 0) + 1);
-  const txt = Object.keys(counts).sort((a, b) => b - a).map((p) => `${counts[p]}×${p}`).join(" + ") || "just the bar";
-  res.innerHTML = `<b>Per side:</b> ${txt}${rem > 0 ? ` <span style="color:var(--warn)">(+${rem}kg short)</span>` : ""}`;
-}
-
 // nearest logged bodyweight to a given date
 function closestWeight(dateKey) {
   const w = LS.get("pt_weights", []); if (!w.length) return null;
@@ -1994,14 +1982,18 @@ function toggleShop(li) {
   if (cnt) cnt.textContent = `${done} of ${items.length} ticked off${done === items.length ? " — all done! 🎉" : ""}`;
 }
 
+function waterVolStr(n) { const l = n * 0.25; return (Number.isInteger(l) ? l : l.toFixed(2).replace(/0$/, "")) + " L"; }
 function updateWater(n) {
   const wrap = document.querySelector(".water-dots");
-  if (!wrap) return;
-  wrap.querySelectorAll(".water-dot").forEach((d, i) => {
+  if (wrap) wrap.querySelectorAll(".water-dot").forEach((d, i) => {
     const filled = i < n;
     d.classList.toggle("filled", filled);
     d.textContent = filled ? "💧" : "";
   });
+  const cnt = document.getElementById("waterCount"); if (cnt) cnt.textContent = n + "/8";
+  const vol = document.getElementById("waterVol"); if (vol) vol.textContent = waterVolStr(n);
+  const dec = document.querySelector('[data-act="waterdec"]'); if (dec) dec.disabled = n <= 0;
+  const inc = document.querySelector('[data-act="waterinc"]'); if (inc) inc.disabled = n >= 8;
 }
 
 /* ---------- shell ---------- */
@@ -2079,11 +2071,9 @@ async function boot() {
   view.addEventListener("change", (e) => {
     if (e.target.id === "photoInput") addPhotoFromFile(e.target.files && e.target.files[0]);
     if (e.target.id === "importFile") importData(e.target.files && e.target.files[0]);
-    if (e.target.id === "plateBar") updatePlates();
   });
   view.addEventListener("input", (e) => {
     if (e.target.id === "compareRange") setCompare(e.target.value);
-    if (e.target.id === "plateWeight") updatePlates();
   });
   try { PHOTOS = await photosAll(); } catch { PHOTOS = []; }
   render();
