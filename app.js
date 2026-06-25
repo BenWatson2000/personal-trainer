@@ -20,6 +20,7 @@ let CURRENT_TAB = "today";
 let PHOTOS = [];           // [{date, data(dataURL)}] loaded from IndexedDB
 let COMPARE_T = 50;        // before/after slider position
 let SWAP_SLOT = null;      // which meal slot's swap picker is open
+let OPEN_LIFT = null;      // which exercise's set-logger is open
 
 /* ---------- progress photos: IndexedDB (blobs are too big for localStorage) ---------- */
 function idb() {
@@ -175,6 +176,104 @@ function adaptiveStatus() {
   if (rate < -1.0) return { state: "fast", rate };
   return { state: "good", rate };
 }
+
+/* ---------- strength logging: weight x reps, e1RM, PBs, auto-progression ---------- */
+function parseLift(item) {
+  const parts = item.split(" — ");
+  const name = parts[0].trim();
+  const presc = (parts[1] || "").trim();
+  const timed = /\d+\s*s\b|min\b|amrap/i.test(presc);
+  const bad = /plank|dead bug|stretch|mobility|warm|walk|cycle|spin|rower|circuit|hold|finisher|side plank/i.test(name);
+  const m = presc.match(/(\d+)\s*[x×]\s*(\d+)(?:\s*-\s*(\d+))?/i);
+  return {
+    name, presc,
+    loggable: !!m && !timed && !bad,
+    sets: m ? +m[1] : 0,
+    repLow: m ? +m[2] : 0,
+    repHigh: m ? (m[3] ? +m[3] : +m[2]) : 0,
+  };
+}
+function e1rm(w, r) { return (w > 0 && r > 0) ? Math.round(w * (1 + r / 30)) : 0; }
+function liftIncrement(name) { return /squat|deadlift|leg press|hip thrust|lunge|rdl/i.test(name) ? 5 : 2.5; }
+function todayLift(name) { return (LS.get("pt_lift_" + todayKey(), {})[name]) || []; }
+function lastLiftBefore(name, beforeDn) {
+  for (let i = beforeDn - 1; i >= 0; i--) {
+    const log = LS.get("pt_lift_" + dateKeyForDn(i), null);
+    if (log && log[name] && log[name].length) return { dn: i, sets: log[name] };
+  }
+  return null;
+}
+function bestE1rm(name) {
+  let best = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.indexOf("pt_lift_") === 0) (LS.get(k, {})[name] || []).forEach((s) => { best = Math.max(best, e1rm(s.w, s.r)); });
+  }
+  return best;
+}
+function setSummary(sets) { return sets.map((s) => (s.w ? s.w + "×" + s.r : "BW×" + s.r)).join(", "); }
+function suggestLift(name, dn, repLow, repHigh) {
+  const last = lastLiftBefore(name, dn);
+  if (!last) return null;
+  const topW = Math.max(0, ...last.sets.map((s) => s.w || 0));
+  const allTop = last.sets.length > 0 && last.sets.every((s) => s.r >= repHigh && s.w > 0);
+  if (allTop) return { w: topW + liftIncrement(name), reps: repLow, progress: true, last: setSummary(last.sets) };
+  return { w: topW, reps: repHigh, progress: false, last: setSummary(last.sets) };
+}
+function allLiftNames() {
+  const names = new Set();
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.indexOf("pt_lift_") === 0) Object.keys(LS.get(k, {})).forEach((n) => names.add(n));
+  }
+  return [...names];
+}
+function weekVolume() {
+  let vol = 0, sets = 0; const start = (Math.max(1, position().week) - 1) * 7;
+  for (let d = 0; d < 7; d++) {
+    const log = LS.get("pt_lift_" + dateKeyForDn(start + d), {});
+    Object.values(log).forEach((arr) => arr.forEach((s) => { vol += (s.w || 0) * s.r; sets++; }));
+  }
+  return { vol: Math.round(vol), sets };
+}
+function liftLogger(lf, dn) {
+  const logged = todayLift(lf.name);
+  const sug = suggestLift(lf.name, dn, lf.repLow, lf.repHigh);
+  const n = Math.max(lf.sets || 3, logged.length);
+  let rows = "";
+  for (let s = 0; s < n; s++) {
+    const cur = logged[s] || {};
+    rows += `<div class="set-row"><span class="set-n">Set ${s + 1}</span>
+      <input class="field set-w" inputmode="decimal" placeholder="${sug && sug.w ? sug.w : "kg"}" value="${cur.w != null ? cur.w : ""}" />
+      <span class="set-x">kg ×</span>
+      <input class="field set-r" inputmode="numeric" placeholder="${sug ? sug.reps : lf.repHigh}" value="${cur.r != null ? cur.r : ""}" />
+      <span class="set-x">reps</span></div>`;
+  }
+  const best = bestE1rm(lf.name);
+  return `<li class="lift-logger"><div style="width:100%">
+    <p class="sub" style="margin:0 0 8px">Target ${lf.presc}${best ? ` · best e1RM ${best}kg` : ""}${sug ? ` · last ${sug.last}` : ""}</p>
+    <div class="set-rows">${rows}</div>
+    <button type="button" class="btn accent block" data-act="savelift" data-name="${encodeURIComponent(lf.name)}" style="margin-top:8px">Save sets</button>
+  </div></li>`;
+}
+function saveLift(name) {
+  const wrap = document.querySelector(".lift-logger");
+  if (!wrap) return;
+  const sets = [...wrap.querySelectorAll(".set-row")].map((r) => ({
+    w: parseFloat(r.querySelector(".set-w").value) || 0,
+    r: parseInt(r.querySelector(".set-r").value, 10) || 0,
+  })).filter((s) => s.r > 0);
+  const prevBest = bestE1rm(name);
+  const key = "pt_lift_" + todayKey(); const log = LS.get(key, {});
+  if (sets.length) log[name] = sets; else delete log[name];
+  LS.set(key, log);
+  OPEN_LIFT = null;
+  const newBest = Math.max(0, ...sets.map((s) => e1rm(s.w, s.r)));
+  haptic(12);
+  if (newBest > prevBest && newBest > 0) { toast("🏅 New PB! e1RM " + newBest + "kg"); }
+  else if (sets.length) toast("Saved · " + setSummary(sets));
+  repaintKeepScroll();
+}
 function position() {
   const dn = dayNumber();
   const week = Math.floor(dn / 7) + 1;
@@ -287,8 +386,23 @@ function renderToday() {
   // workout checklist
   const workItems = exercises.map((t, i) => {
     const done = checks.workout[i];
+    const lf = day.type === "strength" ? parseLift(t) : { loggable: false };
+    let suffix = "", logBtn = "", logger = "";
+    if (lf.loggable) {
+      const logged = todayLift(lf.name);
+      if (logged.length) {
+        const top = Math.max(0, ...logged.map((s) => e1rm(s.w, s.r)));
+        suffix = `<span class="lift-done"> ✓ ${setSummary(logged)}${top ? ` · e1RM ${top}` : ""}</span>`;
+      } else {
+        const sug = suggestLift(lf.name, pos.dn, lf.repLow, lf.repHigh);
+        if (sug) suffix = `<span class="lift-sug"> 🎯 ${sug.w ? sug.w + "kg" : "BW"} × ${sug.reps}${sug.progress ? " ⤴" : ""}</span>`;
+      }
+      logBtn = `<button type="button" class="x-del" data-act="openlift" data-name="${encodeURIComponent(lf.name)}" title="Log sets">${OPEN_LIFT === lf.name ? "▲" : "📊"}</button>`;
+      if (OPEN_LIFT === lf.name) logger = liftLogger(lf, pos.dn);
+    }
     return `<li class="${done ? "done" : ""}" data-act="workout" data-i="${i}">
-      <span class="checkbox">${done ? "✓" : ""}</span><span class="item-text">${t}</span></li>`;
+      <span class="checkbox">${done ? "✓" : ""}</span>
+      <span class="item-text">${t}${suffix}</span>${logBtn}</li>${logger}`;
   }).join("");
 
   // meals checklist — with skip + redistribution of a missed meal across the rest
@@ -888,7 +1002,46 @@ function renderProgress() {
     <div class="fold-body"><div class="badge-grid">${badges}</div></div>
   </details>
 
+  ${renderStrength()}
+
   ${renderPhotos()}`;
+}
+
+function renderStrength() {
+  const names = allLiftNames();
+  if (!names.length) return `<details class="card fold"><summary>💪 Strength log</summary>
+    <div class="fold-body"><p class="note">Tap the 📊 next to any exercise on the Today screen to log your sets (weight × reps). Your PBs, estimated 1-rep maxes, ×bodyweight ratios and weekly volume build up here — and the app suggests next session's load automatically.</p></div></details>`;
+  const bw = latestWeight();
+  const rows = names.map((n) => ({ n, best: bestE1rm(n), last: lastLiftBefore(n, dayNumber() + 1) })).sort((a, b) => b.best - a.best);
+  const wv = weekVolume();
+  return `<details class="card fold"><summary>💪 Strength log <span class="swap-tag">${names.length} lifts</span></summary>
+    <div class="fold-body">
+      <p class="sub">Estimated 1-rep max (Epley) per lift · ×bodyweight</p>
+      <ul class="lift-stats">${rows.map((r) => `<li>
+        <span class="lift-name">${r.n}</span>
+        <span class="lift-figs">${r.best ? `<b>${r.best}kg</b>${bw ? ` · ×${(r.best / bw).toFixed(2)}` : ""}` : "—"}${r.last ? ` · ${setSummary(r.last.sets)}` : ""}</span></li>`).join("")}</ul>
+      <p class="note" style="margin-top:8px">This week: <b>${wv.vol.toLocaleString()} kg</b> total volume across ${wv.sets} sets.</p>
+    </div></details>`;
+}
+
+/* ---------- backup & restore (all on-device data) ---------- */
+function exportData() {
+  const data = { v: 1, exported: new Date().toISOString(), ls: {}, photos: PHOTOS };
+  Object.keys(localStorage).filter((k) => k.startsWith("pt_")).forEach((k) => data.ls[k] = localStorage.getItem(k));
+  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "my-pt-backup-" + todayKey() + ".json"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000); toast("Backup downloaded");
+}
+async function importData(file) {
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (data.ls) Object.entries(data.ls).forEach(([k, v]) => localStorage.setItem(k, v));
+    if (Array.isArray(data.photos)) { for (const p of data.photos) await photoPut(p); }
+    toast("Backup restored — reloading…");
+    setTimeout(() => location.reload(), 800);
+  } catch { toast("Couldn't read that backup file"); }
 }
 
 function renderPhotos() {
@@ -977,6 +1130,15 @@ function renderSettings() {
     <div class="tracker-row" style="margin-top:10px">
       <input class="field" id="suppInput" placeholder="Add a supplement…" />
       <button type="button" class="btn accent" id="addSuppBtn">Add</button>
+    </div>
+  </div>
+
+  <div class="card"><h2>💾 Backup &amp; restore</h2>
+    <p class="note">All your data lives on this device. Export a backup file you can keep safe or move to a new phone — includes check-ins, weigh-ins, lift logs, library, photos and settings.</p>
+    <div class="step-quick" style="margin-top:8px">
+      <button type="button" class="btn accent" id="exportBtn">⬇ Export backup</button>
+      <label class="btn" for="importFile" style="cursor:pointer">⬆ Restore</label>
+      <input id="importFile" type="file" accept="application/json" style="display:none" />
     </div>
   </div>
 
@@ -1089,6 +1251,8 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "pickmeal") { haptic(8); pickMeal(decodeURIComponent(tagged.dataset.slot), tagged.dataset.id); return; }
   if (tagged && tagged.dataset.act === "adapt") { haptic(8); LS.set("pt_adaptkcal", Math.max(-300, Math.min(300, LS.get("pt_adaptkcal", 0) + (+tagged.dataset.kcal)))); toast("Targets adjusted"); repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "adaptreset") { haptic(6); localStorage.removeItem("pt_adaptkcal"); repaintKeepScroll(); return; }
+  if (tagged && tagged.dataset.act === "openlift") { haptic(6); const n = decodeURIComponent(tagged.dataset.name); OPEN_LIFT = OPEN_LIFT === n ? null : n; repaintKeepScroll(); return; }
+  if (tagged && tagged.dataset.act === "savelift") { saveLift(decodeURIComponent(tagged.dataset.name)); return; }
   if (tagged && tagged.dataset.act === "delsupp") { haptic(6); delSupp(decodeURIComponent(tagged.dataset.name)); return; }
   if (tagged && tagged.dataset.act === "batch") { haptic(8); toggleBatch(tagged); return; }
   if (tagged && tagged.dataset.act === "shop") { haptic(8); toggleShop(tagged); return; }
@@ -1122,6 +1286,7 @@ function onViewClick(e) {
   if (e.target.id === "clearGoalBtn") { localStorage.removeItem("pt_goal"); repaintKeepScroll(); return; }
   if (e.target.id === "addCustomBtn") return addCustom();
   if (e.target.id === "addSuppBtn") return addSupp();
+  if (e.target.id === "exportBtn") return exportData();
   if (e.target.id === "setCheatBtn") return setCheatFromInput();
   if (e.target.id === "clearCheatBtn") { localStorage.removeItem("pt_cheat_" + todayKey()); haptic(8); repaintKeepScroll(); return; }
   if (e.target.id === "pushDayBtn") { LS.set("pt_shift", LS.get("pt_shift", 0) + 1); haptic(8); toast("Plan pushed back a day"); repaintKeepScroll(); return; }
@@ -1410,7 +1575,7 @@ async function boot() {
   buildBank();
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
     if (CURRENT_TAB === t.dataset.tab) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; setActiveTab(); navigate();
+    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; setActiveTab(); navigate();
   }));
   const view = document.getElementById("view");
   view.addEventListener("click", onViewClick);
@@ -1424,6 +1589,7 @@ async function boot() {
   });
   view.addEventListener("change", (e) => {
     if (e.target.id === "photoInput") addPhotoFromFile(e.target.files && e.target.files[0]);
+    if (e.target.id === "importFile") importData(e.target.files && e.target.files[0]);
   });
   view.addEventListener("input", (e) => {
     if (e.target.id === "compareRange") setCompare(e.target.value);
