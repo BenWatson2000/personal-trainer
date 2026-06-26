@@ -1384,13 +1384,9 @@ function renderPhotos() {
       <div class="cmp-labels"><span>${a.date}</span><span>${b.date}</span></div>` ;
   })() : "";
 
-  const thumbs = PHOTOS.map(p => {
-    const kg = p.kg != null ? p.kg : closestWeight(p.date);
-    return `<button type="button" class="photo-thumb" data-act="viewphoto" data-date="${p.date}">
-      <img src="${p.data}" alt="${p.date}" />
-      <span class="photo-date">${kg != null ? "~" + kg + "kg" : p.date.slice(5)}</span></button>`;
-  }).join("");
-  const unstamped = PHOTOS.some(p => !p.wm);
+  const thumbs = PHOTOS.map(p =>
+    `<button type="button" class="photo-thumb" data-act="viewphoto" data-date="${p.date}">
+      <img src="${p.data}" alt="${p.date}" /></button>`).join("");
 
   return `<div class="card"><h2>📸 Progress photos</h2>
     <p class="sub">Stored only on this device · tap a photo to view, share or delete</p>
@@ -1400,7 +1396,6 @@ function renderPhotos() {
       <label class="btn accent" for="photoInput" style="cursor:pointer">📷 Add photo</label>
       <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" />
       ${PHOTOS.length >= 2 ? `<button type="button" class="btn" id="playTimelapse">▶ Timelapse</button>` : ""}
-      ${unstamped ? `<button type="button" class="btn" id="stampPhotosBtn">🏷️ Stamp weights</button>` : ""}
     </div>
     <img id="timelapseStage" class="timelapse-stage" style="display:none" />
   </div>
@@ -1672,7 +1667,6 @@ function onViewClick(e) {
   if (e.target.id === "resetShiftBtn") { localStorage.removeItem("pt_shift"); haptic(8); toast("Reschedule reset"); repaintKeepScroll(); return; }
   if (e.target.id === "resetLibBtn") { localStorage.removeItem("pt_library"); haptic(8); toast("Back to the default plan"); repaintKeepScroll(); return; }
   if (e.target.id === "playTimelapse") return playTimelapse();
-  if (e.target.id === "stampPhotosBtn") return restampPhotos();
   if (e.target.id === "saveStartBtn") {
     LS.set("pt_startDate", document.getElementById("startDateInput").value);
     CURRENT_TAB = "today"; setActiveTab(); navigate(); return;
@@ -1814,27 +1808,6 @@ function addPhotoFromFile(file) {
     img.src = reader.result;
   };
   reader.readAsDataURL(file);
-}
-// re-stamp older photos that were saved before watermarking (or before a weigh-in existed)
-function stampOnce(dataUrl, kg, dateKey) {
-  return new Promise((res) => {
-    const img = new Image();
-    img.onload = () => { const cv = document.createElement("canvas"); cv.width = img.width; cv.height = img.height; const ctx = cv.getContext("2d"); ctx.drawImage(img, 0, 0); drawWatermark(ctx, img.width, img.height, kg, dateKey); res(cv.toDataURL("image/jpeg", 0.82)); };
-    img.onerror = () => res(null);
-    img.src = dataUrl;
-  });
-}
-async function restampPhotos() {
-  let n = 0;
-  for (const p of PHOTOS) {
-    if (p.wm) continue;
-    const kg = closestWeight(p.date);
-    const data = await stampOnce(p.data, kg, p.date);
-    if (data) { await photoPut({ date: p.date, data, kg, wm: true }); n++; }
-  }
-  PHOTOS = await photosAll();
-  toast(n ? `Stamped ${n} photo${n > 1 ? "s" : ""}` : "All photos already stamped");
-  repaintKeepScroll();
 }
 async function delPhoto(date) {
   if (!confirm("Delete this photo?")) return;
