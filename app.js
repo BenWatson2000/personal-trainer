@@ -950,6 +950,20 @@ function renderShop() {
   const custom = LS.get("pt_shopcustom_w" + wk, []);
   const libActive = !!getLibrary();
 
+  // recommended buy date: the day before this week starts, so the food's in for day 1
+  const weekStart = new Date(dateKeyForDn(startDn) + "T00:00:00");
+  const buyBy = new Date(weekStart); buyBy.setDate(buyBy.getDate() - 1);
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 6);
+  const fmtFull = (d) => d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  const fmtShort = (d) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const today0 = new Date(todayKey() + "T00:00:00");
+  const daysToBuy = Math.round((buyBy - today0) / 86400000);
+  // upcoming buy date is actionable; once the week's underway just show the coverage range
+  const buyHint = daysToBuy > 1 ? ` <span class="lib-macro">(in ${daysToBuy} days)</span>` : daysToBuy === 1 ? ` <span class="lib-macro">(tomorrow)</span>` : "";
+  const buyLine = daysToBuy >= 0
+    ? `🛒 Best bought by <b>${fmtFull(buyBy)}</b>${buyHint} · covers ${fmtShort(weekStart)}–${fmtShort(weekEnd)}`
+    : `🗓️ This week · covers <b>${fmtShort(weekStart)}–${fmtShort(weekEnd)}</b>`;
+
   // batch-cookable dinners this week
   const batchMap = new Map();
   for (let d = 0; d < 7; d++) { const din = dayMeal(startDn + d).items.Dinner; if (din && din.batch) batchMap.set(din.text, din.text.split(" — ")[0].split(" + ")[0]); }
@@ -1011,6 +1025,7 @@ function renderShop() {
     <span class="phase-tag">Week ${wk} of ${PLAN.meta.weeks}</span>
     <h1>🛒 This week's shop</h1>
     <p>Auto-built from the meals in your plan this week${libActive ? " (your Recipe Library picks)" : ""}.</p>
+    <p class="shop-when">${buyLine}</p>
     <div class="progress-track" style="margin-top:12px"><div class="progress-fill" style="width:${pct}%"></div></div>
     <p class="quote" style="font-style:normal;font-size:13px;color:var(--muted)">${done} of ${total} ticked off${(done === total && total) ? " — all done! 🎉" : ""}</p>
   </div>
@@ -1036,6 +1051,7 @@ function renderShop() {
   <details class="card fold">
     <summary>⏭️ Next week — plan ahead</summary>
     <div class="fold-body">
+    <p class="shop-when" style="margin-top:0">🗓️ Best bought by <b>${fmtFull(weekEnd)}</b> · covers ${fmtShort(new Date(weekEnd.getTime() + 86400000))}–${fmtShort(new Date(weekEnd.getTime() + 7 * 86400000))}</p>
     ${nextBuckets.map(b =>
       `<div class="section-label">${b.name}</div>
        <ul class="checklist">${b.items.map(it =>
