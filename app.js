@@ -1409,8 +1409,10 @@ function renderPhotos() {
     ${has ? `<div class="photo-grid" id="photoStage">${thumbs}</div>` : `<p class="note">Add a photo each week to build your transformation — each is stamped with your nearest weight.</p>`}
     ${compare}
     <div class="tracker-row" style="margin-top:12px;gap:8px;flex-wrap:wrap">
-      <label class="btn accent" for="photoInput" style="cursor:pointer">📷 Add photo</label>
-      <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" />
+      <label class="btn accent" for="photoCapture" style="cursor:pointer">📷 Take photo</label>
+      <input id="photoCapture" type="file" accept="image/*" capture="environment" style="display:none" />
+      <label class="btn" for="photoUpload" style="cursor:pointer">🖼️ Upload</label>
+      <input id="photoUpload" type="file" accept="image/*" style="display:none" />
       ${PHOTOS.length >= 2 ? `<button type="button" class="btn" id="playTimelapse">▶ Timelapse</button>` : ""}
     </div>
     <img id="timelapseStage" class="timelapse-stage" style="display:none" />
@@ -2058,7 +2060,7 @@ async function boot() {
     else if (e.target.id === "cheatInput") { e.preventDefault(); setCheatFromInput(); }
   });
   view.addEventListener("change", (e) => {
-    if (e.target.id === "photoInput") addPhotoFromFile(e.target.files && e.target.files[0]);
+    if (e.target.id === "photoCapture" || e.target.id === "photoUpload") addPhotoFromFile(e.target.files && e.target.files[0]);
     if (e.target.id === "importFile") importData(e.target.files && e.target.files[0]);
   });
   view.addEventListener("input", (e) => {
