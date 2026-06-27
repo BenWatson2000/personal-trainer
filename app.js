@@ -156,7 +156,8 @@ function paybackForDay(dn) {
 function isDietBreak(week) { return LS.get("pt_dietbreaks", []).includes(week); }
 function dailyAim(pos) {
   if (isDietBreak(pos.week)) return Math.round(currentMaintenance() / 10) * 10; // maintenance week
-  return Math.max(1400, Math.round((adjustedAim(pos.phase) - paybackForDay(pos.dn) + LS.get("pt_adaptkcal", 0)) / 10) * 10);
+  const payback = getProfile().goal === "gain" ? 0 : paybackForDay(pos.dn); // gainers keep their surplus
+  return Math.max(1400, Math.round((adjustedAim(pos) - payback + LS.get("pt_adaptkcal", 0)) / 10) * 10);
 }
 // adaptive coach: read the recent weight trend and decide if the plan needs changing
 function weeklyRate() {
@@ -175,10 +176,20 @@ function adaptiveStatus() {
   const pos = position();
   const daysIn = Math.max(0, pos.dn + 1);
   const rate = weeklyRate();
-  if (rate == null || daysIn < 7) return { state: "new", rate: null };
-  if (rate > -0.15) return { state: "stall", rate };
-  if (rate < -1.0) return { state: "fast", rate };
-  return { state: "good", rate };
+  const goal = getProfile().goal;
+  if (rate == null || daysIn < 7) return { state: "new", rate: null, goal };
+  if (goal === "gain") {
+    if (rate < 0.1) return { state: "stall", rate, goal };   // not gaining → add kcal
+    if (rate > 0.6) return { state: "fast", rate, goal };    // gaining too fast → ease (fat)
+    return { state: "good", rate, goal };
+  }
+  if (goal === "maintain") {
+    if (Math.abs(rate) <= 0.25) return { state: "good", rate, goal };
+    return { state: rate > 0 ? "fast" : "stall", rate, goal };
+  }
+  if (rate > -0.15) return { state: "stall", rate, goal };
+  if (rate < -1.0) return { state: "fast", rate, goal };
+  return { state: "good", rate, goal };
 }
 
 /* ---------- strength logging: weight x reps, e1RM, PBs, auto-progression ---------- */
@@ -350,11 +361,17 @@ function projectAtEnd() {
   const toEnd = (revealInfo().end - new Date(todayKey() + "T00:00:00")) / 86400000;
   return +(last.kg + ratePerDay * toEnd).toFixed(1);
 }
-// auto-suggested goal: projected end if trending down, else a ~9% cut; floored at BMI ~20
+// auto-suggested goal weight, direction depends on the profile goal
 function suggestedGoal() {
-  const start = PLAN.meta.stats.weightKg;
-  const floor = Math.round(20 * Math.pow(PLAN.meta.stats.heightCm / 100, 2));
+  const p = getProfile();
+  const start = p.weightKg;
   const proj = projectAtEnd();
+  if (p.goal === "gain") {
+    const g = (proj != null && proj > start) ? proj : start + 0.3 * PLAN.meta.weeks; // ~+0.3kg/wk lean gain
+    return Math.round(g);
+  }
+  if (p.goal === "maintain") return Math.round(start);
+  const floor = Math.round(20 * Math.pow(p.heightCm / 100, 2)); // BMI ~20
   const g = (proj != null && proj < start) ? proj : Math.round(start * 0.91);
   return Math.max(floor, Math.round(g));
 }
@@ -393,15 +410,41 @@ function recipeBlock(meal, pf = 1, nf = pf) {
     </div></details>`;
 }
 
-/* ---------- metabolism (TDEE auto-recalc) ---------- */
-function bmr(w) { const s = PLAN.meta.stats; return 10 * w + 6.25 * s.heightCm - 5 * s.age + 5; }
-function activityFactor() { return (PLAN.meta.maintenance || bmr(PLAN.meta.stats.weightKg)) / bmr(PLAN.meta.stats.weightKg); }
-function latestWeight() { const w = LS.get("pt_weights", []); return w.length ? w[w.length - 1].kg : PLAN.meta.stats.weightKg; }
-function currentMaintenance() { return Math.round(bmr(latestWeight()) * activityFactor()); }
-function adjustedAim(phase) {
-  const deficit = (PLAN.meta.maintenance || 2250) - phase.calories;
-  return Math.round((currentMaintenance() - deficit) / 10) * 10;
+/* ---------- profile (multi-user: stats + goal, stored per device) ---------- */
+const ACTIVITY = { sedentary: 1.4, light: 1.55, moderate: 1.7, active: 1.85 };
+const GOALS = { cut: "Lose fat", maintain: "Maintain", gain: "Gain muscle" };
+// default profile mirrors the bundled plan (so existing users are unchanged)
+function defaultProfile() {
+  const s = PLAN.meta.stats;
+  const base = 10 * s.weightKg + 6.25 * s.heightCm - 5 * s.age + (s.sex === "female" ? -161 : 5);
+  const af = (PLAN.meta.maintenance || base) / base;
+  return { name: PLAN.meta.athlete, sex: s.sex || "male", age: s.age, heightCm: s.heightCm,
+    weightKg: s.weightKg, activity: +af.toFixed(3), goal: "cut", surplus: 300,
+    dislikes: (PLAN.meta.dislikes || []).slice() };
 }
+function getProfile() { const p = LS.get("pt_profile", null); return p ? { ...defaultProfile(), ...p } : defaultProfile(); }
+function saveProfile(p) { LS.set("pt_profile", p); }
+// fresh device (no profile, nothing logged) → show onboarding
+function needsOnboarding() {
+  if (LS.get("pt_profile", null)) return false;
+  if (LS.get("pt_weights", []).length) return false;
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf("pt_checks_") === 0) return false; }
+  return true;
+}
+
+/* ---------- metabolism (TDEE auto-recalc) ---------- */
+function bmr(w) { const p = getProfile(); return 10 * w + 6.25 * p.heightCm - 5 * p.age + (p.sex === "female" ? -161 : 5); }
+function activityFactor() { return getProfile().activity || 1.5; }
+function latestWeight() { const w = LS.get("pt_weights", []); return w.length ? w[w.length - 1].kg : getProfile().weightKg; }
+function currentMaintenance() { return Math.round(bmr(latestWeight()) * activityFactor()); }
+// daily kcal offset from maintenance by goal (cut keeps the phase-stepped deficit)
+function goalDelta(pos) {
+  const p = getProfile();
+  if (p.goal === "gain") return +(p.surplus || 300);
+  if (p.goal === "maintain") return 0;
+  return -((PLAN.meta.maintenance || 2250) - pos.phase.calories);
+}
+function adjustedAim(pos) { return Math.round((currentMaintenance() + goalDelta(pos)) / 10) * 10; }
 const DEFAULT_SUPPS = ["Whey protein", "Creatine 5g", "Vitamin D"];
 function getSupps() { return LS.get("pt_supps", DEFAULT_SUPPS); }
 
@@ -1098,9 +1141,13 @@ function renderShop() {
 function renderProgress() {
   const weights = LS.get("pt_weights", []);
   const pos = position();
-  const start = PLAN.meta.stats.weightKg;
+  const prof = getProfile();
+  const gainMode = prof.goal === "gain";
+  const start = prof.weightKg;
   const latest = weights.length ? weights[weights.length - 1].kg : start;
-  const lost = +(start - latest).toFixed(1);
+  const delta = +(latest - start).toFixed(1);             // + = heavier than start
+  const moved = +(gainMode ? delta : -delta).toFixed(1);  // progress toward goal (+ = good)
+  const lost = moved;                                     // (kept name; = progress in goal direction)
 
   // current streak: count back consecutive days with any completion
   let streak = 0;
@@ -1144,27 +1191,30 @@ function renderProgress() {
       </div>
       <p class="note" style="margin-top:8px">Suggested from your start weight, height and current trend — tweak it to whatever you're aiming for.</p></div>`;
   } else {
-    const span = (start - goal) || 1;
-    const gp = Math.max(0, Math.min(100, Math.round(((start - latest) / span) * 100)));
-    let proj = `<p class="note">Log a couple of weigh-ins trending down and I'll project your finish date.</p>`;
+    const span = Math.abs(start - goal) || 1;
+    const towards = gainMode ? (latest - start) : (start - latest); // progress toward goal
+    const gp = Math.max(0, Math.min(100, Math.round((towards / span) * 100)));
+    const reached = gainMode ? latest >= goal : latest <= goal;
+    let proj = `<p class="note">Log a couple of weigh-ins and I'll project your finish date.</p>`;
     if (weights.length >= 2) {
       const first = weights[0], last = weights[weights.length - 1];
       const days = (new Date(last.date) - new Date(first.date)) / 86400000;
       const ratePerWeek = days > 0 ? (last.kg - first.kg) / (days / 7) : 0;
-      if (latest <= goal) proj = `<p class="note" style="color:var(--accent)">🎉 Goal reached — ${latest} kg. Time to set a new one or move to maintenance.</p>`;
-      else if (ratePerWeek < -0.05) {
+      const movingRight = gainMode ? ratePerWeek > 0.05 : ratePerWeek < -0.05;
+      if (reached) proj = `<p class="note" style="color:var(--accent)">🎉 Goal reached — ${latest} kg. Time to set a new one${gainMode ? "" : " or move to maintenance"}.</p>`;
+      else if (movingRight) {
         const weeksLeft = (goal - latest) / ratePerWeek;
         const eta = new Date(Date.now() + weeksLeft * 7 * 86400000);
         const etaStr = weeksLeft > 52 ? "over a year out at this pace" :
           "around " + eta.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-        proj = `<p class="note">📉 Losing <b>${Math.abs(ratePerWeek).toFixed(2)} kg/week</b> → goal of <b>${goal} kg</b> ${etaStr} (~${Math.max(1, Math.round(weeksLeft))} wk).</p>`;
-      } else proj = `<p class="note">Your trend is flat or up — tighten the deficit a touch (see Phase aim) to start moving toward ${goal} kg.</p>`;
+        proj = `<p class="note">${gainMode ? "📈 Gaining" : "📉 Losing"} <b>${Math.abs(ratePerWeek).toFixed(2)} kg/week</b> → goal of <b>${goal} kg</b> ${etaStr} (~${Math.max(1, Math.round(weeksLeft))} wk).</p>`;
+      } else proj = `<p class="note">Your trend is ${gainMode ? "flat or down — nudge the surplus up a touch" : "flat or up — tighten the deficit a touch"} to start moving toward ${goal} kg.</p>`;
     }
     goalCard = `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center">
         <h2 style="margin:0">🎯 Goal: ${goal} kg</h2>
         <button type="button" class="btn" id="clearGoalBtn" style="min-height:auto;padding:7px 12px">Change</button></div>
       <div class="progress-track" style="margin:12px 0 6px"><div class="progress-fill" style="width:${gp}%"></div></div>
-      <p class="sub">${start} kg → ${goal} kg · ${gp}% there (${lost >= 0 ? "-" : "+"}${Math.abs(lost)} kg so far)</p>
+      <p class="sub">${start} kg → ${goal} kg · ${gp}% there (${delta >= 0 ? "+" : "−"}${Math.abs(delta)} kg so far)</p>
       ${proj}</div>`;
   }
 
@@ -1179,9 +1229,9 @@ function renderProgress() {
     ["💧", "Hydrated", anyWater8],
     ["✨", "Perfect day", perfectDays >= 1],
     ["🌟", "5 perfect days", perfectDays >= 5],
-    ["⚖️", "Down 1 kg", lost >= 1],
-    ["📉", "Down 3 kg", lost >= 3],
-    ["🥇", "Down 5 kg", lost >= 5],
+    ...(gainMode
+      ? [["⚖️", "Up 1 kg", moved >= 1], ["📈", "Up 2 kg", moved >= 2], ["🥇", "Up 4 kg", moved >= 4]]
+      : [["⚖️", "Down 1 kg", moved >= 1], ["📉", "Down 3 kg", moved >= 3], ["🥇", "Down 5 kg", moved >= 5]]),
     ["🗓️", "Halfway", daysIn >= 42],
     ["🎓", "Finisher", daysIn >= 84],
   ];
@@ -1189,15 +1239,38 @@ function renderProgress() {
   const badges = A.map(([e, label, on]) =>
     `<div class="badge ${on ? "earned" : ""}"><div class="badge-e">${e}</div><div class="badge-l">${label}</div></div>`).join("");
 
-  // adaptive coach
+  // adaptive coach (direction depends on goal)
   const ad = adaptiveStatus();
   const adapt = LS.get("pt_adaptkcal", 0);
   const todayAim = dailyAim(pos);
+  const rateStr = ad.rate != null ? `${ad.rate >= 0 ? "+" : ""}${ad.rate.toFixed(2)} kg/wk` : "";
   let adBody;
   if (ad.state === "new") {
     adBody = `<p class="note">Log weigh-ins for a week or two and I'll read your trend and adjust your plan to your <b>actual</b> progress — not just the calendar.</p>`;
+  } else if (ad.goal === "gain") {
+    if (ad.state === "stall") {
+      adBody = `<p class="note">⚠️ You're not gaining yet (<b>${rateStr}</b>). To grow muscle you need a small surplus:</p>
+        <ul class="note" style="padding-left:18px;line-height:1.8">
+          <li><b>Nutrition:</b> add ~150 kcal/day (mostly carbs + protein around training).</li>
+          <li><b>Training:</b> keep adding a rep or a little load each week — progressive overload drives growth.</li>
+        </ul>
+        <button type="button" class="btn accent block" data-act="adapt" data-kcal="150">Apply +150 kcal/day</button>`;
+    } else if (ad.state === "fast") {
+      adBody = `<p class="note">🏃 You're gaining fast (<b>${rateStr}</b>) — ease back so more of it is muscle, not fat:</p>
+        <ul class="note" style="padding-left:18px;line-height:1.8">
+          <li><b>Nutrition:</b> trim ~150 kcal/day to a leaner gain (~0.25–0.5 kg/wk).</li>
+          <li><b>Training:</b> keep lifting hard and progressing your main lifts.</li>
+        </ul>
+        <button type="button" class="btn accent block" data-act="adapt" data-kcal="-150">Apply −150 kcal/day</button>`;
+    } else {
+      adBody = `<p class="note">✅ Lean gaining nicely — <b>${rateStr}</b>. Keep eating in a small surplus and adding load to your lifts.</p>`;
+    }
+  } else if (ad.goal === "maintain") {
+    if (ad.state === "good") adBody = `<p class="note">✅ Holding steady (<b>${rateStr}</b>) — maintenance is working. Keep training to build/keep muscle.</p>`;
+    else adBody = `<p class="note">Your weight is drifting (<b>${rateStr}</b>). Nudge intake ${ad.rate > 0 ? "down" : "up"} ~100–150 kcal/day to hold maintenance.</p>
+      <button type="button" class="btn accent block" data-act="adapt" data-kcal="${ad.rate > 0 ? -150 : 150}">Apply ${ad.rate > 0 ? "−" : "+"}150 kcal/day</button>`;
   } else if (ad.state === "stall") {
-    adBody = `<p class="note">⚠️ Your weight's basically flat (<b>${ad.rate >= 0 ? "+" : ""}${ad.rate.toFixed(2)} kg/wk</b>). Time to change the stimulus:</p>
+    adBody = `<p class="note">⚠️ Your weight's basically flat (<b>${rateStr}</b>). Time to change the stimulus:</p>
       <ul class="note" style="padding-left:18px;line-height:1.8">
         <li><b>Nutrition:</b> trim ~150 kcal/day to restart fat loss.</li>
         <li><b>Training:</b> progress your main lifts (+1 rep or +2.5 kg) and add one extra 25-min low-impact cardio this week.</li>
@@ -1205,7 +1278,7 @@ function renderProgress() {
       </ul>
       <button type="button" class="btn accent block" data-act="adapt" data-kcal="-150">Apply −150 kcal/day</button>`;
   } else if (ad.state === "fast") {
-    adBody = `<p class="note">🏃 You're dropping fast (<b>${ad.rate.toFixed(2)} kg/wk</b>) — ease up so you keep muscle and energy:</p>
+    adBody = `<p class="note">🏃 You're dropping fast (<b>${rateStr}</b>) — ease up so you keep muscle and energy:</p>
       <ul class="note" style="padding-left:18px;line-height:1.8">
         <li><b>Nutrition:</b> add ~150 kcal/day (mostly protein + carbs around training).</li>
         <li><b>Training:</b> keep lifting heavy to hold muscle; don't add more cardio.</li>
@@ -1225,21 +1298,25 @@ function renderProgress() {
           <div class="stat"><div class="big">${currentMaintenance().toLocaleString()}</div><div class="cap">maintenance now</div></div>
           <div class="stat"><div class="big">${(PLAN.meta.maintenance || 2250).toLocaleString()}</div><div class="cap">at start (${start}kg)</div></div>
         </div>
-        <p class="note" style="margin-top:8px">As you lose weight your body burns a little less, so your calorie aim auto-recalculates to hold the same deficit. Today's aim: <b>${adjustedAim(pos.phase).toLocaleString()} kcal</b>.</p>
+        <p class="note" style="margin-top:8px">Your calorie aim auto-recalculates from your live weight, so your ${getProfile().goal === "gain" ? "surplus" : getProfile().goal === "maintain" ? "maintenance" : "deficit"} stays on target as you progress. Today's aim: <b>${adjustedAim(pos).toLocaleString()} kcal</b>.</p>
       </div>
     </details></div>`;
 
-  // diet-break scheduler (moved here from Settings — it's a coaching decision)
-  const breakCard = `<div class="card"><h2>🏖️ Diet-break weeks</h2>
+  // diet-break scheduler — only relevant when cutting (a break = eat at maintenance)
+  const breakCard = gainMode || prof.goal === "maintain" ? "" : `<div class="card"><h2>🏖️ Diet-break weeks</h2>
     <p class="note">On a diet-break week you eat at <b>maintenance (~${currentMaintenance().toLocaleString()} kcal)</b> instead of a deficit — it restores hormones, energy and willpower, and often restarts fat loss. Tap a week to schedule one.</p>
     <div class="week-chips" style="margin-top:10px">
       ${Array.from({ length: PLAN.meta.weeks }, (_, i) => i + 1).map((wk) =>
         `<button type="button" class="wk-chip ${isDietBreak(wk) ? "on" : ""} ${wk === pos.week ? "now" : ""}" data-act="dietbreak" data-wk="${wk}">${wk}</button>`).join("")}
     </div></div>`;
 
+  const heroLine = Math.abs(delta) < 0.05
+    ? `Logging from <b>${start} kg</b> — your trend shows here.`
+    : `${moved >= 0 ? (gainMode ? "Up" : "Down") : (gainMode ? "Down" : "Up")} <b style="color:${moved >= 0 ? "var(--accent)" : "var(--warn)"}">${Math.abs(delta)} kg</b> since you started.`;
+
   return `
   <div class="card hero"><span class="phase-tag">Your numbers</span><h1>Progress</h1>
-    <p>Down <b style="color:var(--accent)">${lost} kg</b> since you started.</p></div>
+    <p>${heroLine}</p></div>
   <div class="card"><div class="stat-grid">
     <div class="stat"><div class="big">${daysIn}</div><div class="cap">days in</div></div>
     <div class="stat"><div class="big">🔥 ${streak}</div><div class="cap">day streak</div></div>
@@ -1492,6 +1569,97 @@ function sparkline(vals) {
   </svg>`;
 }
 
+/* ---------- profile form (onboarding + settings) ---------- */
+function blankProfile() { return { name: "", sex: "male", age: "", heightCm: "", weightKg: "", activity: 1.55, goal: "", surplus: 300, dislikes: [] }; }
+function profileFields(p) {
+  const act = p.activity || 1.55;
+  const presetMatch = Object.values(ACTIVITY).some((v) => Math.abs(v - act) < 0.005);
+  const actKey = Object.keys(ACTIVITY).reduce((best, k) => Math.abs(ACTIVITY[k] - act) < Math.abs(ACTIVITY[best] - act) ? k : best, "light");
+  const actOpt = (k, lbl) => `<option value="${k}" ${presetMatch && actKey === k ? "selected" : ""}>${lbl}</option>`;
+  return `
+    <label class="field-label">Name</label>
+    <input class="field" id="pfName" value="${p.name || ""}" placeholder="Your name" />
+    <div class="pf-row">
+      <div><label class="field-label">Sex</label>
+        <select class="field" id="pfSex">
+          <option value="male" ${p.sex === "male" ? "selected" : ""}>Male</option>
+          <option value="female" ${p.sex === "female" ? "selected" : ""}>Female</option>
+        </select></div>
+      <div><label class="field-label">Age</label>
+        <input class="field" id="pfAge" type="number" inputmode="numeric" value="${p.age || ""}" placeholder="yrs" /></div>
+    </div>
+    <div class="pf-row">
+      <div><label class="field-label">Height (cm)</label>
+        <input class="field" id="pfHeight" type="number" inputmode="numeric" value="${p.heightCm || ""}" placeholder="cm" /></div>
+      <div><label class="field-label">Weight (kg)</label>
+        <input class="field" id="pfWeight" type="number" step="0.1" inputmode="decimal" value="${p.weightKg || ""}" placeholder="kg" /></div>
+    </div>
+    <label class="field-label">Activity level</label>
+    <select class="field" id="pfActivity">
+      ${!presetMatch ? `<option value="current" selected>Current (~${Math.round((bmrFor(p) * act))} kcal/day)</option>` : ""}
+      ${actOpt("sedentary", "Sedentary — desk, little exercise")}
+      ${actOpt("light", "Light — 1–3 sessions/wk")}
+      ${actOpt("moderate", "Moderate — 3–5 sessions/wk")}
+      ${actOpt("active", "Active — 6+ sessions/wk or active job")}
+    </select>
+    <label class="field-label">Goal</label>
+    <select class="field" id="pfGoal">
+      ${!p.goal ? `<option value="" selected disabled>Choose your goal…</option>` : ""}
+      <option value="cut" ${p.goal === "cut" ? "selected" : ""}>Lose fat (cut)</option>
+      <option value="maintain" ${p.goal === "maintain" ? "selected" : ""}>Maintain</option>
+      <option value="gain" ${p.goal === "gain" ? "selected" : ""}>Gain muscle (lean bulk)</option>
+    </select>
+    <label class="field-label">Foods to avoid (optional)</label>
+    <input class="field" id="pfDislikes" value="${(p.dislikes || []).join(", ")}" placeholder="e.g. fish, mushrooms" />`;
+}
+// BMR for an arbitrary profile object (used in the form before it's saved)
+function bmrFor(p) { return 10 * (p.weightKg || 70) + 6.25 * (p.heightCm || 170) - 5 * (p.age || 30) + (p.sex === "female" ? -161 : 5); }
+function readProfileForm() {
+  const cur = getProfile();
+  const g = document.getElementById("pfActivity").value;
+  const activity = g === "current" ? cur.activity : (ACTIVITY[g] || cur.activity);
+  const age = parseInt(document.getElementById("pfAge").value, 10) || cur.age;
+  let goal = document.getElementById("pfGoal").value || "maintain";
+  let coerced = false;
+  if (age < 16 && goal === "cut") { goal = "maintain"; coerced = true; } // safeguarding: no cutting under 16
+  const p = {
+    name: (document.getElementById("pfName").value || "").trim() || cur.name,
+    sex: document.getElementById("pfSex").value,
+    age,
+    heightCm: parseFloat(document.getElementById("pfHeight").value) || cur.heightCm,
+    weightKg: parseFloat(document.getElementById("pfWeight").value) || cur.weightKg,
+    activity, goal, surplus: cur.surplus || 300,
+    dislikes: (document.getElementById("pfDislikes").value || "").split(",").map((s) => s.trim()).filter(Boolean),
+  };
+  saveProfile(p);
+  if (coerced) toast("Under 16 — set to a healthy 'maintain' rather than cutting.");
+  return p;
+}
+function saveProfileSettings() { const p = readProfileForm(); toast("Profile saved · targets updated"); haptic(8); navigate(); }
+function completeOnboarding() {
+  if (!document.getElementById("pfGoal").value) { toast("Pick a goal to continue"); return; }
+  const p = readProfileForm();
+  if (!LS.get("pt_startDate", null)) LS.set("pt_startDate", todayKey()); // begin at Day 1 today
+  haptic(12); toast(`You're all set, ${p.name || "let's go"} 💪`);
+  CURRENT_TAB = "today"; setActiveTab(); navigate();
+}
+function renderOnboarding() {
+  return `
+  <div class="card hero"><span class="phase-tag">Welcome</span>
+    <h1>Let's set up your plan</h1>
+    <p>Everything stays on your device — no account, no sign-up. Tell me about you and your goal and I'll tailor your calorie targets, meals and coaching.</p></div>
+  <div class="card">
+    <h2>👤 About you</h2>
+    ${profileFields(blankProfile())}
+    <p class="note safeguard">⚠️ Under 18? Please set this up with a parent or guardian. If you're under 16 we'll focus on eating well and training to grow — not calorie cutting.</p>
+    <button type="button" class="btn accent block" id="completeOnboard" style="margin-top:14px">Start my plan →</button>
+  </div>
+  <div class="card"><p class="note">Already set up on another phone? Restore your backup instead:</p>
+    <label class="btn block" for="importFile" style="cursor:pointer;text-align:center;margin-top:8px">⬆ Restore from backup</label>
+    <input id="importFile" type="file" accept="application/json" style="display:none" />
+  </div>`;
+}
+
 /* ---------- SETTINGS ---------- */
 function renderLibrary() {
   if (!BANK) return "";
@@ -1548,10 +1716,15 @@ function renderSettings() {
     <p class="note" style="margin-top:8px">Removes check-ins, weigh-ins and start date from this phone only.</p>
   </div>
 
-  <div class="card"><h2>🎯 Your numbers</h2>
-    <p class="note">${PLAN.meta.athlete} · ${PLAN.meta.stats.age}y · ${PLAN.meta.stats.weightKg}kg / ${PLAN.meta.stats.heightCm}cm${PLAN.meta.maintenance ? ` · est. maintenance <b>~${PLAN.meta.maintenance.toLocaleString()} kcal</b>` : ""}.</p>
-    ${PLAN.meta.calcNote ? `<p class="note" style="margin-top:6px">${PLAN.meta.calcNote}</p>` : ""}
-  </div>
+  ${(() => {
+    const prof = getProfile();
+    return `<div class="card"><h2>👤 Your profile</h2>
+      <p class="sub">Used to tailor your calorie targets & coaching. Changing your weight or goal updates everything.</p>
+      ${profileFields(prof)}
+      <button type="button" class="btn accent block" id="saveProfileBtn" style="margin-top:12px">Save profile</button>
+      <p class="note" style="margin-top:10px">${prof.name} · ${prof.sex} · ${prof.age}y · ${prof.heightCm}cm · goal <b>${GOALS[prof.goal] || prof.goal}</b> · maintenance ~${currentMaintenance().toLocaleString()} kcal · today's aim ~${dailyAim(position()).toLocaleString()} kcal.</p>
+    </div>`;
+  })()}
 
   ${renderPlanSection()}
 
@@ -1707,6 +1880,8 @@ function onViewClick(e) {
   if (e.target.id === "saveGoalBtn") return saveGoal();
   if (e.target.id === "useSuggestedGoal") { LS.set("pt_goal", suggestedGoal()); haptic(8); repaintKeepScroll(); return; }
   if (e.target.id === "clearGoalBtn") { localStorage.removeItem("pt_goal"); repaintKeepScroll(); return; }
+  if (e.target.id === "completeOnboard") return completeOnboarding();
+  if (e.target.id === "saveProfileBtn") return saveProfileSettings();
   if (e.target.id === "addCustomBtn") return addCustom();
   if (e.target.id === "addStapleBtn") return addStaple();
   if (e.target.id === "addSuppBtn") return addSupp();
@@ -2028,6 +2203,14 @@ function updateWater(n) {
 function render() {
   clearInterval(REST_INT); clearInterval(TL_INT); // a repaint replaces those elements
   const view = document.getElementById("view");
+  if (needsOnboarding()) {
+    view.innerHTML = renderOnboarding();
+    const pn = document.getElementById("phaseName"); if (pn) pn.textContent = "Welcome";
+    const dp = document.getElementById("dayPill"); if (dp) dp.textContent = "Set up";
+    const op = document.getElementById("overallProgress"); if (op) op.style.width = "0%";
+    enhanceA11y();
+    return;
+  }
   if (CURRENT_TAB === "today") view.innerHTML = renderToday();
   else if (CURRENT_TAB === "shop") view.innerHTML = renderShop();
   else if (CURRENT_TAB === "progress") view.innerHTML = renderProgress();

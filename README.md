@@ -41,8 +41,18 @@ It works offline and remembers everything on your device.
   report card, weight trend, goal + ETA, achievements and the strength log.
 - **Photos** — your own tab: progress photos with weight watermark, before/after
   compare slider and timelapse.
-- **Settings** — start date, **Recipe Library** (pick your meals), supplements,
-  backup/restore, and the full 12-week plan reference (blueprint + recipes).
+- **Settings** — **your profile** (stats + goal), start date, **Recipe Library**
+  (pick your meals), supplements, backup/restore, and the full 12-week plan
+  reference (blueprint + recipes).
+
+### Works for more than one person
+
+On a fresh device the app opens a quick **setup** (name, sex, age, height,
+weight, activity, goal — **lose fat / maintain / gain muscle** — and any foods to
+avoid). Everything — calorie targets, meal portions and the adaptive coach —
+then tailors to that person and goal. Since data is per-device, just share the
+link and each person sets themselves up on their own phone. (Under-16s are kept
+to a healthy *maintain/gain*, never a calorie cut.)
 
 **Flexible by design:** log an eating-out **treat** and it balances the next few
 days; **miss a day** and push the whole plan back without losing a session.
