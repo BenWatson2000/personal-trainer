@@ -103,6 +103,12 @@ main { flex: 1; padding: 16px 16px 96px; }
 .shop-when { margin: 10px 0 0; font-size: 13px; font-weight: 700; color: var(--accent-2); }
 .shop-when b { color: var(--text); }
 
+/* profile / onboarding form */
+.pf-row { display: flex; gap: 10px; }
+.pf-row > div { flex: 1; min-width: 0; }
+.note.safeguard { margin-top: 12px; padding: 10px 12px; border-radius: 10px;
+  background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.35); color: #fcd34d; }
+
 /* folded plan reference (in Settings) */
 .phase-block { padding: 12px 0; border-top: 1px solid var(--line); }
 .phase-block:first-of-type { border-top: none; padding-top: 4px; }
