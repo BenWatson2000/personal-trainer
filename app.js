@@ -366,11 +366,11 @@ function scaleAmounts(text, factor) {
 function recipeBlock(meal, factor = 1) {
   const d = meal.items.Dinner; if (!d || !d.recipe) return "";
   const r = d.recipe, title = d.text.split(" — ")[0];
-  const scale = factor > 1.02;
+  const scale = Math.abs(factor - 1) > 0.02;
   const ing = r.ingredients.map((x) => scaleAmounts(x, factor));
-  return `<details class="recipe"><summary>📖 Tonight's recipe — ${title}${scale ? ` <span class="swap-tag">×${factor.toFixed(1)}</span>` : ""}</summary>
+  return `<details class="recipe"><summary>📖 Tonight's recipe — ${title}${scale ? ` <span class="swap-tag">×${factor.toFixed(2)}</span>` : ""}</summary>
     <div class="recipe-body">
-      ${scale ? `<p class="note" style="margin:0 0 6px">Quantities scaled ×${factor.toFixed(1)} for your bigger portion.</p>` : ""}
+      ${scale ? `<p class="note" style="margin:0 0 6px">Quantities scaled ×${factor.toFixed(2)} for your ${factor > 1 ? "bigger" : "trimmed"} portion.</p>` : ""}
       <div class="section-label">Ingredients</div>
       <ul class="recipe-ing">${ing.map(x => `<li>${x}</li>`).join("")}</ul>
       <div class="section-label">Method</div>
@@ -574,12 +574,22 @@ function renderToday() {
       <span class="item-text">${t}${suffix}</span>${logBtn}</li>${logger}`;
   }).join("");
 
-  // meals checklist — with skip + redistribution of a missed meal across the rest
+  // meals checklist — portions auto-scale so the day lands on today's calorie aim,
+  // and a skipped meal redistributes its share across the rest.
   const mealKeys = Object.keys(meal.items);
   const skipped = LS.get("pt_skip_" + key, {});
   const anySkipped = mealKeys.some((k) => skipped[k]);
+  const payback = paybackForDay(pos.dn);
+  const aim = dailyAim(pos);
+  const aimAdj = aim !== pos.phase.calories;
   const remainBaseKcal = mealKeys.filter((k) => !skipped[k]).reduce((s, k) => s + meal.items[k].kcal, 0);
-  const portionFactor = (anySkipped && remainBaseKcal > 0) ? Math.min(1.8, meal.totals.kcal / remainBaseKcal) : 1;
+  const portionFactor = remainBaseKcal > 0 ? Math.max(0.6, Math.min(1.8, aim / remainBaseKcal)) : 1;
+  const scaled = Math.abs(portionFactor - 1) > 0.02;
+  // live (scaled) day totals for the macro card
+  const liveKcal = mealKeys.filter((k) => !skipped[k]).reduce((s, k) => s + Math.round(meal.items[k].kcal * portionFactor), 0);
+  const liveP = mealKeys.filter((k) => !skipped[k]).reduce((s, k) => s + Math.round(meal.items[k].p * portionFactor), 0);
+  const liveFat = Math.round(0.28 * liveKcal / 9);
+  const liveTotals = { kcal: liveKcal, protein: liveP, carbs: Math.max(0, Math.round((liveKcal - 4 * liveP - 9 * liveFat) / 4)), fat: liveFat };
   const slotKeyOf = Object.fromEntries(SLOTS);
   const libNow = getLibrary();
   const mealItems = mealKeys.map((k, i) => {
@@ -607,9 +617,14 @@ function renderToday() {
     }
     return row;
   }).join("");
-  const skipNote = anySkipped
-    ? `<p class="note" style="margin:6px 0 0;color:var(--accent-2)">⊘ Skipped ${mealKeys.filter(k => skipped[k]).join(", ")} — portions bumped <b>×${portionFactor.toFixed(1)}</b> on the rest${portionFactor >= 1.79 ? " (capped — consider a protein shake to top up)" : ""} to keep your ${meal.totals.kcal} kcal.</p>`
+  const proteinHint = (scaled && portionFactor < 1 && liveP < pos.phase.protein - 8)
+    ? ` Protein dips to ~${liveP}g — add a whey shake to hold ~${pos.phase.protein}g.`
     : "";
+  const skipNote = anySkipped
+    ? `<p class="note" style="margin:6px 0 0;color:var(--accent-2)">⊘ Skipped ${mealKeys.filter(k => skipped[k]).join(", ")} — portions bumped <b>×${portionFactor.toFixed(2)}</b> on the rest${portionFactor >= 1.79 ? " (capped — add a protein shake to top up)" : ""} to hit your ~${aim} kcal aim.</p>`
+    : (scaled
+      ? `<p class="note" style="margin:6px 0 0">🍽️ Portions auto-scaled <b>×${portionFactor.toFixed(2)}</b> so the day lands on your <b>~${aim} kcal</b> aim${payback > 0 ? " (includes a recent treat payback)" : ""}.${proteinHint}</p>`
+      : "");
 
   // water glasses (target ~8 × 250ml = 2L) — tap a glass to set your level
   const waterDots = Array.from({ length: 8 }, (_, i) =>
@@ -724,11 +739,6 @@ function renderToday() {
     ? `<button type="button" class="btn block" data-act="swap" data-i="-1" style="margin-top:10px">↩︎ Reset today's swapped meals to plan</button>`
     : "";
 
-  // calorie aim: TDEE-adjusted, minus any payback owed from a recent treat
-  const payback = paybackForDay(pos.dn);
-  const aim = dailyAim(pos);
-  const aimAdj = aim !== pos.phase.calories;
-
   // off-plan / cheat logging (inner fragment for the Adjust fold)
   const cheatToday = LS.get("pt_cheat_" + key, 0);
   const cheatInner = `<div class="section-label">🍔 Eating out / treat</div>
@@ -793,13 +803,13 @@ function renderToday() {
     <h2>🍽️ Today's Fuel${swapped ? ' <span class="swap-tag">swapped</span>' : ""}</h2>
     <p class="sub">${meal.name} · tick each meal as you eat it</p>
     <div class="macros">
-      <div class="macro"><div class="val">${meal.totals.kcal}</div><div class="lbl">kcal</div></div>
-      <div class="macro"><div class="val">${meal.totals.protein}g</div><div class="lbl">protein</div></div>
-      <div class="macro"><div class="val">${meal.totals.carbs}g</div><div class="lbl">carbs</div></div>
-      <div class="macro"><div class="val">${meal.totals.fat}g</div><div class="lbl">fat</div></div>
+      <div class="macro"><div class="val">${liveTotals.kcal}</div><div class="lbl">kcal</div></div>
+      <div class="macro"><div class="val">${liveTotals.protein}g</div><div class="lbl">protein</div></div>
+      <div class="macro"><div class="val">${liveTotals.carbs}g</div><div class="lbl">carbs</div></div>
+      <div class="macro"><div class="val">${liveTotals.fat}g</div><div class="lbl">fat</div></div>
     </div>
-    <p class="note" style="margin:10px 0 0">🎯 ${isDietBreak(pos.week) ? `<b style="color:var(--accent-2)">🏖️ Diet-break week</b> · eat to ~${aim} kcal (maintenance) to recharge` : `Phase ${pos.phase.id} aim ~${aim} kcal${aimAdj ? ' <span class="swap-tag">recalc</span>' : ""} · ${pos.phase.adjust}`}</p>
-    ${payback > 0 ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">⤵️ Balancing ${payback} kcal from a recent treat.</p>` : ""}
+    <p class="note" style="margin:10px 0 0">🎯 ${isDietBreak(pos.week) ? `<b style="color:var(--accent-2)">🏖️ Diet-break week</b> · portions set to ~${aim} kcal (maintenance) to recharge` : `Phase ${pos.phase.id} target <b>~${aim} kcal</b>${aimAdj ? ' <span class="swap-tag">recalc</span>' : ""} — portions above are scaled to match`}</p>
+    ${payback > 0 ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">⤵️ Includes balancing ${payback} kcal from a recent treat.</p>` : ""}
     ${cookTwice}
     ${skipNote}
     <ul class="checklist">${mealItems}</ul>
