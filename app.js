@@ -363,14 +363,15 @@ function scaleAmounts(text, factor) {
   if (!factor || Math.abs(factor - 1) < 0.02) return text;
   return text.replace(/(\d+(?:\.\d+)?)\s?(g|ml)\b/gi, (_, n, u) => Math.round(n * factor) + u);
 }
-// protein-source foods whose amounts we DON'T trim when scaling a day down
-const PROTEIN_FOOD = /chicken|beef|mince|steak|turkey|pork|gammon|ham|bacon|\begg|whey|casein|protein|greek yogurt|yogurt|skyr|cottage cheese|quark|tofu|jerky|prawn|salmon|tuna/i;
-// scale only carb/fat amounts by nf, leaving protein-source amounts untouched (protein-protected trim)
+// carb/fat-dense foods are the calorie levers we trim when scaling a day down —
+// protein sources and veg/aromatics keep their amounts.
+const SCALE_FOOD = /rice|pasta|spaghetti|noodle|potato|bread|toast|tortilla|wrap|pitta|naan|bagel|brioche|\bbun|\broll\b|oats|granola|couscous|mash|chips|wedges|crouton|\boil\b|butter|pesto|mayo|parmesan|coconut milk|cheese|honey|peanut butter|almond butter|\bjam\b|chocolate|\bnuts|cashew|almond|flapjack|cracker|oatcake|gravy|hummus|houmous|\bbbq/i;
+// scale only carb/fat amounts by nf, leaving protein + veg amounts untouched (protein-protected trim)
 function scaleFood(text, nf) {
   if (!nf || Math.abs(nf - 1) < 0.02) return text;
   return text.split(/(\s*\+\s*|,\s+|\bwith\b)/i).map((seg) => {
     if (/^\s*(\+|,|with)\s*$/i.test(seg) || !seg.trim()) return seg;   // separators
-    if (PROTEIN_FOOD.test(seg)) return seg;                            // keep protein amounts
+    if (!SCALE_FOOD.test(seg)) return seg;                             // only trim carb/fat foods
     return seg.replace(/(\d+(?:\.\d+)?)\s?(g|ml)\b/gi, (_, n, u) => Math.round(n * nf) + u);
   }).join("");
 }
