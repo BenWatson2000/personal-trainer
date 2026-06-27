@@ -455,17 +455,21 @@
           "prep": "If your turkey mince is frozen, move it to the fridge tonight to defrost.",
           "recipe": {
             "ingredients": [
-              "150g turkey mince",
-              "½ onion + 1 garlic clove",
-              "70g pasta",
-              "Tin chopped tomatoes / passata",
-              "Sprinkle parmesan, herbs"
+              "150g 5% turkey mince",
+              "70g dried pasta",
+              "200g passata (½ carton)",
+              "½ onion (~80g), finely diced",
+              "1 garlic clove, crushed",
+              "10g parmesan, grated",
+              "1 tsp olive oil (5ml)",
+              "Pinch dried oregano, salt & pepper"
             ],
             "steps": [
-              "Mix mince with grated onion, herbs, salt; roll into balls.",
-              "Brown the balls in a little oil, set aside.",
-              "Soften garlic, add tomatoes + herbs, simmer 10 min.",
-              "Return meatballs to sauce 5 min; serve over cooked pasta with parmesan."
+              "Mix the mince with half the garlic, oregano, salt & pepper; roll into 5–6 meatballs.",
+              "Brown the meatballs in the oil over medium heat ~6 min, turning. Remove.",
+              "Soften onion & remaining garlic in the pan; add passata and simmer 8–10 min.",
+              "Return meatballs and simmer 8 min until cooked through.",
+              "Boil pasta to pack timing; drain and toss through the sauce, top with parmesan."
             ]
           },
           "batch": true
@@ -509,16 +513,21 @@
           "recipe": {
             "ingredients": [
               "150g 5% beef mince",
-              "½ onion, 1 pepper, garlic",
-              "½ tin kidney beans",
-              "Tin chopped tomatoes",
-              "Chilli powder, cumin, 60g rice"
+              "60g dried basmati/white rice",
+              "120g kidney beans (½ tin, drained)",
+              "200g chopped tomatoes (½ tin)",
+              "½ onion (~80g), diced",
+              "1 red pepper (~120g), diced",
+              "1 garlic clove, crushed",
+              "1 tsp chilli powder + ½ tsp cumin",
+              "1 tsp olive oil (5ml)"
             ],
             "steps": [
-              "Brown mince; add chopped onion, pepper, garlic.",
-              "Stir in spices, tomatoes and drained beans.",
+              "Brown the mince in the oil; drain any excess fat.",
+              "Add onion, pepper and garlic; soften 4–5 min.",
+              "Stir in the spices for 1 min, then the tomatoes and beans.",
               "Simmer 20–25 min until thick.",
-              "Serve with boiled rice."
+              "Cook rice to pack timing and serve alongside."
             ]
           },
           "batch": true
@@ -561,16 +570,20 @@
           "p": 48,
           "recipe": {
             "ingredients": [
-              "150g chicken, sliced",
-              "120g egg noodles",
-              "Peppers, broccoli, ginger",
-              "2 tbsp soy + dash sriracha"
+              "150g chicken breast, sliced",
+              "120g cooked egg noodles (~60g dried)",
+              "1 pepper (~120g), sliced",
+              "100g broccoli / tenderstem, in florets",
+              "1 garlic clove + 1 tsp grated ginger",
+              "2 tbsp light soy sauce (30ml)",
+              "1 tsp sriracha (optional)",
+              "1 tsp sesame/veg oil (5ml)"
             ],
             "steps": [
-              "Cook noodles, drain.",
-              "Stir-fry chicken on high until done.",
-              "Add veg + ginger, fry 3–4 min.",
-              "Toss in noodles + soy/sriracha 1 min."
+              "Cook noodles to pack, drain and set aside.",
+              "Stir-fry chicken in the oil over high heat 4–5 min until cooked. Remove.",
+              "Add broccoli & pepper; stir-fry 3–4 min, then garlic & ginger for 30s.",
+              "Return chicken & noodles, add soy + sriracha and toss 1–2 min."
             ]
           }
         },
@@ -611,16 +624,20 @@
           "p": 50,
           "recipe": {
             "ingredients": [
-              "150g chicken strips",
-              "Peppers + onion",
-              "2 small tortillas",
-              "Fajita seasoning, salsa, light cheese"
+              "150g chicken breast, in strips",
+              "2 small tortillas (~32g each)",
+              "1 pepper (~120g), sliced",
+              "½ onion (~80g), sliced",
+              "1 tbsp fajita seasoning (~8g)",
+              "30g salsa",
+              "20g light grated cheese",
+              "1 tsp olive oil (5ml)"
             ],
             "steps": [
-              "Toss chicken in seasoning.",
-              "Fry chicken until cooked; add peppers + onion.",
-              "Warm tortillas.",
-              "Fill with chicken, salsa and a little cheese."
+              "Toss the chicken with the fajita seasoning.",
+              "Fry chicken in the oil over high heat 5–6 min until cooked; remove.",
+              "Add peppers & onion; char 4–5 min.",
+              "Warm tortillas and fill with chicken, veg, salsa & cheese."
             ]
           }
         },
@@ -661,16 +678,18 @@
           "p": 48,
           "recipe": {
             "ingredients": [
-              "150g pork loin steak",
-              "200g new potatoes",
-              "Green veg (beans/broccoli)",
-              "Garlic, olive oil"
+              "150g pork loin steak, fat trimmed",
+              "200g new potatoes, halved",
+              "150g green veg (green beans / broccoli)",
+              "1 garlic clove, crushed",
+              "1 tsp olive oil (5ml)",
+              "Salt, pepper, pinch rosemary"
             ],
             "steps": [
-              "Boil new potatoes ~15 min.",
-              "Season pork; pan-fry 3–4 min each side until cooked.",
-              "Steam the greens.",
-              "Rest pork 2 min; plate with potatoes + veg."
+              "Boil new potatoes 15–18 min until tender; drain.",
+              "Season the pork; pan-fry in the oil 3–4 min each side until cooked. Rest 2 min.",
+              "Steam or boil the green veg 4–5 min.",
+              "Toss potatoes with the garlic; plate with pork & veg."
             ]
           }
         },
@@ -713,15 +732,20 @@
           "recipe": {
             "ingredients": [
               "150g 5% beef mince",
-              "75g spaghetti",
-              "½ onion, garlic, carrot",
-              "Tin tomatoes, herbs, parmesan"
+              "75g dried spaghetti",
+              "200g chopped tomatoes (½ tin)",
+              "½ onion (~80g), diced",
+              "1 small carrot (~60g), grated",
+              "1 garlic clove, crushed",
+              "10g parmesan, grated",
+              "1 tsp olive oil (5ml), pinch oregano"
             ],
             "steps": [
-              "Brown mince; add diced onion, carrot, garlic.",
-              "Add tomatoes + herbs, simmer 20 min.",
-              "Cook spaghetti.",
-              "Combine; top with parmesan."
+              "Brown the mince in the oil; drain excess fat.",
+              "Add onion, carrot and garlic; soften 5 min.",
+              "Add tomatoes & oregano; simmer 20–25 min.",
+              "Boil spaghetti to pack timing; drain.",
+              "Toss with the sauce and top with parmesan."
             ]
           },
           "batch": true
@@ -763,16 +787,21 @@
           "p": 48,
           "recipe": {
             "ingredients": [
-              "150g chicken",
-              "Onion, pepper, garlic, ginger",
-              "Curry paste + light coconut milk",
-              "60g rice"
+              "150g chicken breast, diced",
+              "60g dried basmati rice",
+              "1 onion (~120g), diced",
+              "1 pepper (~120g), sliced",
+              "1 garlic clove + 1 tsp grated ginger",
+              "2 tbsp curry paste (~30g)",
+              "100ml light coconut milk",
+              "100g chopped tomatoes",
+              "1 tsp oil (5ml)"
             ],
             "steps": [
-              "Fry onion, garlic, ginger; add curry paste.",
-              "Add chicken, brown.",
-              "Pour in coconut milk + veg; simmer 15 min.",
-              "Serve with rice."
+              "Fry onion in the oil 4 min; add garlic, ginger and curry paste for 1 min.",
+              "Add chicken and brown 4–5 min.",
+              "Stir in tomatoes, coconut milk and pepper; simmer 12–15 min.",
+              "Cook rice to pack timing and serve."
             ]
           },
           "batch": true
@@ -815,15 +844,16 @@
           "recipe": {
             "ingredients": [
               "160g chicken breast",
-              "BBQ sauce",
-              "200g sweet potato",
-              "Corn on the cob"
+              "200g sweet potato, in wedges",
+              "1 corn on the cob (~125g)",
+              "2 tbsp BBQ sauce (~35g)",
+              "1 tsp olive oil (5ml)",
+              "Salt, pepper, paprika"
             ],
             "steps": [
-              "Cut sweet potato into wedges, roast 25–30 min.",
-              "Coat chicken in BBQ sauce; bake or grill ~20 min.",
-              "Boil/grill the corn.",
-              "Plate it all up."
+              "Heat oven to 200°C. Toss sweet potato wedges in the oil + paprika; roast 25–30 min.",
+              "Coat the chicken in BBQ sauce; bake 18–22 min until cooked.",
+              "Boil the corn 6–8 min and serve."
             ]
           }
         },
@@ -866,15 +896,18 @@
           "recipe": {
             "ingredients": [
               "150g lean beef strips",
-              "Broccoli",
-              "Garlic + ginger",
-              "2 tbsp soy, 60g rice"
+              "60g dried rice",
+              "150g broccoli, in florets",
+              "1 garlic clove + 1 tsp grated ginger",
+              "2 tbsp light soy sauce (30ml)",
+              "1 tsp oyster sauce (optional, ~10g)",
+              "1 tsp sesame/veg oil (5ml)"
             ],
             "steps": [
-              "Cook rice.",
-              "Sear beef on high heat, set aside.",
-              "Stir-fry broccoli, garlic, ginger 3 min.",
-              "Return beef + soy 1 min; serve over rice."
+              "Cook rice to pack timing.",
+              "Sear beef in the oil over high heat 2–3 min; remove.",
+              "Stir-fry broccoli 3–4 min (splash of water to steam), then garlic & ginger 30s.",
+              "Return beef, add soy (+ oyster) and toss 1 min. Serve over rice."
             ]
           }
         },
@@ -915,16 +948,18 @@
           "p": 46,
           "recipe": {
             "ingredients": [
-              "150g chicken",
-              "75g pasta",
-              "Light pesto",
-              "Cherry tomatoes"
+              "150g chicken breast, diced",
+              "75g dried pasta",
+              "1 tbsp light green pesto (~20g)",
+              "80g cherry tomatoes, halved",
+              "1 tsp olive oil (5ml)",
+              "5g parmesan (optional)"
             ],
             "steps": [
-              "Cook pasta.",
-              "Pan-fry chicken until done, slice.",
-              "Toss pasta with pesto + halved tomatoes.",
-              "Top with chicken."
+              "Boil pasta to pack timing; reserve a splash of water, then drain.",
+              "Fry chicken in the oil 6–7 min until cooked.",
+              "Off the heat, stir the pesto + a splash of pasta water through the pasta & chicken.",
+              "Fold in cherry tomatoes; top with parmesan."
             ]
           }
         },
@@ -965,16 +1000,16 @@
           "p": 46,
           "recipe": {
             "ingredients": [
-              "150g pork steak/chops",
-              "1 apple, wedged",
-              "200g new potatoes",
-              "Onion, rosemary"
+              "150g pork steak/chops, trimmed",
+              "200g new potatoes, halved",
+              "1 apple, cut in wedges",
+              "½ onion (~80g), wedged",
+              "150g veg (carrots / green beans)",
+              "1 tsp olive oil (5ml), pinch rosemary"
             ],
             "steps": [
-              "Halve potatoes, par-boil 8 min.",
-              "Add to tray with pork, apple, onion, rosemary + oil.",
-              "Roast 25–30 min at 200°C until pork cooked.",
-              "Serve with green veg."
+              "Heat oven to 200°C. Toss potatoes, onion & veg in the oil + rosemary; roast 15 min.",
+              "Add the pork & apple to the tray; roast a further 18–20 min until the pork is cooked."
             ]
           },
           "batch": true
@@ -1017,16 +1052,17 @@
           "p": 48,
           "recipe": {
             "ingredients": [
-              "2 turkey burgers",
-              "Brioche thins / buns",
-              "200g sweet potato (chips)",
-              "Salad"
+              "2 turkey burgers (~85g each)",
+              "2 brioche thins (or 1 bun)",
+              "200g sweet potato, in chips",
+              "80g side salad (leaves, tomato, cucumber)",
+              "1 tsp olive oil (5ml)",
+              "Salt, pepper, paprika"
             ],
             "steps": [
-              "Cut sweet potato into chips, oven 25 min.",
-              "Grill/fry burgers until cooked through.",
-              "Toast the buns.",
-              "Build with salad; serve with chips."
+              "Heat oven to 200°C. Toss sweet potato chips in the oil + paprika; roast 25–30 min.",
+              "Grill or pan-fry the turkey burgers 5–6 min each side until cooked.",
+              "Build in the brioche thins with the salad on the side."
             ]
           }
         },
@@ -1068,16 +1104,17 @@
           "prep": "Marinate the chicken in tikka paste + yogurt tonight for the best flavour.",
           "recipe": {
             "ingredients": [
-              "160g chicken",
-              "Tikka paste + 2 tbsp yogurt",
-              "60g rice",
-              "Mini naan"
+              "160g chicken breast, cubed",
+              "60g dried basmati rice",
+              "1 mini naan (~60g)",
+              "1 tbsp tikka paste (~20g)",
+              "2 tbsp fat-free yogurt (~40g)",
+              "½ onion + lemon wedge"
             ],
             "steps": [
-              "Marinate chicken in tikka paste + yogurt (ideally overnight).",
-              "Grill/bake ~20 min until charred and cooked.",
-              "Cook rice; warm naan.",
-              "Serve together."
+              "Mix the tikka paste + yogurt; coat the chicken and marinate 15 min if you have time.",
+              "Grill or bake the chicken 12–15 min, turning, until charred & cooked.",
+              "Cook rice; warm the naan. Serve with onion & lemon."
             ]
           }
         },
@@ -1119,15 +1156,17 @@
           "recipe": {
             "ingredients": [
               "4 reduced-fat sausages",
-              "2 potatoes (mash)",
-              "Onion gravy",
-              "Peas"
+              "250g potatoes (for mash)",
+              "80g peas",
+              "1 onion (~120g), sliced",
+              "150ml gravy (1 tsp granules + water)",
+              "1 tsp olive oil (5ml) + splash milk (~20ml)"
             ],
             "steps": [
-              "Boil potatoes; mash with a splash of milk.",
-              "Grill sausages ~15 min, turning.",
-              "Heat gravy; cook peas.",
-              "Plate sausages on mash with gravy + peas."
+              "Grill or bake the sausages 18–20 min, turning.",
+              "Boil potatoes 15 min; mash with a splash of milk, season.",
+              "Soften onion in the oil 8–10 min; add gravy and simmer 3 min.",
+              "Boil peas 3 min. Plate sausages with mash, peas & onion gravy."
             ]
           }
         },
@@ -1509,17 +1548,21 @@
         "prep": "If your turkey mince is frozen, move it to the fridge tonight to defrost.",
         "recipe": {
           "ingredients": [
-            "150g turkey mince",
-            "½ onion + 1 garlic clove",
-            "70g pasta",
-            "Tin chopped tomatoes / passata",
-            "Sprinkle parmesan, herbs"
+            "150g 5% turkey mince",
+            "70g dried pasta",
+            "200g passata (½ carton)",
+            "½ onion (~80g), finely diced",
+            "1 garlic clove, crushed",
+            "10g parmesan, grated",
+            "1 tsp olive oil (5ml)",
+            "Pinch dried oregano, salt & pepper"
           ],
           "steps": [
-            "Mix mince with grated onion, herbs, salt; roll into balls.",
-            "Brown the balls in a little oil, set aside.",
-            "Soften garlic, add tomatoes + herbs, simmer 10 min.",
-            "Return meatballs to sauce 5 min; serve over cooked pasta with parmesan."
+            "Mix the mince with half the garlic, oregano, salt & pepper; roll into 5–6 meatballs.",
+            "Brown the meatballs in the oil over medium heat ~6 min, turning. Remove.",
+            "Soften onion & remaining garlic in the pan; add passata and simmer 8–10 min.",
+            "Return meatballs and simmer 8 min until cooked through.",
+            "Boil pasta to pack timing; drain and toss through the sauce, top with parmesan."
           ]
         },
         "batch": true
@@ -1533,16 +1576,21 @@
         "recipe": {
           "ingredients": [
             "150g 5% beef mince",
-            "½ onion, 1 pepper, garlic",
-            "½ tin kidney beans",
-            "Tin chopped tomatoes",
-            "Chilli powder, cumin, 60g rice"
+            "60g dried basmati/white rice",
+            "120g kidney beans (½ tin, drained)",
+            "200g chopped tomatoes (½ tin)",
+            "½ onion (~80g), diced",
+            "1 red pepper (~120g), diced",
+            "1 garlic clove, crushed",
+            "1 tsp chilli powder + ½ tsp cumin",
+            "1 tsp olive oil (5ml)"
           ],
           "steps": [
-            "Brown mince; add chopped onion, pepper, garlic.",
-            "Stir in spices, tomatoes and drained beans.",
+            "Brown the mince in the oil; drain any excess fat.",
+            "Add onion, pepper and garlic; soften 4–5 min.",
+            "Stir in the spices for 1 min, then the tomatoes and beans.",
             "Simmer 20–25 min until thick.",
-            "Serve with boiled rice."
+            "Cook rice to pack timing and serve alongside."
           ]
         },
         "batch": true
@@ -1554,16 +1602,20 @@
         "p": 48,
         "recipe": {
           "ingredients": [
-            "150g chicken, sliced",
-            "120g egg noodles",
-            "Peppers, broccoli, ginger",
-            "2 tbsp soy + dash sriracha"
+            "150g chicken breast, sliced",
+            "120g cooked egg noodles (~60g dried)",
+            "1 pepper (~120g), sliced",
+            "100g broccoli / tenderstem, in florets",
+            "1 garlic clove + 1 tsp grated ginger",
+            "2 tbsp light soy sauce (30ml)",
+            "1 tsp sriracha (optional)",
+            "1 tsp sesame/veg oil (5ml)"
           ],
           "steps": [
-            "Cook noodles, drain.",
-            "Stir-fry chicken on high until done.",
-            "Add veg + ginger, fry 3–4 min.",
-            "Toss in noodles + soy/sriracha 1 min."
+            "Cook noodles to pack, drain and set aside.",
+            "Stir-fry chicken in the oil over high heat 4–5 min until cooked. Remove.",
+            "Add broccoli & pepper; stir-fry 3–4 min, then garlic & ginger for 30s.",
+            "Return chicken & noodles, add soy + sriracha and toss 1–2 min."
           ]
         }
       },
@@ -1574,16 +1626,20 @@
         "p": 50,
         "recipe": {
           "ingredients": [
-            "150g chicken strips",
-            "Peppers + onion",
-            "2 small tortillas",
-            "Fajita seasoning, salsa, light cheese"
+            "150g chicken breast, in strips",
+            "2 small tortillas (~32g each)",
+            "1 pepper (~120g), sliced",
+            "½ onion (~80g), sliced",
+            "1 tbsp fajita seasoning (~8g)",
+            "30g salsa",
+            "20g light grated cheese",
+            "1 tsp olive oil (5ml)"
           ],
           "steps": [
-            "Toss chicken in seasoning.",
-            "Fry chicken until cooked; add peppers + onion.",
-            "Warm tortillas.",
-            "Fill with chicken, salsa and a little cheese."
+            "Toss the chicken with the fajita seasoning.",
+            "Fry chicken in the oil over high heat 5–6 min until cooked; remove.",
+            "Add peppers & onion; char 4–5 min.",
+            "Warm tortillas and fill with chicken, veg, salsa & cheese."
           ]
         }
       },
@@ -1594,16 +1650,18 @@
         "p": 48,
         "recipe": {
           "ingredients": [
-            "150g pork loin steak",
-            "200g new potatoes",
-            "Green veg (beans/broccoli)",
-            "Garlic, olive oil"
+            "150g pork loin steak, fat trimmed",
+            "200g new potatoes, halved",
+            "150g green veg (green beans / broccoli)",
+            "1 garlic clove, crushed",
+            "1 tsp olive oil (5ml)",
+            "Salt, pepper, pinch rosemary"
           ],
           "steps": [
-            "Boil new potatoes ~15 min.",
-            "Season pork; pan-fry 3–4 min each side until cooked.",
-            "Steam the greens.",
-            "Rest pork 2 min; plate with potatoes + veg."
+            "Boil new potatoes 15–18 min until tender; drain.",
+            "Season the pork; pan-fry in the oil 3–4 min each side until cooked. Rest 2 min.",
+            "Steam or boil the green veg 4–5 min.",
+            "Toss potatoes with the garlic; plate with pork & veg."
           ]
         }
       },
@@ -1616,15 +1674,20 @@
         "recipe": {
           "ingredients": [
             "150g 5% beef mince",
-            "75g spaghetti",
-            "½ onion, garlic, carrot",
-            "Tin tomatoes, herbs, parmesan"
+            "75g dried spaghetti",
+            "200g chopped tomatoes (½ tin)",
+            "½ onion (~80g), diced",
+            "1 small carrot (~60g), grated",
+            "1 garlic clove, crushed",
+            "10g parmesan, grated",
+            "1 tsp olive oil (5ml), pinch oregano"
           ],
           "steps": [
-            "Brown mince; add diced onion, carrot, garlic.",
-            "Add tomatoes + herbs, simmer 20 min.",
-            "Cook spaghetti.",
-            "Combine; top with parmesan."
+            "Brown the mince in the oil; drain excess fat.",
+            "Add onion, carrot and garlic; soften 5 min.",
+            "Add tomatoes & oregano; simmer 20–25 min.",
+            "Boil spaghetti to pack timing; drain.",
+            "Toss with the sauce and top with parmesan."
           ]
         },
         "batch": true
@@ -1636,16 +1699,21 @@
         "p": 48,
         "recipe": {
           "ingredients": [
-            "150g chicken",
-            "Onion, pepper, garlic, ginger",
-            "Curry paste + light coconut milk",
-            "60g rice"
+            "150g chicken breast, diced",
+            "60g dried basmati rice",
+            "1 onion (~120g), diced",
+            "1 pepper (~120g), sliced",
+            "1 garlic clove + 1 tsp grated ginger",
+            "2 tbsp curry paste (~30g)",
+            "100ml light coconut milk",
+            "100g chopped tomatoes",
+            "1 tsp oil (5ml)"
           ],
           "steps": [
-            "Fry onion, garlic, ginger; add curry paste.",
-            "Add chicken, brown.",
-            "Pour in coconut milk + veg; simmer 15 min.",
-            "Serve with rice."
+            "Fry onion in the oil 4 min; add garlic, ginger and curry paste for 1 min.",
+            "Add chicken and brown 4–5 min.",
+            "Stir in tomatoes, coconut milk and pepper; simmer 12–15 min.",
+            "Cook rice to pack timing and serve."
           ]
         },
         "batch": true
@@ -1658,15 +1726,16 @@
         "recipe": {
           "ingredients": [
             "160g chicken breast",
-            "BBQ sauce",
-            "200g sweet potato",
-            "Corn on the cob"
+            "200g sweet potato, in wedges",
+            "1 corn on the cob (~125g)",
+            "2 tbsp BBQ sauce (~35g)",
+            "1 tsp olive oil (5ml)",
+            "Salt, pepper, paprika"
           ],
           "steps": [
-            "Cut sweet potato into wedges, roast 25–30 min.",
-            "Coat chicken in BBQ sauce; bake or grill ~20 min.",
-            "Boil/grill the corn.",
-            "Plate it all up."
+            "Heat oven to 200°C. Toss sweet potato wedges in the oil + paprika; roast 25–30 min.",
+            "Coat the chicken in BBQ sauce; bake 18–22 min until cooked.",
+            "Boil the corn 6–8 min and serve."
           ]
         }
       },
@@ -1679,15 +1748,18 @@
         "recipe": {
           "ingredients": [
             "150g lean beef strips",
-            "Broccoli",
-            "Garlic + ginger",
-            "2 tbsp soy, 60g rice"
+            "60g dried rice",
+            "150g broccoli, in florets",
+            "1 garlic clove + 1 tsp grated ginger",
+            "2 tbsp light soy sauce (30ml)",
+            "1 tsp oyster sauce (optional, ~10g)",
+            "1 tsp sesame/veg oil (5ml)"
           ],
           "steps": [
-            "Cook rice.",
-            "Sear beef on high heat, set aside.",
-            "Stir-fry broccoli, garlic, ginger 3 min.",
-            "Return beef + soy 1 min; serve over rice."
+            "Cook rice to pack timing.",
+            "Sear beef in the oil over high heat 2–3 min; remove.",
+            "Stir-fry broccoli 3–4 min (splash of water to steam), then garlic & ginger 30s.",
+            "Return beef, add soy (+ oyster) and toss 1 min. Serve over rice."
           ]
         }
       },
@@ -1698,16 +1770,18 @@
         "p": 46,
         "recipe": {
           "ingredients": [
-            "150g chicken",
-            "75g pasta",
-            "Light pesto",
-            "Cherry tomatoes"
+            "150g chicken breast, diced",
+            "75g dried pasta",
+            "1 tbsp light green pesto (~20g)",
+            "80g cherry tomatoes, halved",
+            "1 tsp olive oil (5ml)",
+            "5g parmesan (optional)"
           ],
           "steps": [
-            "Cook pasta.",
-            "Pan-fry chicken until done, slice.",
-            "Toss pasta with pesto + halved tomatoes.",
-            "Top with chicken."
+            "Boil pasta to pack timing; reserve a splash of water, then drain.",
+            "Fry chicken in the oil 6–7 min until cooked.",
+            "Off the heat, stir the pesto + a splash of pasta water through the pasta & chicken.",
+            "Fold in cherry tomatoes; top with parmesan."
           ]
         }
       },
@@ -1718,16 +1792,16 @@
         "p": 46,
         "recipe": {
           "ingredients": [
-            "150g pork steak/chops",
-            "1 apple, wedged",
-            "200g new potatoes",
-            "Onion, rosemary"
+            "150g pork steak/chops, trimmed",
+            "200g new potatoes, halved",
+            "1 apple, cut in wedges",
+            "½ onion (~80g), wedged",
+            "150g veg (carrots / green beans)",
+            "1 tsp olive oil (5ml), pinch rosemary"
           ],
           "steps": [
-            "Halve potatoes, par-boil 8 min.",
-            "Add to tray with pork, apple, onion, rosemary + oil.",
-            "Roast 25–30 min at 200°C until pork cooked.",
-            "Serve with green veg."
+            "Heat oven to 200°C. Toss potatoes, onion & veg in the oil + rosemary; roast 15 min.",
+            "Add the pork & apple to the tray; roast a further 18–20 min until the pork is cooked."
           ]
         },
         "batch": true
@@ -1739,16 +1813,17 @@
         "p": 48,
         "recipe": {
           "ingredients": [
-            "2 turkey burgers",
-            "Brioche thins / buns",
-            "200g sweet potato (chips)",
-            "Salad"
+            "2 turkey burgers (~85g each)",
+            "2 brioche thins (or 1 bun)",
+            "200g sweet potato, in chips",
+            "80g side salad (leaves, tomato, cucumber)",
+            "1 tsp olive oil (5ml)",
+            "Salt, pepper, paprika"
           ],
           "steps": [
-            "Cut sweet potato into chips, oven 25 min.",
-            "Grill/fry burgers until cooked through.",
-            "Toast the buns.",
-            "Build with salad; serve with chips."
+            "Heat oven to 200°C. Toss sweet potato chips in the oil + paprika; roast 25–30 min.",
+            "Grill or pan-fry the turkey burgers 5–6 min each side until cooked.",
+            "Build in the brioche thins with the salad on the side."
           ]
         }
       },
@@ -1760,16 +1835,17 @@
         "prep": "Marinate the chicken in tikka paste + yogurt tonight for the best flavour.",
         "recipe": {
           "ingredients": [
-            "160g chicken",
-            "Tikka paste + 2 tbsp yogurt",
-            "60g rice",
-            "Mini naan"
+            "160g chicken breast, cubed",
+            "60g dried basmati rice",
+            "1 mini naan (~60g)",
+            "1 tbsp tikka paste (~20g)",
+            "2 tbsp fat-free yogurt (~40g)",
+            "½ onion + lemon wedge"
           ],
           "steps": [
-            "Marinate chicken in tikka paste + yogurt (ideally overnight).",
-            "Grill/bake ~20 min until charred and cooked.",
-            "Cook rice; warm naan.",
-            "Serve together."
+            "Mix the tikka paste + yogurt; coat the chicken and marinate 15 min if you have time.",
+            "Grill or bake the chicken 12–15 min, turning, until charred & cooked.",
+            "Cook rice; warm the naan. Serve with onion & lemon."
           ]
         }
       },
@@ -1781,15 +1857,17 @@
         "recipe": {
           "ingredients": [
             "4 reduced-fat sausages",
-            "2 potatoes (mash)",
-            "Onion gravy",
-            "Peas"
+            "250g potatoes (for mash)",
+            "80g peas",
+            "1 onion (~120g), sliced",
+            "150ml gravy (1 tsp granules + water)",
+            "1 tsp olive oil (5ml) + splash milk (~20ml)"
           ],
           "steps": [
-            "Boil potatoes; mash with a splash of milk.",
-            "Grill sausages ~15 min, turning.",
-            "Heat gravy; cook peas.",
-            "Plate sausages on mash with gravy + peas."
+            "Grill or bake the sausages 18–20 min, turning.",
+            "Boil potatoes 15 min; mash with a splash of milk, season.",
+            "Soften onion in the oil 8–10 min; add gravy and simmer 3 min.",
+            "Boil peas 3 min. Plate sausages with mash, peas & onion gravy."
           ]
         }
       },
@@ -1800,17 +1878,19 @@
         "p": 44,
         "recipe": {
           "ingredients": [
-            "150g turkey mince",
-            "Onion, pepper, garlic",
-            "½ tin kidney beans",
-            "Tin chopped tomatoes",
-            "Chilli spices, 60g rice"
+            "150g 5% turkey mince",
+            "60g dried rice",
+            "120g kidney beans (½ tin, drained)",
+            "200g chopped tomatoes (½ tin)",
+            "½ onion (~80g), 1 pepper (~120g), 1 garlic clove",
+            "1 tsp chilli powder + ½ tsp cumin",
+            "1 tsp olive oil (5ml)"
           ],
           "steps": [
-            "Brown the mince.",
-            "Add veg + chilli spices.",
-            "Stir in tomatoes + beans; simmer 20 min.",
-            "Serve with rice."
+            "Brown the turkey mince in the oil.",
+            "Add onion, pepper and garlic; soften 4–5 min.",
+            "Stir in spices, tomatoes & beans; simmer 20 min.",
+            "Cook rice and serve."
           ]
         },
         "batch": true
@@ -1823,16 +1903,17 @@
         "recipe": {
           "ingredients": [
             "150g 5% beef mince",
-            "Onion + carrot",
-            "Beef stock/gravy",
-            "2 potatoes (mash)",
-            "Peas"
+            "250g potatoes (mash topping)",
+            "150g veg (carrots / green beans)",
+            "½ onion (~80g), 1 garlic clove",
+            "100g chopped tomatoes + 1 tsp tomato purée",
+            "150ml beef stock + splash milk for mash"
           ],
           "steps": [
-            "Brown mince with onion + carrot.",
-            "Add stock, simmer 10 min.",
-            "Top with mash; bake 20 min at 200°C.",
-            "Serve with peas."
+            "Brown the mince; add onion & garlic and soften.",
+            "Add purée, tomatoes & stock; simmer 15 min until thick.",
+            "Boil & mash the potatoes with a splash of milk.",
+            "Top the mince with mash; bake 200°C 18–20 min. Serve with veg."
           ]
         },
         "batch": true
@@ -1844,16 +1925,18 @@
         "p": 44,
         "recipe": {
           "ingredients": [
-            "150g pork mince",
-            "Breadcrumb + ½ egg",
-            "Passata + garlic, herbs",
-            "70g pasta"
+            "150g 5% pork mince",
+            "70g dried pasta",
+            "200g passata",
+            "½ onion (~80g), 1 garlic clove",
+            "10g parmesan",
+            "1 tsp olive oil (5ml), pinch oregano"
           ],
           "steps": [
-            "Mix mince, breadcrumb, egg; roll into balls.",
-            "Brown the balls.",
-            "Simmer in garlicky passata 12 min.",
-            "Serve over pasta."
+            "Roll the pork mince into balls; brown in the oil. Remove.",
+            "Soften onion & garlic; add passata & oregano and simmer 8 min.",
+            "Return meatballs and simmer 8–10 min.",
+            "Boil pasta; toss through the sauce and top with parmesan."
           ]
         },
         "batch": true
@@ -1865,16 +1948,18 @@
         "p": 46,
         "recipe": {
           "ingredients": [
-            "140g chicken",
-            "40g light chorizo",
-            "Onion, pepper, paprika",
-            "60g rice + stock"
+            "150g chicken breast, diced",
+            "40g chorizo, sliced",
+            "60g dried rice",
+            "½ onion (~80g), 1 pepper (~120g), 1 garlic clove",
+            "200g chopped tomatoes",
+            "200ml chicken stock, pinch paprika"
           ],
           "steps": [
-            "Fry chorizo to release oil.",
-            "Add chicken + veg + paprika.",
-            "Stir in rice + stock.",
-            "Cover and simmer 15 min."
+            "Fry chorizo 1–2 min to release its oil; add chicken and brown.",
+            "Add onion, pepper & garlic; soften 4 min.",
+            "Stir in rice, paprika, tomatoes & stock.",
+            "Cover and simmer 18–20 min until the rice is cooked."
           ]
         },
         "batch": true
@@ -1887,16 +1972,16 @@
         "prep": "Marinate the chicken in lemon, garlic & oregano tonight.",
         "recipe": {
           "ingredients": [
-            "150g chicken",
-            "Lemon, oregano, garlic",
-            "Mini pitta",
-            "Salad + light tzatziki"
+            "150g chicken breast, cubed",
+            "1 mini pitta (~45g)",
+            "80g salad (leaves, tomato, cucumber, red onion)",
+            "30g tzatziki",
+            "1 tsp olive oil (5ml) + squeeze lemon, oregano"
           ],
           "steps": [
-            "Marinate chicken in lemon, oregano, garlic.",
-            "Grill/skewer until cooked.",
-            "Warm the pitta.",
-            "Fill with chicken, salad + tzatziki."
+            "Toss the chicken with oil, lemon & oregano; thread on skewers if you like.",
+            "Grill or pan-fry 10–12 min until charred & cooked.",
+            "Warm the pitta; serve with the salad & tzatziki."
           ]
         }
       },
@@ -1909,14 +1994,15 @@
           "ingredients": [
             "150g gammon steak",
             "1 egg",
-            "200g potatoes",
-            "Peas"
+            "200g potatoes, diced (sautéed)",
+            "80g peas",
+            "1 tsp olive oil (5ml)"
           ],
           "steps": [
-            "Boil then sauté the potatoes.",
-            "Grill the gammon 4–5 min each side.",
-            "Fry the egg; cook peas.",
-            "Plate together."
+            "Par-boil the diced potatoes 6 min; drain.",
+            "Sauté the potatoes in the oil 8–10 min until golden.",
+            "Grill or pan-fry the gammon 3–4 min each side. Fry the egg.",
+            "Boil peas 3 min. Plate everything together."
           ]
         }
       }
