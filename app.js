@@ -844,8 +844,8 @@ function renderToday() {
   <div class="card">
     <h2>📋 Daily log</h2>
     <div class="log-sec water-sec">
-      <div class="log-label">💧 Water <span class="water-count" id="waterCount">${checks.water}/8</span>
-        <span class="water-vol" id="waterVol">${waterVolStr(checks.water)}</span></div>
+      <div class="log-label">💧 Water <span class="water-count" id="waterCount">${waterReadout(checks.water)}</span>
+        <span class="water-vol" id="waterVol">${waterGlasses(checks.water)}</span></div>
       <div class="water-row">
         <button type="button" class="water-step" data-act="waterdec" aria-label="Remove a glass"${checks.water <= 0 ? " disabled" : ""}>−</button>
         <div class="water-dots">${waterDots}</div>
@@ -2007,7 +2007,9 @@ function toggleShop(li) {
   if (cnt) cnt.textContent = `${done} of ${items.length} ticked off${done === items.length ? " — all done! 🎉" : ""}`;
 }
 
-function waterVolStr(n) { const l = n * 0.25; return (Number.isInteger(l) ? l : l.toFixed(2).replace(/0$/, "")) + " L"; }
+// each glass = 250ml; target 8 = 2 L. Show "drunk / 2 L" so it maps to a bottle.
+function waterReadout(n) { return (Math.round(n * 25) / 100) + " / 2 L"; }
+function waterGlasses(n) { return n + "/8 glasses · 250ml each"; }
 function updateWater(n) {
   const wrap = document.querySelector(".water-dots");
   if (wrap) wrap.querySelectorAll(".water-dot").forEach((d, i) => {
@@ -2015,8 +2017,8 @@ function updateWater(n) {
     d.classList.toggle("filled", filled);
     d.textContent = filled ? "💧" : "";
   });
-  const cnt = document.getElementById("waterCount"); if (cnt) cnt.textContent = n + "/8";
-  const vol = document.getElementById("waterVol"); if (vol) vol.textContent = waterVolStr(n);
+  const cnt = document.getElementById("waterCount"); if (cnt) cnt.textContent = waterReadout(n);
+  const vol = document.getElementById("waterVol"); if (vol) vol.textContent = waterGlasses(n);
   const dec = document.querySelector('[data-act="waterdec"]'); if (dec) dec.disabled = n <= 0;
   const inc = document.querySelector('[data-act="waterinc"]'); if (inc) inc.disabled = n >= 8;
 }
