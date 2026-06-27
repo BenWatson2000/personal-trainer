@@ -363,14 +363,28 @@ function scaleAmounts(text, factor) {
   if (!factor || Math.abs(factor - 1) < 0.02) return text;
   return text.replace(/(\d+(?:\.\d+)?)\s?(g|ml)\b/gi, (_, n, u) => Math.round(n * factor) + u);
 }
-function recipeBlock(meal, factor = 1) {
+// protein-source foods whose amounts we DON'T trim when scaling a day down
+const PROTEIN_FOOD = /chicken|beef|mince|steak|turkey|pork|gammon|ham|bacon|\begg|whey|casein|protein|greek yogurt|yogurt|skyr|cottage cheese|quark|tofu|jerky|prawn|salmon|tuna/i;
+// scale only carb/fat amounts by nf, leaving protein-source amounts untouched (protein-protected trim)
+function scaleFood(text, nf) {
+  if (!nf || Math.abs(nf - 1) < 0.02) return text;
+  return text.split(/(\s*\+\s*|,\s+|\bwith\b)/i).map((seg) => {
+    if (/^\s*(\+|,|with)\s*$/i.test(seg) || !seg.trim()) return seg;   // separators
+    if (PROTEIN_FOOD.test(seg)) return seg;                            // keep protein amounts
+    return seg.replace(/(\d+(?:\.\d+)?)\s?(g|ml)\b/gi, (_, n, u) => Math.round(n * nf) + u);
+  }).join("");
+}
+function recipeBlock(meal, pf = 1, nf = pf) {
   const d = meal.items.Dinner; if (!d || !d.recipe) return "";
   const r = d.recipe, title = d.text.split(" — ")[0];
-  const scale = Math.abs(factor - 1) > 0.02;
-  const ing = r.ingredients.map((x) => scaleAmounts(x, factor));
-  return `<details class="recipe"><summary>📖 Tonight's recipe — ${title}${scale ? ` <span class="swap-tag">×${factor.toFixed(2)}</span>` : ""}</summary>
+  const up = pf > 1.02, down = nf < pf - 0.02;   // up = bigger portion, down = protein-protected trim
+  const ing = r.ingredients.map((x) => down ? scaleFood(x, nf) : scaleAmounts(x, pf));
+  const tag = up ? `×${pf.toFixed(2)}` : down ? `carbs ×${nf.toFixed(2)}` : "";
+  const note = up ? `Quantities scaled ×${pf.toFixed(2)} for your bigger portion.`
+    : down ? `Carb/fat amounts trimmed ×${nf.toFixed(2)} to hit your aim — protein kept full.` : "";
+  return `<details class="recipe"><summary>📖 Tonight's recipe — ${title}${tag ? ` <span class="swap-tag">${tag}</span>` : ""}</summary>
     <div class="recipe-body">
-      ${scale ? `<p class="note" style="margin:0 0 6px">Quantities scaled ×${factor.toFixed(2)} for your ${factor > 1 ? "bigger" : "trimmed"} portion.</p>` : ""}
+      ${note ? `<p class="note" style="margin:0 0 6px">${note}</p>` : ""}
       <div class="section-label">Ingredients</div>
       <ul class="recipe-ing">${ing.map(x => `<li>${x}</li>`).join("")}</ul>
       <div class="section-label">Method</div>
@@ -582,25 +596,37 @@ function renderToday() {
   const payback = paybackForDay(pos.dn);
   const aim = dailyAim(pos);
   const aimAdj = aim !== pos.phase.calories;
+  // base macros across the non-skipped meals
   const remainBaseKcal = mealKeys.filter((k) => !skipped[k]).reduce((s, k) => s + meal.items[k].kcal, 0);
-  const portionFactor = remainBaseKcal > 0 ? Math.max(0.6, Math.min(1.8, aim / remainBaseKcal)) : 1;
-  const scaled = Math.abs(portionFactor - 1) > 0.02;
-  // live (scaled) day totals for the macro card
-  const liveKcal = mealKeys.filter((k) => !skipped[k]).reduce((s, k) => s + Math.round(meal.items[k].kcal * portionFactor), 0);
-  const liveP = mealKeys.filter((k) => !skipped[k]).reduce((s, k) => s + Math.round(meal.items[k].p * portionFactor), 0);
-  const liveFat = Math.round(0.28 * liveKcal / 9);
-  const liveTotals = { kcal: liveKcal, protein: liveP, carbs: Math.max(0, Math.round((liveKcal - 4 * liveP - 9 * liveFat) / 4)), fat: liveFat };
+  const baseProtein = mealKeys.filter((k) => !skipped[k]).reduce((s, k) => s + meal.items[k].p, 0);
+  const baseFat = Math.round(0.28 * remainBaseKcal / 9);
+  const baseCarbs = Math.max(0, Math.round((remainBaseKcal - 4 * baseProtein - 9 * baseFat) / 4));
+  // scale the day to today's aim, PROTECTING protein: when trimming calories, hold
+  // protein full and take the cut from carbs/fat only. Scaling up (diet break / skip
+  // redistribution) lifts everything together.
+  const proteinKcal = baseProtein * 4;
+  const baseNonProtein = Math.max(1, remainBaseKcal - proteinKcal);
+  const scaleDown = remainBaseKcal > 0 && aim < remainBaseKcal;
+  const pf = !scaleDown ? (remainBaseKcal > 0 ? Math.min(1.8, aim / remainBaseKcal) : 1) : 1;     // protein/overall factor
+  const nf = !scaleDown ? pf : Math.max(0.2, Math.min(1, (aim - proteinKcal) / baseNonProtein));   // carb/fat factor
+  const scaled = Math.abs(pf - 1) > 0.02 || Math.abs(nf - 1) > 0.02;
+  // live (scaled) day totals for the macro card — protein held full when trimming
+  const liveP = Math.round(baseProtein * pf);
+  const liveFat = Math.round(baseFat * nf);
+  const liveCarbs = Math.round(baseCarbs * nf);
+  const liveTotals = { kcal: liveP * 4 + liveCarbs * 4 + liveFat * 9, protein: liveP, carbs: liveCarbs, fat: liveFat };
   const slotKeyOf = Object.fromEntries(SLOTS);
   const libNow = getLibrary();
   const mealItems = mealKeys.map((k, i) => {
     const done = checks.meals[i];
     const m = meal.items[k];
     const isSkip = !!skipped[k];
-    const kc = Math.round(m.kcal * portionFactor), pr = Math.round(m.p * portionFactor);
-    const label = isSkip ? `${k} · skipped` : `${k} · ${kc} kcal · ${pr}g P${portionFactor > 1.02 ? ` · ×${portionFactor.toFixed(1)}` : ""}`;
+    const kc = Math.round(m.p * 4 * pf + Math.max(0, m.kcal - m.p * 4) * nf);
+    const pr = Math.round(m.p * pf);
+    const label = isSkip ? `${k} · skipped` : `${k} · ${kc} kcal · ${pr}g P${pf > 1.02 ? ` · ×${pf.toFixed(1)}` : ""}`;
     let row = `<li class="${done ? "done" : ""} ${isSkip ? "skipped-meal" : ""}" data-act="meals" data-i="${i}">
       <span class="checkbox">${done ? "✓" : ""}</span>
-      <span class="item-text"><span class="meal-label">${label}</span>${isSkip ? m.text : scaleAmounts(m.text, portionFactor)}</span>
+      <span class="item-text"><span class="meal-label">${label}</span>${isSkip ? m.text : (scaleDown ? scaleFood(m.text, nf) : scaleAmounts(m.text, pf))}</span>
       <span class="meal-actions">
         <button type="button" class="x-del" data-act="openswap" data-slot="${encodeURIComponent(k)}" title="Swap this meal">${SWAP_SLOT === k ? "▲" : "🔀"}</button>
         <button type="button" class="x-del meal-skip" data-act="skipmeal" data-slot="${encodeURIComponent(k)}" title="${isSkip ? "Restore" : "Skip & redistribute"}">${isSkip ? "↺" : "⊘"}</button>
@@ -617,13 +643,10 @@ function renderToday() {
     }
     return row;
   }).join("");
-  const proteinHint = (scaled && portionFactor < 1 && liveP < pos.phase.protein - 8)
-    ? ` Protein dips to ~${liveP}g — add a whey shake to hold ~${pos.phase.protein}g.`
-    : "";
   const skipNote = anySkipped
-    ? `<p class="note" style="margin:6px 0 0;color:var(--accent-2)">⊘ Skipped ${mealKeys.filter(k => skipped[k]).join(", ")} — portions bumped <b>×${portionFactor.toFixed(2)}</b> on the rest${portionFactor >= 1.79 ? " (capped — add a protein shake to top up)" : ""} to hit your ~${aim} kcal aim.</p>`
+    ? `<p class="note" style="margin:6px 0 0;color:var(--accent-2)">⊘ Skipped ${mealKeys.filter(k => skipped[k]).join(", ")} — ${scaleDown ? `remaining portions trimmed, protein held at <b>${liveP}g</b>` : `portions bumped <b>×${pf.toFixed(2)}</b> on the rest`} to hit your ~${aim} kcal aim.</p>`
     : (scaled
-      ? `<p class="note" style="margin:6px 0 0">🍽️ Portions auto-scaled <b>×${portionFactor.toFixed(2)}</b> so the day lands on your <b>~${aim} kcal</b> aim${payback > 0 ? " (includes a recent treat payback)" : ""}.${proteinHint}</p>`
+      ? `<p class="note" style="margin:6px 0 0">🍽️ Portions scaled to your <b>~${aim} kcal</b> aim${scaleDown ? ` — protein kept full at <b>${liveP}g</b>, the trim comes off carbs & fat` : ""}${payback > 0 ? " (includes a recent treat payback)" : ""}.</p>`
       : "");
 
   // water glasses (target ~8 × 250ml = 2L) — tap a glass to set your level
@@ -813,7 +836,7 @@ function renderToday() {
     ${cookTwice}
     ${skipNote}
     <ul class="checklist">${mealItems}</ul>
-    ${recipeBlock(meal, skipped.Dinner ? 0 : portionFactor)}
+    ${recipeBlock(meal, skipped.Dinner ? 1 : pf, skipped.Dinner ? 1 : nf)}
     ${swapPicker}
   </div>
 
