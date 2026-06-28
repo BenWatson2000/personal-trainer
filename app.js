@@ -157,7 +157,8 @@ function isDietBreak(week) { return LS.get("pt_dietbreaks", []).includes(week); 
 function dailyAim(pos) {
   if (isDietBreak(pos.week)) return Math.round(currentMaintenance() / 10) * 10; // maintenance week
   const payback = getProfile().goal === "gain" ? 0 : paybackForDay(pos.dn); // gainers keep their surplus
-  return Math.max(1400, Math.round((adjustedAim(pos) - payback + LS.get("pt_adaptkcal", 0)) / 10) * 10);
+  const floor = ageBand() === "older" ? 1200 : 1300; // relaxed so small/older people aren't over-fed
+  return Math.max(floor, Math.round((adjustedAim(pos) - payback + LS.get("pt_adaptkcal", 0)) / 10) * 10);
 }
 // adaptive coach: read the recent weight trend and decide if the plan needs changing
 function weeklyRate() {
@@ -431,6 +432,21 @@ function needsOnboarding() {
   for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf("pt_checks_") === 0) return false; }
   return true;
 }
+// age bands drive how the app behaves: <13 unsupported, 13–17 numbers-free, 60+ tuned
+function ageBand(p = getProfile()) {
+  const a = parseInt(p.age, 10) || 30;
+  if (a < 13) return "child";
+  if (a < 18) return "teen";
+  if (a >= 60) return "older";
+  return "adult";
+}
+function numbersFree() { const b = ageBand(); return b === "teen" || b === "child"; } // hide calorie figures under 18
+// daily protein target from bodyweight (older adults get a higher floor to preserve muscle)
+function proteinTarget(p = getProfile()) {
+  const band = ageBand(p);
+  const perKg = band === "older" ? 1.6 : p.goal === "gain" ? 2.0 : 1.8;
+  return Math.round(latestWeight() * perKg);
+}
 
 /* ---------- metabolism (TDEE auto-recalc) ---------- */
 function bmr(w) { const p = getProfile(); return 10 * w + 6.25 * p.heightCm - 5 * p.age + (p.sex === "female" ? -161 : 5); }
@@ -659,6 +675,7 @@ function renderToday() {
   const liveFat = Math.round(baseFat * nf);
   const liveCarbs = Math.round(baseCarbs * nf);
   const liveTotals = { kcal: liveP * 4 + liveCarbs * 4 + liveFat * 9, protein: liveP, carbs: liveCarbs, fat: liveFat };
+  const teen = numbersFree(); // 13–17: hide calorie/macro figures, keep the food + habits
   const slotKeyOf = Object.fromEntries(SLOTS);
   const libNow = getLibrary();
   const mealItems = mealKeys.map((k, i) => {
@@ -667,7 +684,9 @@ function renderToday() {
     const isSkip = !!skipped[k];
     const kc = Math.round(m.p * 4 * pf + Math.max(0, m.kcal - m.p * 4) * nf);
     const pr = Math.round(m.p * pf);
-    const label = isSkip ? `${k} · skipped` : `${k} · ${kc} kcal · ${pr}g P${pf > 1.02 ? ` · ×${pf.toFixed(1)}` : ""}`;
+    const label = isSkip ? `${k} · skipped`
+      : teen ? `${k}${pf > 1.02 ? " · larger portion" : ""}`
+      : `${k} · ${kc} kcal · ${pr}g P${pf > 1.02 ? ` · ×${pf.toFixed(1)}` : ""}`;
     let row = `<li class="${done ? "done" : ""} ${isSkip ? "skipped-meal" : ""}" data-act="meals" data-i="${i}">
       <span class="checkbox">${done ? "✓" : ""}</span>
       <span class="item-text"><span class="meal-label">${label}</span>${isSkip ? m.text : (scaleDown ? scaleFood(m.text, nf) : scaleAmounts(m.text, pf))}</span>
@@ -806,9 +825,9 @@ function renderToday() {
     ? `<button type="button" class="btn block" data-act="swap" data-i="-1" style="margin-top:10px">↩︎ Reset today's swapped meals to plan</button>`
     : "";
 
-  // off-plan / cheat logging (inner fragment for the Adjust fold)
-  const cheatToday = LS.get("pt_cheat_" + key, 0);
-  const cheatInner = `<div class="section-label">🍔 Eating out / treat</div>
+  // off-plan / cheat logging (inner fragment for the Adjust fold) — hidden in numbers-free teen mode
+  const cheatToday = numbersFree() ? 0 : LS.get("pt_cheat_" + key, 0);
+  const cheatInner = numbersFree() ? "" : `<div class="section-label">🍔 Eating out / treat</div>
     ${cheatToday
       ? `<p class="note">Logged <b>+${cheatToday} kcal</b> today, spread over the next ${CHEAT_SPREAD} days. <button type="button" class="btn" id="clearCheatBtn" style="min-height:auto;padding:6px 10px;margin-left:6px">Clear</button></p>`
       : `<div class="step-quick">
@@ -830,7 +849,7 @@ function renderToday() {
     </div>
     ${shift > 0 ? `<p class="note" style="margin-top:8px">Pushed back <b>${shift} day${shift > 1 ? "s" : ""}</b> — finishing ${revealInfo().endStr}. <button type="button" class="btn" id="resetShiftBtn" style="min-height:auto;padding:5px 9px;margin-left:4px">Reset</button></p>` : ""}`;
 
-  const adjustFold = `<details class="card fold"><summary>⚙️ Adjust today — eating out · reschedule${cheatToday ? ' <span class="swap-tag">+' + cheatToday + '</span>' : ""}${shift > 0 ? ' <span class="swap-tag">shifted</span>' : ""}</summary>
+  const adjustFold = `<details class="card fold"><summary>⚙️ Adjust today — ${numbersFree() ? "reschedule" : "eating out · reschedule"}${cheatToday ? ' <span class="swap-tag">+' + cheatToday + '</span>' : ""}${shift > 0 ? ' <span class="swap-tag">shifted</span>' : ""}</summary>
     <div class="fold-body">${cheatInner}${reschedInner}</div></details>`;
 
   const rv = revealInfo();
@@ -869,7 +888,14 @@ function renderToday() {
   <div class="card">
     <h2>🍽️ Today's Fuel${swapped ? ' <span class="swap-tag">swapped</span>' : ""}</h2>
     <p class="sub">${meal.name} · tick each meal as you eat it</p>
-    <div class="macros">
+    ${teen ? `<div class="teen-fuel">
+      <p>💪 You're still growing — eat to <b>fuel your training and growth</b>, not to a calorie number.</p>
+      <ul>
+        <li>Protein at every meal (eggs, chicken, dairy, yogurt, milk)</li>
+        <li>Eat enough — go back for seconds if you're hungry, especially after training</li>
+        <li>Plenty of water and 8–9 hours' sleep — that's when muscle is actually built</li>
+        <li>Whole foods most of the time; treats are totally fine too</li>
+      </ul></div>` : `<div class="macros">
       <div class="macro"><div class="val">${liveTotals.kcal}</div><div class="lbl">kcal</div></div>
       <div class="macro"><div class="val">${liveTotals.protein}g</div><div class="lbl">protein</div></div>
       <div class="macro"><div class="val">${liveTotals.carbs}g</div><div class="lbl">carbs</div></div>
@@ -877,8 +903,8 @@ function renderToday() {
     </div>
     <p class="note" style="margin:10px 0 0">🎯 ${isDietBreak(pos.week) ? `<b style="color:var(--accent-2)">🏖️ Diet-break week</b> · portions set to ~${aim} kcal (maintenance) to recharge` : `Phase ${pos.phase.id} target <b>~${aim} kcal</b>${aimAdj ? ' <span class="swap-tag">recalc</span>' : ""} — portions above are scaled to match`}</p>
     ${payback > 0 ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">⤵️ Includes balancing ${payback} kcal from a recent treat.</p>` : ""}
+    ${skipNote}`}
     ${cookTwice}
-    ${skipNote}
     <ul class="checklist">${mealItems}</ul>
     ${recipeBlock(meal, skipped.Dinner ? 1 : pf, skipped.Dinner ? 1 : nf)}
     ${swapPicker}
@@ -1290,17 +1316,34 @@ function renderProgress() {
   if (adapt !== 0) {
     adBody += `<p class="note" style="margin-top:10px">Active adaptive tweak: <b>${adapt > 0 ? "+" : ""}${adapt} kcal/day</b> → today's aim <b>${todayAim} kcal</b>. <button type="button" class="btn" data-act="adaptreset" style="min-height:auto;padding:5px 9px;margin-left:4px">Reset</button></p>`;
   }
-  const adCard = `<div class="card"><h2>🧭 Adaptive coach</h2>${adBody}
-    <details class="fold" style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
-      <summary>🔥 Metabolism — maintenance ~${currentMaintenance().toLocaleString()} kcal</summary>
-      <div class="fold-body">
-        <div class="stat-grid">
-          <div class="stat"><div class="big">${currentMaintenance().toLocaleString()}</div><div class="cap">maintenance now</div></div>
-          <div class="stat"><div class="big">${(PLAN.meta.maintenance || 2250).toLocaleString()}</div><div class="cap">at start (${start}kg)</div></div>
+  const teen = numbersFree();
+  const older = ageBand() === "older";
+  const pTarget = proteinTarget(prof);
+  let adCard;
+  if (teen) {
+    // numbers-free coaching for 13–17
+    adCard = `<div class="card"><h2>🧭 Your coach</h2>
+      <p class="note">No calorie counting while you're growing — these are the things that actually move the needle:</p>
+      <ul class="note" style="padding-left:18px;line-height:1.9">
+        <li><b>Eat enough</b>, especially around training — hunger is a signal to eat more, not less.</li>
+        <li><b>Protein every meal</b> (eggs, chicken, dairy, yogurt, milk) to build muscle.</li>
+        <li><b>Train consistently</b> and add a rep or a little weight over time.</li>
+        <li><b>Sleep 8–9 hours</b> — most growth happens then.</li>
+      </ul></div>`;
+  } else {
+    adCard = `<div class="card"><h2>🧭 Adaptive coach</h2>${adBody}
+      <details class="fold" style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
+        <summary>🔥 Metabolism — maintenance ~${currentMaintenance().toLocaleString()} kcal</summary>
+        <div class="fold-body">
+          <div class="stat-grid">
+            <div class="stat"><div class="big">${currentMaintenance().toLocaleString()}</div><div class="cap">maintenance now</div></div>
+            <div class="stat"><div class="big">${pTarget}g</div><div class="cap">protein target/day</div></div>
+          </div>
+          <p class="note" style="margin-top:8px">Your calorie aim auto-recalculates from your live weight, so your ${prof.goal === "gain" ? "surplus" : prof.goal === "maintain" ? "maintenance" : "deficit"} stays on target as you progress. Today's aim: <b>${adjustedAim(pos).toLocaleString()} kcal</b>.</p>
+          ${older ? `<p class="note" style="margin-top:6px">👴 Over 60: prioritise protein (~${pTarget}g, ~1.6g/kg) and keep resistance-training — it's the biggest lever for holding onto muscle and strength with age.</p>` : ""}
         </div>
-        <p class="note" style="margin-top:8px">Your calorie aim auto-recalculates from your live weight, so your ${getProfile().goal === "gain" ? "surplus" : getProfile().goal === "maintain" ? "maintenance" : "deficit"} stays on target as you progress. Today's aim: <b>${adjustedAim(pos).toLocaleString()} kcal</b>.</p>
-      </div>
-    </details></div>`;
+      </details></div>`;
+  }
 
   // diet-break scheduler — only relevant when cutting (a break = eat at maintenance)
   const breakCard = gainMode || prof.goal === "maintain" ? "" : `<div class="card"><h2>🏖️ Diet-break weeks</h2>
@@ -1621,7 +1664,7 @@ function readProfileForm() {
   const age = parseInt(document.getElementById("pfAge").value, 10) || cur.age;
   let goal = document.getElementById("pfGoal").value || "maintain";
   let coerced = false;
-  if (age < 16 && goal === "cut") { goal = "maintain"; coerced = true; } // safeguarding: no cutting under 16
+  if (age < 18 && goal === "cut") { goal = "maintain"; coerced = true; } // safeguarding: no cutting under 18
   const p = {
     name: (document.getElementById("pfName").value || "").trim() || cur.name,
     sex: document.getElementById("pfSex").value,
@@ -1632,11 +1675,18 @@ function readProfileForm() {
     dislikes: (document.getElementById("pfDislikes").value || "").split(",").map((s) => s.trim()).filter(Boolean),
   };
   saveProfile(p);
-  if (coerced) toast("Under 16 — set to a healthy 'maintain' rather than cutting.");
+  if (coerced) toast("Under 18 — set to a healthy 'maintain' rather than cutting.");
   return p;
 }
-function saveProfileSettings() { const p = readProfileForm(); toast("Profile saved · targets updated"); haptic(8); navigate(); }
+// under-13: not appropriate to hand calorie/training targets. Block the save.
+function ageGuard() {
+  const age = parseInt(document.getElementById("pfAge").value, 10);
+  if (age && age < 13) { haptic(20); toast("This app isn't suitable under 13 — please ask a parent or coach."); return false; }
+  return true;
+}
+function saveProfileSettings() { if (!ageGuard()) return; readProfileForm(); toast("Profile saved · targets updated"); haptic(8); navigate(); }
 function completeOnboarding() {
+  if (!ageGuard()) return;
   if (!document.getElementById("pfGoal").value) { toast("Pick a goal to continue"); return; }
   const p = readProfileForm();
   if (!LS.get("pt_startDate", null)) LS.set("pt_startDate", todayKey()); // begin at Day 1 today
@@ -1651,7 +1701,7 @@ function renderOnboarding() {
   <div class="card">
     <h2>👤 About you</h2>
     ${profileFields(blankProfile())}
-    <p class="note safeguard">⚠️ Under 18? Please set this up with a parent or guardian. If you're under 16 we'll focus on eating well and training to grow — not calorie cutting.</p>
+    <p class="note safeguard">⚠️ <b>Under 13:</b> this app isn't suitable — please come back when you're older or use it with a parent/coach. <b>13–17:</b> we drop the calorie numbers and focus on eating well, training and sleep to grow. <b>Under 18:</b> set this up with a parent or guardian.</p>
     <button type="button" class="btn accent block" id="completeOnboard" style="margin-top:14px">Start my plan →</button>
   </div>
   <div class="card"><p class="note">Already set up on another phone? Restore your backup instead:</p>
@@ -1722,7 +1772,7 @@ function renderSettings() {
       <p class="sub">Used to tailor your calorie targets & coaching. Changing your weight or goal updates everything.</p>
       ${profileFields(prof)}
       <button type="button" class="btn accent block" id="saveProfileBtn" style="margin-top:12px">Save profile</button>
-      <p class="note" style="margin-top:10px">${prof.name} · ${prof.sex} · ${prof.age}y · ${prof.heightCm}cm · goal <b>${GOALS[prof.goal] || prof.goal}</b> · maintenance ~${currentMaintenance().toLocaleString()} kcal · today's aim ~${dailyAim(position()).toLocaleString()} kcal.</p>
+      <p class="note" style="margin-top:10px">${prof.name} · ${prof.sex} · ${prof.age}y · ${prof.heightCm}cm · goal <b>${GOALS[prof.goal] || prof.goal}</b>${numbersFree() ? " · growing-mode (no calorie targets)" : ` · maintenance ~${currentMaintenance().toLocaleString()} kcal · today's aim ~${dailyAim(position()).toLocaleString()} kcal`}.</p>
     </div>`;
   })()}
 

@@ -51,8 +51,13 @@ On a fresh device the app opens a quick **setup** (name, sex, age, height,
 weight, activity, goal — **lose fat / maintain / gain muscle** — and any foods to
 avoid). Everything — calorie targets, meal portions and the adaptive coach —
 then tailors to that person and goal. Since data is per-device, just share the
-link and each person sets themselves up on their own phone. (Under-16s are kept
-to a healthy *maintain/gain*, never a calorie cut.)
+link and each person sets themselves up on their own phone.
+
+**Age-aware & safe:** best for ~16–65, but it adapts at the edges — **under 13**
+isn't supported (it'll say so), **13–17** runs in a *numbers-free* mode (no
+calorie targets — just eat-well/train/sleep habits, with workouts, photos and
+streaks), **under-18s** are kept to *maintain/gain* (never a cut), and **60+**
+gets a bodyweight-based protein target and a relaxed calorie floor.
 
 **Flexible by design:** log an eating-out **treat** and it balances the next few
 days; **miss a day** and push the whole plan back without losing a session.
