@@ -53,6 +53,11 @@ avoid). Everything — calorie targets, meal portions and the adaptive coach —
 then tailors to that person and goal. Since data is per-device, just share the
 link and each person sets themselves up on their own phone.
 
+**Goal-specific training:** gainers get a **hypertrophy / lean-gain** block
+(Upper-Lower → Push-Pull-Legs), 60+ gets a **gentle full-body + balance**
+programme, and everyone else keeps the fat-loss plan — picked automatically from
+your profile.
+
 **Age-aware & safe:** best for ~16–65, but it adapts at the edges — **under 13**
 isn't supported (it'll say so), **13–17** runs in a *numbers-free* mode (no
 calorie targets — just eat-well/train/sleep habits, with workouts, photos and

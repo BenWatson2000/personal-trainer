@@ -2087,5 +2087,787 @@
         "p": 28
       }
     ]
+  },
+  "trainingPlans": {
+    "gain": [
+      {
+        "id": 1,
+        "name": "Foundation",
+        "tagline": "Groove the lifts, build the base",
+        "focus": "Upper/Lower split 4x with progressive overload — add a rep or a little load each week. One easy cardio for health.",
+        "weekStart": 1,
+        "weekEnd": 4,
+        "calories": 2450,
+        "protein": 170,
+        "carbs": 300,
+        "fat": 70,
+        "adjust": "Eat in a small surplus — see your daily aim.",
+        "schedule": [
+          {
+            "day": "Monday",
+            "type": "strength",
+            "emoji": "💪",
+            "name": "Upper A",
+            "items": [
+              "Barbell bench press — 4 x 8",
+              "Bent-over row — 4 x 8",
+              "Seated DB shoulder press — 3 x 10",
+              "Lat pulldown — 3 x 10",
+              "DB bicep curl — 3 x 12",
+              "Tricep rope pushdown — 3 x 12"
+            ],
+            "homeItems": [
+              "DB floor press — 4 x 10",
+              "One-arm DB row — 4 x 10 each",
+              "DB shoulder press — 3 x 10",
+              "Band pulldown — 3 x 12",
+              "DB curl — 3 x 12",
+              "DB overhead tricep extension — 3 x 12"
+            ]
+          },
+          {
+            "day": "Tuesday",
+            "type": "strength",
+            "emoji": "🦵",
+            "name": "Lower A",
+            "items": [
+              "Back squat — 4 x 8",
+              "Romanian deadlift — 4 x 8",
+              "Leg press — 3 x 12",
+              "Seated leg curl — 3 x 12",
+              "Standing calf raise — 3 x 15",
+              "Plank — 3 x 45s"
+            ],
+            "homeItems": [
+              "Goblet squat — 4 x 12",
+              "DB Romanian deadlift — 4 x 10",
+              "Reverse lunge — 3 x 12 each",
+              "DB calf raise — 3 x 20",
+              "Glute bridge — 3 x 15",
+              "Plank — 3 x 45s"
+            ]
+          },
+          {
+            "day": "Wednesday",
+            "type": "cardio",
+            "emoji": "🚶",
+            "name": "Zone 2 + Core",
+            "items": [
+              "25 min easy cycle or brisk walk",
+              "Dead bug — 3 x 12",
+              "Hanging knee raise — 3 x 12"
+            ]
+          },
+          {
+            "day": "Thursday",
+            "type": "strength",
+            "emoji": "💪",
+            "name": "Upper B",
+            "items": [
+              "Incline DB press — 4 x 10",
+              "Seated cable row — 4 x 10",
+              "Arnold press — 3 x 10",
+              "Assisted pull-up — 3 x AMRAP",
+              "Hammer curl — 3 x 12",
+              "Overhead tricep extension — 3 x 12"
+            ],
+            "homeItems": [
+              "Incline push-up — 4 x AMRAP",
+              "DB row — 4 x 10 each",
+              "DB lateral raise — 3 x 15",
+              "Band pull-apart — 3 x 20",
+              "Hammer curl — 3 x 12",
+              "Bench dip — 3 x 12"
+            ]
+          },
+          {
+            "day": "Friday",
+            "type": "strength",
+            "emoji": "🦵",
+            "name": "Lower B",
+            "items": [
+              "Deadlift — 4 x 6",
+              "Front squat — 3 x 10",
+              "Walking lunge — 3 x 12 each",
+              "Leg extension — 3 x 15",
+              "Seated calf raise — 3 x 15",
+              "Cable crunch — 3 x 15"
+            ],
+            "homeItems": [
+              "DB deadlift — 4 x 10",
+              "Goblet squat — 3 x 12",
+              "Reverse lunge — 3 x 12 each",
+              "Step-up — 3 x 12 each",
+              "DB calf raise — 3 x 20",
+              "Crunch — 3 x 20"
+            ]
+          },
+          {
+            "day": "Saturday",
+            "type": "cardio",
+            "emoji": "⚡",
+            "name": "Arms & Cardio",
+            "items": [
+              "20 min easy cardio",
+              "Superset: DB curls + tricep pushdowns — 3 x 12",
+              "Lateral raise — 3 x 15",
+              "Abs circuit — 2 rounds"
+            ]
+          },
+          {
+            "day": "Sunday",
+            "type": "rest",
+            "emoji": "😴",
+            "name": "Rest & Recover",
+            "items": [
+              "Full rest or a gentle walk",
+              "10 min stretch / mobility"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Hypertrophy",
+        "tagline": "More volume, more growth",
+        "focus": "Push/Pull/Legs 5x — the muscle-building sweet spot. Keep progressing load and chase a strong mind-muscle connection.",
+        "weekStart": 5,
+        "weekEnd": 8,
+        "calories": 2500,
+        "protein": 175,
+        "carbs": 310,
+        "fat": 72,
+        "adjust": "Hold the small surplus; add food on heavy days.",
+        "schedule": [
+          {
+            "day": "Monday",
+            "type": "strength",
+            "emoji": "💪",
+            "name": "Push",
+            "items": [
+              "Barbell bench press — 4 x 8",
+              "Incline DB press — 3 x 10",
+              "Seated shoulder press — 3 x 10",
+              "Lateral raise — 3 x 15",
+              "Tricep pushdown — 3 x 12",
+              "Overhead tricep extension — 3 x 12"
+            ],
+            "homeItems": [
+              "DB floor press — 4 x 10",
+              "Incline push-up — 3 x AMRAP",
+              "DB shoulder press — 3 x 10",
+              "DB lateral raise — 3 x 15",
+              "Bench dip — 3 x 12",
+              "Overhead DB extension — 3 x 12"
+            ]
+          },
+          {
+            "day": "Tuesday",
+            "type": "strength",
+            "emoji": "🔙",
+            "name": "Pull",
+            "items": [
+              "Deadlift — 4 x 6",
+              "Lat pulldown — 4 x 10",
+              "Seated row — 3 x 10",
+              "Face pull — 3 x 15",
+              "DB curl — 3 x 12",
+              "Hammer curl — 3 x 12"
+            ],
+            "homeItems": [
+              "DB deadlift — 4 x 10",
+              "Band pulldown — 4 x 12",
+              "DB row — 3 x 10 each",
+              "Band face pull — 3 x 20",
+              "DB curl — 3 x 12",
+              "Hammer curl — 3 x 12"
+            ]
+          },
+          {
+            "day": "Wednesday",
+            "type": "strength",
+            "emoji": "🦵",
+            "name": "Legs",
+            "items": [
+              "Back squat — 4 x 8",
+              "Romanian deadlift — 3 x 10",
+              "Leg press — 3 x 12",
+              "Seated leg curl — 3 x 12",
+              "Standing calf raise — 4 x 15",
+              "Hanging leg raise — 3 x 12"
+            ],
+            "homeItems": [
+              "Goblet squat — 4 x 12",
+              "DB Romanian deadlift — 3 x 10",
+              "Bulgarian split squat — 3 x 10 each",
+              "Glute bridge — 3 x 15",
+              "DB calf raise — 4 x 20",
+              "Lying leg raise — 3 x 15"
+            ]
+          },
+          {
+            "day": "Thursday",
+            "type": "cardio",
+            "emoji": "🚶",
+            "name": "Zone 2 + Core",
+            "items": [
+              "25 min Zone 2 cycle",
+              "Plank — 3 x 45s",
+              "Cable crunch — 3 x 15"
+            ]
+          },
+          {
+            "day": "Friday",
+            "type": "strength",
+            "emoji": "💪",
+            "name": "Upper (Push/Pull)",
+            "items": [
+              "Incline barbell press — 4 x 8",
+              "Bent-over row — 4 x 8",
+              "Arnold press — 3 x 10",
+              "Lat pulldown — 3 x 10",
+              "EZ-bar curl — 3 x 12",
+              "Skull crusher — 3 x 12"
+            ],
+            "homeItems": [
+              "Incline DB press — 4 x 10",
+              "One-arm DB row — 4 x 10 each",
+              "DB shoulder press — 3 x 10",
+              "Band pulldown — 3 x 12",
+              "DB curl — 3 x 12",
+              "DB skull crusher — 3 x 12"
+            ]
+          },
+          {
+            "day": "Saturday",
+            "type": "strength",
+            "emoji": "🦿",
+            "name": "Legs & Arms",
+            "items": [
+              "Front squat — 4 x 8",
+              "Walking lunge — 3 x 12 each",
+              "Leg extension — 3 x 15",
+              "Seated calf raise — 3 x 20",
+              "Superset: curls + pushdowns — 3 x 12"
+            ],
+            "homeItems": [
+              "Goblet squat — 4 x 12",
+              "Reverse lunge — 3 x 12 each",
+              "Step-up — 3 x 12 each",
+              "DB calf raise — 3 x 20",
+              "Superset: DB curls + bench dips — 3 x 12"
+            ]
+          },
+          {
+            "day": "Sunday",
+            "type": "rest",
+            "emoji": "😴",
+            "name": "Rest & Recover",
+            "items": [
+              "Full rest or a gentle walk",
+              "10 min stretch / mobility"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "name": "Peak",
+        "tagline": "Intensify and finish strong",
+        "focus": "PPL with extra intensity — top sets, slow negatives and an added arm/shoulder finisher. Push the lifts you've built.",
+        "weekStart": 9,
+        "weekEnd": 12,
+        "calories": 2550,
+        "protein": 180,
+        "carbs": 315,
+        "fat": 74,
+        "adjust": "Keep the surplus modest so the gain stays lean.",
+        "schedule": [
+          {
+            "day": "Monday",
+            "type": "strength",
+            "emoji": "💪",
+            "name": "Push (heavy)",
+            "items": [
+              "Barbell bench press — 5 x 6",
+              "Incline DB press — 4 x 8",
+              "Seated shoulder press — 4 x 8",
+              "Lateral raise — 4 x 15",
+              "Tricep pushdown — 3 x 12",
+              "Overhead tricep extension — 3 x 12"
+            ],
+            "homeItems": [
+              "DB floor press — 5 x 8",
+              "Incline push-up — 4 x AMRAP",
+              "DB shoulder press — 4 x 8",
+              "DB lateral raise — 4 x 15",
+              "Bench dip — 3 x 15",
+              "Overhead DB extension — 3 x 12"
+            ]
+          },
+          {
+            "day": "Tuesday",
+            "type": "strength",
+            "emoji": "🔙",
+            "name": "Pull (heavy)",
+            "items": [
+              "Deadlift — 5 x 5",
+              "Weighted pull-up / pulldown — 4 x 8",
+              "Seated row — 4 x 10",
+              "Face pull — 3 x 20",
+              "Barbell curl — 4 x 10",
+              "Hammer curl — 3 x 12"
+            ],
+            "homeItems": [
+              "DB deadlift — 5 x 8",
+              "Band pulldown — 4 x 10",
+              "DB row — 4 x 10 each",
+              "Band face pull — 3 x 20",
+              "DB curl — 4 x 10",
+              "Hammer curl — 3 x 12"
+            ]
+          },
+          {
+            "day": "Wednesday",
+            "type": "strength",
+            "emoji": "🦵",
+            "name": "Legs (heavy)",
+            "items": [
+              "Back squat — 5 x 6",
+              "Romanian deadlift — 4 x 8",
+              "Leg press — 4 x 12",
+              "Seated leg curl — 4 x 12",
+              "Standing calf raise — 4 x 18",
+              "Hanging leg raise — 3 x 15"
+            ],
+            "homeItems": [
+              "Goblet squat — 5 x 12",
+              "DB Romanian deadlift — 4 x 10",
+              "Bulgarian split squat — 4 x 10 each",
+              "Glute bridge — 4 x 15",
+              "DB calf raise — 4 x 22",
+              "Lying leg raise — 3 x 18"
+            ]
+          },
+          {
+            "day": "Thursday",
+            "type": "hiit",
+            "emoji": "⚡",
+            "name": "Intervals + Core",
+            "items": [
+              "Warm up 5 min",
+              "8 x (40s hard / 80s easy) — bike or rower",
+              "Plank — 3 x 60s",
+              "Cable crunch — 3 x 15"
+            ]
+          },
+          {
+            "day": "Friday",
+            "type": "strength",
+            "emoji": "💪",
+            "name": "Upper (pump)",
+            "items": [
+              "Incline barbell press — 4 x 10",
+              "Chest-supported row — 4 x 10",
+              "Arnold press — 4 x 10",
+              "Lat pulldown — 3 x 12",
+              "EZ-bar curl — 4 x 12",
+              "Skull crusher — 4 x 12"
+            ],
+            "homeItems": [
+              "Incline DB press — 4 x 10",
+              "One-arm DB row — 4 x 10 each",
+              "DB shoulder press — 4 x 10",
+              "Band pulldown — 3 x 12",
+              "DB curl — 4 x 12",
+              "DB skull crusher — 4 x 12"
+            ]
+          },
+          {
+            "day": "Saturday",
+            "type": "strength",
+            "emoji": "🦿",
+            "name": "Legs & Arms (pump)",
+            "items": [
+              "Front squat — 4 x 10",
+              "Walking lunge — 4 x 12 each",
+              "Leg extension — 4 x 15",
+              "Seated calf raise — 4 x 20",
+              "Superset: curls + pushdowns — 4 x 12"
+            ],
+            "homeItems": [
+              "Goblet squat — 4 x 12",
+              "Reverse lunge — 4 x 12 each",
+              "Step-up — 4 x 12 each",
+              "DB calf raise — 4 x 22",
+              "Superset: DB curls + bench dips — 4 x 12"
+            ]
+          },
+          {
+            "day": "Sunday",
+            "type": "rest",
+            "emoji": "😴",
+            "name": "Rest & Recover",
+            "items": [
+              "Full rest or a gentle walk",
+              "10 min stretch / mobility"
+            ]
+          }
+        ]
+      }
+    ],
+    "older": [
+      {
+        "id": 1,
+        "name": "Build Confidence",
+        "tagline": "Move well, get the habit",
+        "focus": "Full-body strength 2x with supported, low-impact moves, plus regular walking and balance work. Quality over load.",
+        "weekStart": 1,
+        "weekEnd": 4,
+        "calories": 1850,
+        "protein": 160,
+        "carbs": 165,
+        "fat": 60,
+        "adjust": "Eat the plan as written; protein at every meal.",
+        "schedule": [
+          {
+            "day": "Monday",
+            "type": "strength",
+            "emoji": "🪑",
+            "name": "Full Body A",
+            "items": [
+              "Sit-to-stand (box squat) — 3 x 10",
+              "Incline / wall press-up — 3 x 10",
+              "Seated row (band or machine) — 3 x 12",
+              "Glute bridge — 3 x 12",
+              "Calf raise (hold support) — 3 x 12",
+              "Dead bug — 3 x 8 each"
+            ],
+            "homeItems": [
+              "Chair sit-to-stand — 3 x 10",
+              "Wall press-up — 3 x 10",
+              "Band row — 3 x 12",
+              "Glute bridge — 3 x 12",
+              "Calf raise (counter support) — 3 x 12",
+              "Dead bug — 3 x 8 each"
+            ]
+          },
+          {
+            "day": "Tuesday",
+            "type": "cardio",
+            "emoji": "🚶",
+            "name": "Walk + Mobility",
+            "items": [
+              "20–30 min walk at a comfortable pace",
+              "Gentle full-body mobility — 10 min",
+              "Balance: stand on one leg — 3 x 20s each"
+            ]
+          },
+          {
+            "day": "Wednesday",
+            "type": "rest",
+            "emoji": "😴",
+            "name": "Rest",
+            "items": [
+              "Full rest day",
+              "Optional short, easy stroll"
+            ]
+          },
+          {
+            "day": "Thursday",
+            "type": "strength",
+            "emoji": "🪑",
+            "name": "Full Body B",
+            "items": [
+              "Leg press / wall sit — 3 x 12",
+              "Seated DB shoulder press (light) — 3 x 10",
+              "Lat / band pulldown — 3 x 12",
+              "Low step-up — 3 x 8 each",
+              "Bird-dog — 3 x 8 each",
+              "Seated knee raise — 3 x 12"
+            ],
+            "homeItems": [
+              "Wall sit — 3 x 20s",
+              "Light DB shoulder press — 3 x 10",
+              "Band pulldown — 3 x 12",
+              "Low step-up — 3 x 8 each",
+              "Bird-dog — 3 x 8 each",
+              "Seated march — 3 x 20"
+            ]
+          },
+          {
+            "day": "Friday",
+            "type": "cardio",
+            "emoji": "🚶",
+            "name": "Walk",
+            "items": [
+              "25–30 min walk",
+              "Stretch — 10 min"
+            ]
+          },
+          {
+            "day": "Saturday",
+            "type": "rest",
+            "emoji": "🧘",
+            "name": "Mobility (optional)",
+            "items": [
+              "Gentle yoga or stretching — 15 min",
+              "Balance practice — heel-to-toe walk"
+            ]
+          },
+          {
+            "day": "Sunday",
+            "type": "rest",
+            "emoji": "😴",
+            "name": "Rest",
+            "items": [
+              "Full rest day"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Get Stronger",
+        "tagline": "Add a session, a little more",
+        "focus": "Full-body strength 3x, nudging reps or light load up over time. Keep cardio as easy walking and protect the joints.",
+        "weekStart": 5,
+        "weekEnd": 8,
+        "calories": 1750,
+        "protein": 160,
+        "carbs": 150,
+        "fat": 55,
+        "adjust": "Step calories down a touch only if weight loss stalls.",
+        "schedule": [
+          {
+            "day": "Monday",
+            "type": "strength",
+            "emoji": "🪑",
+            "name": "Full Body A",
+            "items": [
+              "Goblet / box squat — 3 x 12",
+              "Incline press-up — 3 x 12",
+              "Seated row — 3 x 12",
+              "Hip thrust / glute bridge — 3 x 12",
+              "Calf raise (support) — 3 x 15",
+              "Dead bug — 3 x 10 each"
+            ],
+            "homeItems": [
+              "Chair squat — 3 x 12",
+              "Incline press-up — 3 x 12",
+              "Band row — 3 x 12",
+              "Glute bridge — 3 x 12",
+              "Calf raise — 3 x 15",
+              "Dead bug — 3 x 10 each"
+            ]
+          },
+          {
+            "day": "Tuesday",
+            "type": "cardio",
+            "emoji": "🚶",
+            "name": "Walk + Balance",
+            "items": [
+              "25–30 min walk",
+              "Balance: single-leg stand — 3 x 25s each",
+              "Mobility — 10 min"
+            ]
+          },
+          {
+            "day": "Wednesday",
+            "type": "strength",
+            "emoji": "🪑",
+            "name": "Full Body B",
+            "items": [
+              "Leg press / wall sit — 3 x 15",
+              "Seated shoulder press — 3 x 12",
+              "Lat / band pulldown — 3 x 12",
+              "Step-up — 3 x 10 each",
+              "Bird-dog — 3 x 10 each",
+              "Seated knee raise — 3 x 15"
+            ],
+            "homeItems": [
+              "Wall sit — 3 x 25s",
+              "DB shoulder press — 3 x 12",
+              "Band pulldown — 3 x 12",
+              "Step-up — 3 x 10 each",
+              "Bird-dog — 3 x 10 each",
+              "Seated march — 3 x 25"
+            ]
+          },
+          {
+            "day": "Thursday",
+            "type": "cardio",
+            "emoji": "🚶",
+            "name": "Walk",
+            "items": [
+              "30 min walk",
+              "Stretch — 10 min"
+            ]
+          },
+          {
+            "day": "Friday",
+            "type": "strength",
+            "emoji": "🪑",
+            "name": "Full Body C",
+            "items": [
+              "Box squat — 3 x 12",
+              "Chest press (machine/DB) — 3 x 10",
+              "Seated row — 3 x 12",
+              "Glute bridge — 3 x 15",
+              "Calf raise — 3 x 15",
+              "Side plank (knees) — 3 x 20s each"
+            ],
+            "homeItems": [
+              "Chair squat — 3 x 12",
+              "DB floor press — 3 x 10",
+              "Band row — 3 x 12",
+              "Glute bridge — 3 x 15",
+              "Calf raise — 3 x 15",
+              "Side plank (knees) — 3 x 20s each"
+            ]
+          },
+          {
+            "day": "Saturday",
+            "type": "rest",
+            "emoji": "🧘",
+            "name": "Mobility (optional)",
+            "items": [
+              "Gentle yoga / stretching — 15 min",
+              "Heel-to-toe balance walk"
+            ]
+          },
+          {
+            "day": "Sunday",
+            "type": "rest",
+            "emoji": "😴",
+            "name": "Rest",
+            "items": [
+              "Full rest day"
+            ]
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "name": "Strong & Steady",
+        "tagline": "Maintain strength and balance",
+        "focus": "Keep the 3x full-body habit with steady load and a clear focus on balance and mobility — the things that keep you independent and strong.",
+        "weekStart": 9,
+        "weekEnd": 12,
+        "calories": 1650,
+        "protein": 165,
+        "carbs": 130,
+        "fat": 52,
+        "adjust": "Hold protein high; don't let calories drop too low.",
+        "schedule": [
+          {
+            "day": "Monday",
+            "type": "strength",
+            "emoji": "🪑",
+            "name": "Full Body A",
+            "items": [
+              "Goblet / box squat — 3 x 12",
+              "Chest press — 3 x 12",
+              "Seated row — 3 x 12",
+              "Hip thrust — 3 x 12",
+              "Calf raise (support) — 3 x 15",
+              "Pallof press (band) — 3 x 10 each"
+            ],
+            "homeItems": [
+              "Chair squat — 3 x 12",
+              "DB floor press — 3 x 12",
+              "Band row — 3 x 12",
+              "Glute bridge — 3 x 12",
+              "Calf raise — 3 x 15",
+              "Band Pallof press — 3 x 10 each"
+            ]
+          },
+          {
+            "day": "Tuesday",
+            "type": "cardio",
+            "emoji": "🚶",
+            "name": "Walk + Balance",
+            "items": [
+              "30 min walk",
+              "Single-leg stand — 3 x 30s each",
+              "Mobility — 10 min"
+            ]
+          },
+          {
+            "day": "Wednesday",
+            "type": "strength",
+            "emoji": "🪑",
+            "name": "Full Body B",
+            "items": [
+              "Leg press / wall sit — 3 x 15",
+              "Shoulder press — 3 x 12",
+              "Lat / band pulldown — 3 x 12",
+              "Step-up — 3 x 12 each",
+              "Bird-dog — 3 x 12 each",
+              "Seated knee raise — 3 x 15"
+            ],
+            "homeItems": [
+              "Wall sit — 3 x 30s",
+              "DB shoulder press — 3 x 12",
+              "Band pulldown — 3 x 12",
+              "Step-up — 3 x 12 each",
+              "Bird-dog — 3 x 12 each",
+              "Seated march — 3 x 30"
+            ]
+          },
+          {
+            "day": "Thursday",
+            "type": "cardio",
+            "emoji": "🚶",
+            "name": "Walk",
+            "items": [
+              "30 min walk",
+              "Stretch — 10 min"
+            ]
+          },
+          {
+            "day": "Friday",
+            "type": "strength",
+            "emoji": "🪑",
+            "name": "Full Body C",
+            "items": [
+              "Box squat — 3 x 12",
+              "Chest press — 3 x 12",
+              "Seated row — 3 x 12",
+              "Glute bridge — 3 x 15",
+              "Calf raise — 3 x 15",
+              "Side plank — 3 x 25s each"
+            ],
+            "homeItems": [
+              "Chair squat — 3 x 12",
+              "DB floor press — 3 x 12",
+              "Band row — 3 x 12",
+              "Glute bridge — 3 x 15",
+              "Calf raise — 3 x 15",
+              "Side plank (knees) — 3 x 25s each"
+            ]
+          },
+          {
+            "day": "Saturday",
+            "type": "rest",
+            "emoji": "🧘",
+            "name": "Mobility + Balance",
+            "items": [
+              "Gentle yoga / stretching — 15 min",
+              "Heel-to-toe walk + single-leg balance"
+            ]
+          },
+          {
+            "day": "Sunday",
+            "type": "rest",
+            "emoji": "😴",
+            "name": "Rest",
+            "items": [
+              "Full rest day"
+            ]
+          }
+        ]
+      }
+    ]
   }
 }
