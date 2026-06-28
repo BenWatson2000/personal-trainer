@@ -103,6 +103,16 @@ main { flex: 1; padding: 16px 16px 96px; }
 .shop-when { margin: 10px 0 0; font-size: 13px; font-weight: 700; color: var(--accent-2); }
 .shop-when b { color: var(--text); }
 
+/* "left to eat" budget — counts down as meals are ticked */
+.remain { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0 2px;
+  padding: 12px 6px; border-radius: 12px; background: rgba(56,189,248,.08);
+  border: 1px solid rgba(56,189,248,.25); }
+.remain.done { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.4); }
+.remain-cell { text-align: center; }
+.remain .rv { display: block; font-size: 19px; font-weight: 800; color: var(--accent-2); line-height: 1.1; }
+.remain.done .rv { color: var(--accent); }
+.remain .rl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+
 /* teen (13–17) numbers-free fuel panel */
 .teen-fuel { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.28);
   border-radius: 12px; padding: 12px 14px; margin: 4px 0 2px; }
