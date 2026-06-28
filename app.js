@@ -95,6 +95,16 @@ function mealTotals(items) {
   const fat = Math.round(0.28 * kcal / 9);
   return { kcal, protein, carbs: Math.round((kcal - 4 * protein - 9 * fat) / 4), fat };
 }
+// macros for an ad-hoc logged food (carbs/fat estimated from the non-protein calories)
+function extraMacros(x) {
+  const kcal = +x.kcal || 0, protein = +x.p || 0, np = Math.max(0, kcal - protein * 4);
+  return { kcal, protein, carbs: Math.round(np * 0.55 / 4), fat: Math.round(np * 0.45 / 9) };
+}
+function extrasTotals(key) {
+  return LS.get("pt_extra_" + key, []).reduce((a, x) => {
+    const m = extraMacros(x); a.kcal += m.kcal; a.protein += m.protein; a.carbs += m.carbs; a.fat += m.fat; return a;
+  }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+}
 // the meal for a given day index — assembled from your library, else the curated plan,
 // then any per-slot swaps you made for that day applied on top
 function dayMeal(dn) {
@@ -722,13 +732,34 @@ function renderToday() {
       ? `<p class="note" style="margin:6px 0 0">🍽️ Portions scaled to your <b>~${aim} kcal</b> aim${scaleDown ? ` — protein kept full at <b>${liveP}g</b>, the trim comes off carbs & fat` : ""}${payback > 0 ? " (includes a recent treat payback)" : ""}.</p>`
       : "");
 
-  // live "left to eat" budget — counts down as you tick meals (hidden in teen mode)
-  const allIn = consumed.kcal >= served.kcal;
-  const remainRow = teen ? "" : `<div class="remain ${allIn ? "done" : ""}" id="remainRow"
-      data-kcal="${served.kcal}" data-protein="${served.protein}" data-carbs="${served.carbs}" data-fat="${served.fat}">
+  // live "left to eat" budget — counts down as you tick meals + log extras (hidden in teen mode)
+  const xt = extrasTotals(key);
+  const eaten = { kcal: consumed.kcal + xt.kcal, protein: consumed.protein + xt.protein, carbs: consumed.carbs + xt.carbs, fat: consumed.fat + xt.fat };
+  const over = eaten.kcal > served.kcal, allIn = eaten.kcal >= served.kcal;
+  const remainRow = teen ? "" : `<div class="remain ${allIn ? "done" : ""} ${over ? "over" : ""}" id="remainRow"
+      data-kcal="${served.kcal}" data-protein="${served.protein}" data-carbs="${served.carbs}" data-fat="${served.fat}"
+      data-xkcal="${xt.kcal}" data-xprotein="${xt.protein}" data-xcarbs="${xt.carbs}" data-xfat="${xt.fat}">
     ${[["kcal", "kcal"], ["protein", "protein"], ["carbs", "carbs"], ["fat", "fat"]].map(([m, l]) =>
-      `<div class="remain-cell"><span class="rv" data-m="${m}">${Math.max(0, served[m] - consumed[m])}</span><span class="rl">${l} left</span></div>`).join("")}
-  </div>`;
+      `<div class="remain-cell"><span class="rv" data-m="${m}">${Math.max(0, served[m] - eaten[m])}</span><span class="rl">${l} left</span></div>`).join("")}
+  </div>${over ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">Over today's aim by ${eaten.kcal - served.kcal} kcal.</p>` : ""}`;
+
+  // ad-hoc food logging (snacks/drinks beyond the plan) — counts against the budget
+  const extras = LS.get("pt_extra_" + key, []);
+  const extrasBlock = teen ? "" : `
+    ${extras.length ? `<ul class="checklist extras-list">${extras.map((x, i) => `<li style="cursor:default" class="done">
+      <span class="checkbox">✓</span>
+      <span class="item-text"><span class="meal-label">Extra · ${(+x.kcal || 0)} kcal · ${(+x.p || 0)}g P</span>${x.name}</span>
+      <button type="button" class="x-del" data-act="delextra" data-i="${i}">✕</button></li>`).join("")}</ul>` : ""}
+    <details class="swap"><summary>➕ Log an extra food or snack</summary>
+      <div class="fold-body">
+        <input class="field" id="extraName" placeholder="What did you eat? (e.g. flat white, protein bar)" style="margin-bottom:8px" />
+        <div class="tracker-row">
+          <input class="field" id="extraKcal" type="number" inputmode="numeric" placeholder="kcal" style="max-width:90px" />
+          <input class="field" id="extraP" type="number" inputmode="numeric" placeholder="protein g" style="max-width:110px" />
+          <button type="button" class="btn accent" id="addExtraBtn">Add</button>
+        </div>
+        <p class="note" style="margin-top:6px">Counts against your “left to eat” above. Carbs &amp; fat are estimated from the calories.</p>
+      </div></details>`;
 
   // water glasses (target ~8 × 250ml = 2L) — tap a glass to set your level
   const waterDots = Array.from({ length: 8 }, (_, i) =>
@@ -925,6 +956,7 @@ function renderToday() {
     ${cookTwice}
     ${remainRow}
     <ul class="checklist">${mealItems}</ul>
+    ${extrasBlock}
     ${recipeBlock(meal, skipped.Dinner ? 1 : pf, skipped.Dinner ? 1 : nf)}
     ${swapPicker}
   </div>
@@ -1893,6 +1925,7 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "swap") { haptic(6); swapMeal(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delcustom") { haptic(6); delCustom(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delstaple") { haptic(6); delStaple(+tagged.dataset.i); return; }
+  if (tagged && tagged.dataset.act === "delextra") { haptic(6); delExtra(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delphoto") { haptic(6); delPhoto(tagged.dataset.date); return; }
   if (tagged && tagged.dataset.act === "viewphoto") { haptic(6); VIEW_PHOTO = tagged.dataset.date; repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "closephoto") { VIEW_PHOTO = null; repaintKeepScroll(); return; }
@@ -1954,6 +1987,7 @@ function onViewClick(e) {
   if (e.target.id === "saveProfileBtn") return saveProfileSettings();
   if (e.target.id === "addCustomBtn") return addCustom();
   if (e.target.id === "addStapleBtn") return addStaple();
+  if (e.target.id === "addExtraBtn") return addExtra();
   if (e.target.id === "addSuppBtn") return addSupp();
   if (e.target.id === "exportBtn") return exportData();
   if (e.target.id === "shareReportBtn") return shareReport();
@@ -2057,6 +2091,23 @@ function addStaple() {
   if (!v) { el.focus(); return; }
   const arr = LS.get("pt_staples", []); arr.push(v); LS.set("pt_staples", arr);
   haptic(8); repaintKeepScroll();
+}
+// ad-hoc extra foods logged for today (count against the "left to eat" budget)
+function addExtra() {
+  const nameEl = document.getElementById("extraName"), kcalEl = document.getElementById("extraKcal"), pEl = document.getElementById("extraP");
+  const name = (nameEl.value || "").trim(), kcal = parseInt(kcalEl.value, 10);
+  if (!name) { nameEl.focus(); return; }
+  if (!kcal || kcal <= 0) { kcalEl.focus(); return; }
+  const key = todayKey();
+  const arr = LS.get("pt_extra_" + key, []);
+  arr.push({ name, kcal, p: parseInt(pEl.value, 10) || 0 });
+  LS.set("pt_extra_" + key, arr);
+  haptic(8); repaintKeepScroll();
+}
+function delExtra(i) {
+  const key = todayKey();
+  const arr = LS.get("pt_extra_" + key, []); arr.splice(i, 1); LS.set("pt_extra_" + key, arr);
+  haptic(6); repaintKeepScroll();
 }
 function delStaple(i) {
   const arr = LS.get("pt_staples", []); arr.splice(i, 1); LS.set("pt_staples", arr);
@@ -2262,13 +2313,14 @@ function updateRemaining() {
     sum.kcal += +li.dataset.kc || 0; sum.protein += +li.dataset.pr || 0;
     sum.carbs += +li.dataset.cb || 0; sum.fat += +li.dataset.ft || 0;
   });
-  let allIn = true;
+  let allIn = true, over = false;
   row.querySelectorAll(".rv").forEach((el) => {
-    const m = el.dataset.m, left = Math.round((+row.dataset[m] || 0) - sum[m]);
+    const m = el.dataset.m, left = Math.round((+row.dataset[m] || 0) - sum[m] - (+row.dataset["x" + m] || 0));
     el.textContent = Math.max(0, left);
-    if (m === "kcal" && left > 0) allIn = false;
+    if (m === "kcal") { allIn = left <= 0; over = left < 0; }
   });
   row.classList.toggle("done", allIn);
+  row.classList.toggle("over", over);
 }
 function waterReadout(n) { return (Math.round(n * 25) / 100) + " / 2 L"; }
 function waterGlasses(n) { return n + "/8 glasses · 250ml each"; }
@@ -2362,6 +2414,7 @@ async function boot() {
     else if (e.target.id === "goalWeight") { e.preventDefault(); saveGoal(); }
     else if (e.target.id === "customItem") { e.preventDefault(); addCustom(); }
     else if (e.target.id === "stapleItem") { e.preventDefault(); addStaple(); }
+    else if (e.target.id === "extraName" || e.target.id === "extraKcal" || e.target.id === "extraP") { e.preventDefault(); addExtra(); }
     else if (e.target.id === "suppInput") { e.preventDefault(); addSupp(); }
     else if (e.target.id === "cheatInput") { e.preventDefault(); setCheatFromInput(); }
   });
