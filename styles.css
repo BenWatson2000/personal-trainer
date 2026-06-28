@@ -108,6 +108,10 @@ main { flex: 1; padding: 16px 16px 96px; }
   padding: 12px 6px; border-radius: 12px; background: rgba(56,189,248,.08);
   border: 1px solid rgba(56,189,248,.25); }
 .remain.done { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.4); }
+.remain.over { background: rgba(251,191,36,.12); border-color: rgba(251,191,36,.4); }
+.remain.over .rv { color: #fbbf24; }
+.extras-list { margin-top: 4px; }
+.extras-list .meal-label { color: var(--warn); }
 .remain-cell { text-align: center; }
 .remain .rv { display: block; font-size: 19px; font-weight: 800; color: var(--accent-2); line-height: 1.1; }
 .remain.done .rv { color: var(--accent); }
