@@ -370,11 +370,20 @@ function saveLift(name) {
   repaintKeepScroll();
   if (sets.length) startRest(LS.get("pt_restsecs", 90)); // auto-start rest after logging
 }
+// training plan for the current profile: hypertrophy for gainers, gentle for 60+, else the bundled cut plan
+function activePhases() {
+  const tp = PLAN.trainingPlans || {};
+  const p = getProfile();
+  if (ageBand() === "older" && tp.older) return tp.older;
+  if (p.goal === "gain" && tp.gain) return tp.gain;
+  return PLAN.phases;
+}
+function phaseForWeek(phases, week) { return phases.find((p) => week >= p.weekStart && week <= p.weekEnd) || phases[phases.length - 1]; }
 function position() {
   const dn = dayNumber();
   const week = Math.floor(dn / 7) + 1;
   const weekday = ((new Date().getDay()) + 6) % 7; // Mon=0
-  const phase = PLAN.phases.find((p) => week >= p.weekStart && week <= p.weekEnd) || PLAN.phases[PLAN.phases.length - 1];
+  const phase = phaseForWeek(activePhases(), Math.max(1, week));
   const beforeStart = dn < 0;
   const finished = week > PLAN.meta.weeks;
   return { dn, week, weekday, phase, beforeStart, finished };
@@ -478,6 +487,12 @@ function ageBand(p = getProfile()) {
   return "adult";
 }
 function numbersFree() { const b = ageBand(); return b === "teen" || b === "child"; } // hide calorie figures under 18
+function trainingStyle() {
+  const tp = PLAN.trainingPlans || {};
+  if (ageBand() === "older" && tp.older) return "gentle full-body + balance";
+  if (getProfile().goal === "gain" && tp.gain) return "hypertrophy / lean-gain";
+  return "fat-loss + conditioning";
+}
 // daily protein target from bodyweight (older adults get a higher floor to preserve muscle)
 function proteinTarget(p = getProfile()) {
   const band = ageBand(p);
@@ -495,7 +510,9 @@ function goalDelta(pos) {
   const p = getProfile();
   if (p.goal === "gain") return +(p.surplus || 300);
   if (p.goal === "maintain") return 0;
-  return -((PLAN.meta.maintenance || 2250) - pos.phase.calories);
+  // cut: deficit from the bundled calorie phases (independent of which training plan is active)
+  const calPhase = phaseForWeek(PLAN.phases, Math.max(1, pos.week));
+  return -((PLAN.meta.maintenance || 2250) - calPhase.calories);
 }
 function adjustedAim(pos) { return Math.round((currentMaintenance() + goalDelta(pos)) / 10) * 10; }
 const DEFAULT_SUPPS = ["Whey protein", "Creatine 5g", "Vitamin D"];
@@ -537,7 +554,7 @@ function renderDayRecap(pos) {
   const vkey = dateKeyForDn(vdn);
   const week = Math.floor(vdn / 7) + 1;
   const weekday = (new Date(vkey + "T00:00:00").getDay() + 6) % 7;
-  const phase = PLAN.phases.find((p) => week >= p.weekStart && week <= p.weekEnd) || PLAN.phases[PLAN.phases.length - 1];
+  const phase = phaseForWeek(activePhases(), Math.max(1, week));
   const day = phase.schedule[weekday];
   const checks = LS.get("pt_checks_" + vkey, { workout: {}, meals: {}, water: 0 });
   const dateStr = new Date(vkey + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
@@ -820,7 +837,7 @@ function renderToday() {
   if (tWeek > PLAN.meta.weeks) {
     activityHtml = `<div class="tmrw-head">🏁 <b>That's your 12 weeks done!</b></div>`;
   } else {
-    const tPhase = PLAN.phases.find(p => tWeek >= p.weekStart && tWeek <= p.weekEnd) || PLAN.phases[PLAN.phases.length - 1];
+    const tPhase = phaseForWeek(activePhases(), Math.max(1, tWeek));
     const tDay = tPhase.schedule[tWeekday];
     const tEx = (mode === "home" && tDay.homeItems) ? tDay.homeItems : tDay.items;
     activityHtml = `<div class="tmrw-head"><span class="work-emoji" style="font-size:20px">${tDay.emoji}</span>
@@ -1016,7 +1033,7 @@ function renderToday() {
 
 /* ---------- PLAN (reference, shown folded inside Settings) ---------- */
 function renderPlanSection() {
-  const phases = PLAN.phases.map((p) => `
+  const phases = activePhases().map((p) => `
     <div class="phase-block">
       <div class="phase-head"><h3 style="margin:0">Phase ${p.id}: ${p.name}</h3><small>Weeks ${p.weekStart}–${p.weekEnd}</small></div>
       <p class="sub" style="margin:4px 0 0">${p.tagline}</p>
@@ -1476,7 +1493,7 @@ function weeklyReport() {
   const d0 = new Date(getStartDate() + "T00:00:00"); d0.setDate(d0.getDate() + start + LS.get("pt_shift", 0));
   const d6 = new Date(d0); d6.setDate(d6.getDate() + 6);
   const fmt = (d) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-  const phase = PLAN.phases.find((p) => wk >= p.weekStart && wk <= p.weekEnd) || PLAN.phases[0];
+  const phase = phaseForWeek(activePhases(), Math.max(1, wk));
   const weights = LS.get("pt_weights", []);
   const inWeek = weights.filter((w) => { const dn = effDnForDate(w.date); return dn >= start && dn <= start + 6; });
   let weightStr = "—", weightDelta = null;
@@ -1851,7 +1868,7 @@ function renderSettings() {
       <p class="sub">Used to tailor your calorie targets & coaching. Changing your weight or goal updates everything.</p>
       ${profileFields(prof)}
       <button type="button" class="btn accent block" id="saveProfileBtn" style="margin-top:12px">Save profile</button>
-      <p class="note" style="margin-top:10px">${prof.name} · ${prof.sex} · ${prof.age}y · ${prof.heightCm}cm · goal <b>${GOALS[prof.goal] || prof.goal}</b>${numbersFree() ? " · growing-mode (no calorie targets)" : ` · maintenance ~${currentMaintenance().toLocaleString()} kcal · today's aim ~${dailyAim(position()).toLocaleString()} kcal`}.</p>
+      <p class="note" style="margin-top:10px">${prof.name} · ${prof.sex} · ${prof.age}y · ${prof.heightCm}cm · goal <b>${GOALS[prof.goal] || prof.goal}</b> · training <b>${trainingStyle()}</b>${numbersFree() ? " · growing-mode (no calorie targets)" : ` · maintenance ~${currentMaintenance().toLocaleString()} kcal · today's aim ~${dailyAim(position()).toLocaleString()} kcal`}.</p>
     </div>`;
   })()}
 
