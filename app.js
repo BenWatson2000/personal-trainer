@@ -676,18 +676,28 @@ function renderToday() {
   const liveCarbs = Math.round(baseCarbs * nf);
   const liveTotals = { kcal: liveP * 4 + liveCarbs * 4 + liveFat * 9, protein: liveP, carbs: liveCarbs, fat: liveFat };
   const teen = numbersFree(); // 13–17: hide calorie/macro figures, keep the food + habits
+  // split each meal's scaled non-protein calories into carbs/fat using the day ratio
+  const npDayKcal = (liveCarbs * 4 + liveFat * 9) || 1;
+  const carbShare = (liveCarbs * 4) / npDayKcal, fatShare = (liveFat * 9) / npDayKcal;
+  const consumed = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+  const served = { kcal: 0, protein: 0, carbs: 0, fat: 0 }; // sum of the day's meals (the budget)
   const slotKeyOf = Object.fromEntries(SLOTS);
   const libNow = getLibrary();
   const mealItems = mealKeys.map((k, i) => {
     const done = checks.meals[i];
     const m = meal.items[k];
     const isSkip = !!skipped[k];
-    const kc = Math.round(m.p * 4 * pf + Math.max(0, m.kcal - m.p * 4) * nf);
-    const pr = Math.round(m.p * pf);
+    const npK = Math.max(0, m.kcal - m.p * 4) * nf;
+    const kc = isSkip ? 0 : Math.round(m.p * 4 * pf + npK);
+    const pr = isSkip ? 0 : Math.round(m.p * pf);
+    const cb = isSkip ? 0 : Math.round(npK * carbShare / 4);
+    const ft = isSkip ? 0 : Math.round(npK * fatShare / 9);
+    if (!isSkip) { served.kcal += kc; served.protein += pr; served.carbs += cb; served.fat += ft; }
+    if (done && !isSkip) { consumed.kcal += kc; consumed.protein += pr; consumed.carbs += cb; consumed.fat += ft; }
     const label = isSkip ? `${k} · skipped`
       : teen ? `${k}${pf > 1.02 ? " · larger portion" : ""}`
       : `${k} · ${kc} kcal · ${pr}g P${pf > 1.02 ? ` · ×${pf.toFixed(1)}` : ""}`;
-    let row = `<li class="${done ? "done" : ""} ${isSkip ? "skipped-meal" : ""}" data-act="meals" data-i="${i}">
+    let row = `<li class="${done ? "done" : ""} ${isSkip ? "skipped-meal" : ""}" data-act="meals" data-i="${i}" data-kc="${kc}" data-pr="${pr}" data-cb="${cb}" data-ft="${ft}">
       <span class="checkbox">${done ? "✓" : ""}</span>
       <span class="item-text"><span class="meal-label">${label}</span>${isSkip ? m.text : (scaleDown ? scaleFood(m.text, nf) : scaleAmounts(m.text, pf))}</span>
       <span class="meal-actions">
@@ -711,6 +721,14 @@ function renderToday() {
     : (scaled
       ? `<p class="note" style="margin:6px 0 0">🍽️ Portions scaled to your <b>~${aim} kcal</b> aim${scaleDown ? ` — protein kept full at <b>${liveP}g</b>, the trim comes off carbs & fat` : ""}${payback > 0 ? " (includes a recent treat payback)" : ""}.</p>`
       : "");
+
+  // live "left to eat" budget — counts down as you tick meals (hidden in teen mode)
+  const allIn = consumed.kcal >= served.kcal;
+  const remainRow = teen ? "" : `<div class="remain ${allIn ? "done" : ""}" id="remainRow"
+      data-kcal="${served.kcal}" data-protein="${served.protein}" data-carbs="${served.carbs}" data-fat="${served.fat}">
+    ${[["kcal", "kcal"], ["protein", "protein"], ["carbs", "carbs"], ["fat", "fat"]].map(([m, l]) =>
+      `<div class="remain-cell"><span class="rv" data-m="${m}">${Math.max(0, served[m] - consumed[m])}</span><span class="rl">${l} left</span></div>`).join("")}
+  </div>`;
 
   // water glasses (target ~8 × 250ml = 2L) — tap a glass to set your level
   const waterDots = Array.from({ length: 8 }, (_, i) =>
@@ -896,15 +914,16 @@ function renderToday() {
         <li>Plenty of water and 8–9 hours' sleep — that's when muscle is actually built</li>
         <li>Whole foods most of the time; treats are totally fine too</li>
       </ul></div>` : `<div class="macros">
-      <div class="macro"><div class="val">${liveTotals.kcal}</div><div class="lbl">kcal</div></div>
-      <div class="macro"><div class="val">${liveTotals.protein}g</div><div class="lbl">protein</div></div>
-      <div class="macro"><div class="val">${liveTotals.carbs}g</div><div class="lbl">carbs</div></div>
-      <div class="macro"><div class="val">${liveTotals.fat}g</div><div class="lbl">fat</div></div>
+      <div class="macro"><div class="val">${served.kcal}</div><div class="lbl">kcal</div></div>
+      <div class="macro"><div class="val">${served.protein}g</div><div class="lbl">protein</div></div>
+      <div class="macro"><div class="val">${served.carbs}g</div><div class="lbl">carbs</div></div>
+      <div class="macro"><div class="val">${served.fat}g</div><div class="lbl">fat</div></div>
     </div>
     <p class="note" style="margin:10px 0 0">🎯 ${isDietBreak(pos.week) ? `<b style="color:var(--accent-2)">🏖️ Diet-break week</b> · portions set to ~${aim} kcal (maintenance) to recharge` : `Phase ${pos.phase.id} target <b>~${aim} kcal</b>${aimAdj ? ' <span class="swap-tag">recalc</span>' : ""} — portions above are scaled to match`}</p>
     ${payback > 0 ? `<p class="note" style="margin:6px 0 0;color:var(--warn)">⤵️ Includes balancing ${payback} kcal from a recent treat.</p>` : ""}
     ${skipNote}`}
     ${cookTwice}
+    ${remainRow}
     <ul class="checklist">${mealItems}</ul>
     ${recipeBlock(meal, skipped.Dinner ? 1 : pf, skipped.Dinner ? 1 : nf)}
     ${swapPicker}
@@ -1918,6 +1937,7 @@ function onViewClick(e) {
       tagged.classList.toggle("done", on);
       const cb = tagged.querySelector(".checkbox");
       if (cb) cb.textContent = on ? "✓" : "";
+      if (act === "meals") updateRemaining();   // live "left to eat" budget
     }
     updateTodayChips();
     // celebrate the moment everything's complete
@@ -2233,6 +2253,23 @@ function toggleShop(li) {
 }
 
 // each glass = 250ml; target 8 = 2 L. Show "drunk / 2 L" so it maps to a bottle.
+// recompute the "left to eat" budget from ticked meals (surgical, no full repaint)
+function updateRemaining() {
+  const row = document.getElementById("remainRow"); if (!row) return;
+  const keys = ["kcal", "protein", "carbs", "fat"];
+  const sum = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+  document.querySelectorAll('#view li[data-act="meals"].done').forEach((li) => {
+    sum.kcal += +li.dataset.kc || 0; sum.protein += +li.dataset.pr || 0;
+    sum.carbs += +li.dataset.cb || 0; sum.fat += +li.dataset.ft || 0;
+  });
+  let allIn = true;
+  row.querySelectorAll(".rv").forEach((el) => {
+    const m = el.dataset.m, left = Math.round((+row.dataset[m] || 0) - sum[m]);
+    el.textContent = Math.max(0, left);
+    if (m === "kcal" && left > 0) allIn = false;
+  });
+  row.classList.toggle("done", allIn);
+}
 function waterReadout(n) { return (Math.round(n * 25) / 100) + " / 2 L"; }
 function waterGlasses(n) { return n + "/8 glasses · 250ml each"; }
 function updateWater(n) {
