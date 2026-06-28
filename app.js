@@ -50,14 +50,29 @@ async function photoDel(date) { try { const db = await idb(); db.transaction("ph
 /* ---------- recipe library: build the plan from a per-slot pool you choose ---------- */
 const SLOTS = [["Breakfast", "breakfast"], ["Lunch", "lunch"], ["Snack", "snack"], ["Dinner", "dinner"], ["Evening", "evening"]];
 let BANK = null;
+// foods to avoid: only from an explicit saved profile (the default/bundled user isn't filtered)
+function dislikeList() { const p = LS.get("pt_profile", null); return (p && Array.isArray(p.dislikes)) ? p.dislikes.map((s) => String(s).trim()).filter(Boolean) : []; }
+function dislikeRe() {
+  const d = dislikeList(); if (!d.length) return null;
+  return new RegExp("\\b(" + d.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")", "i");
+}
+function itemDisliked(item, re) {
+  if (!re || !item) return false;
+  if (re.test(item.text || "")) return true;
+  const r = item.recipe;
+  return !!(r && r.ingredients && re.test(r.ingredients.join(" ")));
+}
 function buildBank() {
   if (!PLAN.mealBank) { BANK = null; return; }
+  const re = dislikeRe();
   BANK = {};
   for (const [, k] of SLOTS) {
-    const list = PLAN.mealBank[k] || [];
+    const full = PLAN.mealBank[k] || [];
+    let list = re ? full.filter((it) => !itemDisliked(it, re)) : full;
+    if (!list.length) list = full; // never empty a slot
     const byId = {}; list.forEach(it => byId[it.id] = it);
     const lim = (PLAN.mealBank.limits && PLAN.mealBank.limits[k]) || [1, list.length];
-    BANK[k] = { list, byId, min: lim[0], max: lim[1] };
+    BANK[k] = { list, byId, min: Math.min(lim[0], list.length), max: Math.min(lim[1], list.length) };
   }
 }
 // default picks = the meals from the curated 14-day plan (capped at each slot's max)
@@ -111,8 +126,20 @@ function dayMeal(dn) {
   const idx = ((dn % PLAN.meals.length) + PLAN.meals.length) % PLAN.meals.length;
   const lib = getLibrary();
   let base;
-  if (!lib) base = PLAN.meals[idx];
-  else {
+  if (!lib) {
+    base = PLAN.meals[idx];
+    const re = dislikeRe();
+    if (re && BANK) { // swap any disliked slot in the curated meal for an acceptable bank pick
+      const items = { ...base.items }; let changed = false;
+      for (const [label, k] of SLOTS) {
+        if (itemDisliked(items[label], re)) {
+          const pool = BANK[k].list;
+          if (pool.length) { items[label] = pool[((dn % pool.length) + pool.length) % pool.length]; changed = true; }
+        }
+      }
+      if (changed) base = { name: base.name, totals: mealTotals(items), items };
+    }
+  } else {
     const items = {};
     for (const [label, k] of SLOTS) {
       const sel = lib[k].filter(id => BANK[k].byId[id]).map(id => BANK[k].byId[id]);
@@ -1735,11 +1762,12 @@ function ageGuard() {
   if (age && age < 13) { haptic(20); toast("This app isn't suitable under 13 — please ask a parent or coach."); return false; }
   return true;
 }
-function saveProfileSettings() { if (!ageGuard()) return; readProfileForm(); toast("Profile saved · targets updated"); haptic(8); navigate(); }
+function saveProfileSettings() { if (!ageGuard()) return; readProfileForm(); buildBank(); toast("Profile saved · targets updated"); haptic(8); navigate(); }
 function completeOnboarding() {
   if (!ageGuard()) return;
   if (!document.getElementById("pfGoal").value) { toast("Pick a goal to continue"); return; }
   const p = readProfileForm();
+  buildBank(); // re-filter meals to the new dislikes
   if (!LS.get("pt_startDate", null)) LS.set("pt_startDate", todayKey()); // begin at Day 1 today
   haptic(12); toast(`You're all set, ${p.name || "let's go"} 💪`);
   CURRENT_TAB = "today"; setActiveTab(); navigate();
