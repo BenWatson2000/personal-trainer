@@ -2283,9 +2283,7 @@ function updateTodayChips() {
     hero.classList.add("light-" + light);
     pill.textContent = light === "green" ? "🟢 On track" : light === "amber" ? "🟡 Behind" : "🔴 Off pace";
   }
-  // water label
-  const wl = document.querySelector(".log-label");
-  if (wl && wl.textContent.startsWith("💧")) wl.textContent = `💧 Water · ${c.water || 0}/8`;
+  // (water readout is updated separately by updateWater — don't overwrite its litres spans here)
 }
 function isTodayPerfect() {
   const pos = position(); if (pos.beforeStart || pos.finished) return false;
