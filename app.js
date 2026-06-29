@@ -23,6 +23,7 @@ let SWAP_SLOT = null;      // which meal slot's swap picker is open
 let OPEN_LIFT = null;      // which exercise's set-logger is open
 let VIEW_PHOTO = null;     // date of the photo open in the lightbox
 let VIEW_OFFSET = 0;       // Today tab: 0 = today, negative = read-only past days
+let WORKOUT_OPEN = false;  // Today: is the (collapsed-by-default) workout card expanded
 
 /* ---------- progress photos: IndexedDB (blobs are too big for localStorage) ---------- */
 function idb() {
@@ -947,6 +948,25 @@ function renderToday() {
 
   const rv = revealInfo();
 
+  // workout card — collapsed by default, expandable (stays open if you're mid-log)
+  const workoutCard = `<details class="card fold workout-card" data-workout-card${WORKOUT_OPEN || OPEN_LIFT ? " open" : ""}>
+    <summary>
+      <span class="work-emoji">${day.emoji}</span>
+      <span class="wo-sum-name">${day.name} <span class="type-badge type-${day.type}">${day.type.toUpperCase()}</span></span>
+      <span class="wo-sum-prog ${wDone === exercises.length ? "on" : ""}">${day.type === "rest" ? "😴" : `${wDone}/${exercises.length}`}</span>
+    </summary>
+    <div class="fold-body">
+      ${day.homeItems ? `<div class="mode-toggle">
+        <button type="button" class="mode-btn ${!useHome ? "active" : ""}" data-mode="gym" aria-pressed="${!useHome}">🏋️ Gym</button>
+        <button type="button" class="mode-btn ${useHome ? "active" : ""}" data-mode="home" aria-pressed="${!!useHome}">🏠 Home</button>
+      </div>` : ""}
+      <ul class="checklist">${workItems}</ul>
+      <p class="note" style="margin:10px 0 0">${stepHint}</p>
+      ${restTimer}
+      ${(day.type === "strength" && allLiftNames().length) ? `<button type="button" class="link-btn" data-act="gotostats" style="margin-top:12px">📊 View your strength stats — PBs, e1RM &amp; volume →</button>` : ""}
+    </div>
+  </details>`;
+
   return `
   ${dayNav(pos)}
   ${perfectBanner}
@@ -960,22 +980,6 @@ function renderToday() {
     <p class="hero-meta">Week ${pos.week}/12 · Day ${pos.dn + 1} · 🏁 ${Math.max(0, rv.daysLeft)} to Reveal Day</p>
     ${chips}
     <div class="quote">"${quote}"</div>
-  </div>
-
-  <div class="card" data-workout-card>
-    <div class="work-head">
-      <span class="work-emoji">${day.emoji}</span>
-      <div><h2 style="margin:0">${day.name}</h2>
-      <span class="type-badge type-${day.type}">${day.type.toUpperCase()}</span></div>
-    </div>
-    ${day.homeItems ? `<div class="mode-toggle">
-      <button type="button" class="mode-btn ${!useHome ? "active" : ""}" data-mode="gym" aria-pressed="${!useHome}">🏋️ Gym</button>
-      <button type="button" class="mode-btn ${useHome ? "active" : ""}" data-mode="home" aria-pressed="${!!useHome}">🏠 Home</button>
-    </div>` : ""}
-    <ul class="checklist">${workItems}</ul>
-    <p class="note" style="margin:10px 0 0">${stepHint}</p>
-    ${restTimer}
-    ${(day.type === "strength" && allLiftNames().length) ? `<button type="button" class="link-btn" data-act="gotostats" style="margin-top:12px">📊 View your strength stats — PBs, e1RM &amp; volume →</button>` : ""}
   </div>
 
   <div class="card">
@@ -1004,6 +1008,8 @@ function renderToday() {
     ${recipeBlock(meal, skipped.Dinner ? 1 : pf, skipped.Dinner ? 1 : nf)}
     ${swapPicker}
   </div>
+
+  ${workoutCard}
 
   <div class="card">
     <h2>📋 Daily log</h2>
@@ -2445,10 +2451,14 @@ async function boot() {
   buildBank();
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
     if (CURRENT_TAB === t.dataset.tab) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; VIEW_PHOTO = null; VIEW_OFFSET = 0; setActiveTab(); navigate();
+    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; VIEW_PHOTO = null; VIEW_OFFSET = 0; WORKOUT_OPEN = false; setActiveTab(); navigate();
   }));
   const view = document.getElementById("view");
   view.addEventListener("click", onViewClick);
+  // remember whether the workout card is expanded (toggle doesn't bubble → use capture)
+  view.addEventListener("toggle", (e) => {
+    if (e.target && e.target.matches && e.target.matches("[data-workout-card]")) WORKOUT_OPEN = e.target.open;
+  }, true);
   view.addEventListener("keydown", (e) => {
     // keyboard activation for non-button interactive rows (checklists, dots, lib/shop items)
     if ((e.key === "Enter" || e.key === " ") && e.target.matches && e.target.matches("[data-act]") &&
