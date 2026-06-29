@@ -2368,7 +2368,10 @@ function updateRemaining() {
   row.classList.toggle("over", over);
 }
 function waterReadout(n) { return (Math.round(n * 25) / 100) + " / 2 L"; }
-function waterGlasses(n) { return n + "/8 glasses · 250ml each"; }
+function waterGlasses(n) {
+  const left = Math.round((8 - n) * 25) / 100;
+  return (left <= 0 ? "🎉 target hit" : left + " L left") + " · " + n + "/8 glasses";
+}
 function updateWater(n) {
   const wrap = document.querySelector(".water-dots");
   if (wrap) wrap.querySelectorAll(".water-dot").forEach((d, i) => {
