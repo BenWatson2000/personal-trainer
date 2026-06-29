@@ -23,7 +23,7 @@ let SWAP_SLOT = null;      // which meal slot's swap picker is open
 let OPEN_LIFT = null;      // which exercise's set-logger is open
 let VIEW_PHOTO = null;     // date of the photo open in the lightbox
 let VIEW_OFFSET = 0;       // Today tab: 0 = today, negative = read-only past days
-let WORKOUT_OPEN = false;  // Today: is the (collapsed-by-default) workout card expanded
+let OPEN_PANELS = {};      // Today: which collapsed-by-default cards the user has expanded
 
 /* ---------- progress photos: IndexedDB (blobs are too big for localStorage) ---------- */
 function idb() {
@@ -949,7 +949,7 @@ function renderToday() {
   const rv = revealInfo();
 
   // workout card — collapsed by default, expandable (stays open if you're mid-log)
-  const workoutCard = `<details class="card fold workout-card" data-workout-card${WORKOUT_OPEN || OPEN_LIFT ? " open" : ""}>
+  const workoutCard = `<details class="card fold workout-card" data-workout-card data-panel="workout"${OPEN_PANELS.workout || OPEN_LIFT ? " open" : ""}>
     <summary>
       <span class="work-emoji">${day.emoji}</span>
       <span class="wo-sum-name">${day.name} <span class="type-badge type-${day.type}">${day.type.toUpperCase()}</span></span>
@@ -982,8 +982,12 @@ function renderToday() {
     <div class="quote">"${quote}"</div>
   </div>
 
-  <div class="card">
-    <h2>🍽️ Today's Fuel${swapped ? ' <span class="swap-tag">swapped</span>' : ""}</h2>
+  <details class="card fold" data-panel="fuel"${OPEN_PANELS.fuel ? " open" : ""}>
+    <summary>
+      <span class="wo-sum-name">🍽️ Today's Fuel${swapped ? ' <span class="swap-tag">swapped</span>' : ""}</span>
+      <span class="wo-sum-prog ${mDone === mealKeys.length ? "on" : ""}">${mDone}/${mealKeys.length}${teen ? "" : ` · ${served.kcal}kcal`}</span>
+    </summary>
+    <div class="fold-body">
     <p class="sub">${meal.name} · tick each meal as you eat it</p>
     ${teen ? `<div class="teen-fuel">
       <p>💪 You're still growing — eat to <b>fuel your training and growth</b>, not to a calorie number.</p>
@@ -1007,12 +1011,17 @@ function renderToday() {
     ${extrasBlock}
     ${recipeBlock(meal, skipped.Dinner ? 1 : pf, skipped.Dinner ? 1 : nf)}
     ${swapPicker}
-  </div>
+    </div>
+  </details>
 
   ${workoutCard}
 
-  <div class="card">
-    <h2>📋 Daily log</h2>
+  <details class="card fold" data-panel="daily"${OPEN_PANELS.daily ? " open" : ""}>
+    <summary>
+      <span class="wo-sum-name">📋 Daily log</span>
+      <span class="wo-sum-prog ${checks.water >= 8 ? "on" : ""}">💧 ${checks.water}/8</span>
+    </summary>
+    <div class="fold-body">
     <div class="log-sec water-sec">
       <div class="log-label">💧 Water <span class="water-count" id="waterCount">${waterReadout(checks.water)}</span>
         <span class="water-vol" id="waterVol">${waterGlasses(checks.water)}</span></div>
@@ -1030,7 +1039,8 @@ function renderToday() {
         <button type="button" class="btn accent" id="logWeightBtn">Log</button>
       </div>
     </div>
-  </div>
+    </div>
+  </details>
 
   ${tomorrowFold}
 
@@ -2451,13 +2461,13 @@ async function boot() {
   buildBank();
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
     if (CURRENT_TAB === t.dataset.tab) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; VIEW_PHOTO = null; VIEW_OFFSET = 0; WORKOUT_OPEN = false; setActiveTab(); navigate();
+    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; VIEW_PHOTO = null; VIEW_OFFSET = 0; OPEN_PANELS = {}; setActiveTab(); navigate();
   }));
   const view = document.getElementById("view");
   view.addEventListener("click", onViewClick);
-  // remember whether the workout card is expanded (toggle doesn't bubble → use capture)
+  // remember which collapsed Today cards are expanded (toggle doesn't bubble → use capture)
   view.addEventListener("toggle", (e) => {
-    if (e.target && e.target.matches && e.target.matches("[data-workout-card]")) WORKOUT_OPEN = e.target.open;
+    if (e.target && e.target.matches && e.target.matches("details[data-panel]")) OPEN_PANELS[e.target.dataset.panel] = e.target.open;
   }, true);
   view.addEventListener("keydown", (e) => {
     // keyboard activation for non-button interactive rows (checklists, dots, lib/shop items)
