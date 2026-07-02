@@ -24,6 +24,7 @@ let OPEN_LIFT = null;      // which exercise's set-logger is open
 let VIEW_PHOTO = null;     // date of the photo open in the lightbox
 let VIEW_OFFSET = 0;       // Today tab: 0 = today, negative = read-only past days
 let OPEN_PANELS = {};      // Today: which collapsed-by-default cards the user has expanded
+let OPEN_FORM = null;      // Today: which exercise's form-guide panel is open
 
 /* ---------- progress photos: IndexedDB (blobs are too big for localStorage) ---------- */
 function idb() {
@@ -519,6 +520,90 @@ function adjustedAim(pos) { return Math.round((currentMaintenance() + goalDelta(
 const DEFAULT_SUPPS = ["Whey protein", "Creatine 5g", "Vitamin D"];
 function getSupps() { return LS.get("pt_supps", DEFAULT_SUPPS); }
 
+/* ---------- coaching: form guide, warm-up, readiness ---------- */
+// form cues per movement pattern, matched against the exercise text
+const FORM_GUIDE = [
+  [/squat|sit-to-stand/i, ["Chest up, sit down between your hips", "Knees track over the toes", "Drive up through the whole foot"], ["Heels lifting off the floor", "Knees caving inwards"]],
+  [/bench press|floor press|chest press/i, ["Squeeze shoulder blades back into the bench", "Lower to mid-chest with wrists stacked over elbows", "Feet planted for drive"], ["Elbows flared to 90°", "Bouncing the bar off your chest"]],
+  [/push-?up|press-?up/i, ["Body one rigid line — squeeze glutes and abs", "Hands under shoulders, elbows ~45°", "Chest to an inch off the floor"], ["Hips sagging or piking", "Half reps"]],
+  [/\brow\b/i, ["Pull the elbow back towards your hip", "Squeeze the shoulder blade at the top for 1s", "Spine stays long and neutral"], ["Shrugging the shoulder up", "Heaving with momentum"]],
+  [/romanian|rdl\b/i, ["Push hips straight back, soft knees", "Weight stays close, sliding down the thighs", "Stop at a hamstring stretch, flat back"], ["Rounding the lower back", "Turning it into a squat"]],
+  [/deadlift/i, ["Weight over mid-foot, brace hard before you pull", "Push the floor away — hips and shoulders rise together", "Lock out tall, don't lean back"], ["Jerking the weight off the floor", "Back rounding as you tire"]],
+  [/shoulder press|overhead|arnold/i, ["Ribs down, glutes tight before you press", "Press up and slightly back to stack over shoulders", "Lower with control to chin level"], ["Arching the lower back", "Pressing out in front of you"]],
+  [/pulldown|pull-?up/i, ["Lead with the chest, pull elbows down and back", "Bar/hands towards the collarbone", "Full stretch at the top of each rep"], ["Swinging or leaning way back", "Cutting the range short"]],
+  [/hip thrust|glute bridge/i, ["Chin tucked, ribs down", "Drive through the heels, squeeze glutes hard 1s at the top", "Finish flat like a tabletop"], ["Hyperextending the lower back at the top"]],
+  [/lunge|split squat|step-?up/i, ["Torso tall, front knee tracks over the toe", "Lower under control — don't drop", "Push through the front heel to stand"], ["Knee slamming the floor", "Bouncing off the back leg"]],
+  [/leg press/i, ["Feet mid-platform, hip width", "Lower to ~90° knee bend or your comfortable depth", "Press without locking the knees hard"], ["Bum lifting off the pad (too deep)", "Ego-loading half reps"]],
+  [/plank/i, ["Squeeze glutes and abs — one straight line ear to ankle", "Push the floor away through forearms", "Keep breathing"], ["Hips sagging or piking up", "Holding your breath"]],
+  [/curl/i, ["Elbows pinned to your sides", "Squeeze at the top, lower slow (2–3s)", "Full range — arms straight at the bottom"], ["Swinging the hips to lift", "Half reps in the middle"]],
+  [/tricep|pushdown|skull|extension\b/i, ["Elbows stay still — only the forearm moves", "Squeeze the lockout for 1s", "Control the way back"], ["Shoulders rolling forward to press", "Elbows drifting out"]],
+  [/lateral raise/i, ["Lead with the elbows, slight bend", "Raise to shoulder height, no higher", "Tip the pinky slightly up, lower slow"], ["Shrugging the traps", "Swinging heavier than you can control"]],
+  [/calf raise/i, ["Full stretch at the bottom", "Pause 1s at the very top", "Slow on the way down"], ["Bouncing out of the bottom"]],
+  [/face pull|pull-?apart/i, ["Pull towards your eyebrows, thumbs pointing back", "Squeeze the rear delts and hold 1s"], ["Turning it into a heavy row"]],
+  [/leg curl/i, ["Hips pressed down into the pad", "Slow 3s negative on every rep"], ["Hips lifting as you curl"]],
+  [/dead bug/i, ["Lower back pressed flat into the floor throughout", "Opposite arm and leg, slow and controlled", "Exhale as you extend"], ["Back arching off the floor"]],
+  [/bird-?dog/i, ["Hips stay level — imagine a drink balanced on your back", "Reach long, not high"], ["Rotating or twisting the torso"]],
+  [/knee raise|leg raise/i, ["Curl the pelvis up at the top — don't just lift legs", "Lower slowly without arching"], ["Swinging for momentum"]],
+  [/wall sit/i, ["Back flat against the wall, knees at ~90°", "Weight through the heels, hands off the thighs"], ["Resting hands on your legs"]],
+  [/pallof/i, ["Press out and resist the twist — ribs down", "Slow out, slow back"], ["Leaning away from the anchor"]],
+  [/crunch/i, ["Ribs towards hips, exhale hard at the top", "Chin off your chest"], ["Pulling on your neck"]],
+  [/cycle|elliptical|zone 2|walk\b/i, ["Conversational pace — you can talk in full sentences", "Light grip, relaxed shoulders", "Smooth, even cadence"], ["Creeping into a pace you can't sustain"]],
+];
+function formTipFor(text) {
+  for (const [re, cues, avoid] of FORM_GUIDE) if (re.test(text)) return { cues, avoid };
+  return null;
+}
+// warm-up protocol generated for the day type
+function warmupBlock(day) {
+  if (day.type === "rest") return "";
+  const body = day.type === "strength"
+    ? `<ul class="warmup-list">
+        <li>2–3 min easy cycle / brisk march to raise your pulse</li>
+        <li>10 arm circles each way · 10 bodyweight squats · 10 hip hinges</li>
+        <li>15 band pull-aparts (or 10 slow wall press-ups)</li>
+        <li><b>First lift:</b> 2 ramp-up sets — ~50% × 8, then ~75% × 5 — before your working weight</li>
+      </ul>`
+    : day.type === "hiit"
+    ? `<ul class="warmup-list">
+        <li>5 min building from easy to moderate pace</li>
+        <li>10 leg swings each side · 10 bodyweight squats</li>
+        <li>2 × 15s at interval pace with full recovery before the first real rep</li>
+      </ul>`
+    : `<ul class="warmup-list">
+        <li>Start the first 5 min noticeably easier than your target pace</li>
+        <li>10 slow calf raises + ankle circles before you settle in</li>
+      </ul>`;
+  return `<details class="fold warmup"><summary>🔥 Warm-up first — 3–5 min</summary>
+    <div class="fold-body">${body}
+    <p class="note" style="margin:6px 0 0">A warm body lifts more and gets injured less. Never skip it on cold mornings.</p></div></details>`;
+}
+// morning readiness: sleep + soreness + energy (each 1–3) → tailored advice for the day
+function readinessAdvice(score, dayType) {
+  const low = {
+    strength: "Go lighter today — same moves, one fewer set, leave 3 reps in the tank. Showing up still counts double on rough days.",
+    cardio: "Keep it genuinely easy — shorter is fine. Move, don't push.",
+    hiit: "Swap the intervals for 20 easy minutes — intensity needs fuel you don't have today.",
+    rest: "Perfect timing for a rest day. Eat well, get to bed early tonight.",
+  };
+  const mid = {
+    strength: "Train as planned — hit your target sets and stop 1–2 reps shy of failure.",
+    cardio: "Steady as planned — settle into a rhythm you could hold all day.",
+    hiit: "Do the session, but cap the last interval rather than emptying the tank.",
+    rest: "Recover well — a short easy walk speeds it up.",
+  };
+  const high = {
+    strength: "You're primed — chase the suggested top sets, and take the extra rep if it's there.",
+    cardio: "Feeling good? Add 5–10 minutes at the same easy effort.",
+    hiit: "Green light — attack the intervals, full quality on every rep.",
+    rest: "Bank the energy — easy walk today, and tomorrow's session will fly.",
+  };
+  const band = score <= 4 ? low : score <= 7 ? mid : high;
+  return band[dayType] || band.strength;
+}
+function readinessMeta(score) {
+  return score <= 4 ? ["🪫", "Run down"] : score <= 7 ? ["🔋", "Steady"] : ["⚡", "Primed"];
+}
+
 /* ---------- TODAY ---------- */
 // Prep-ahead notes for a meal: explicit prep fields + an auto defrost hint for meat dinners.
 function prepNotes(meal) {
@@ -646,6 +731,9 @@ function renderDayRecap(pos) {
     <div class="log-sec"><div class="log-label">⚖️ Weigh-in</div>
       <p class="note" style="margin:0">${wIn ? `<b>${wIn.kg} kg</b>` : "— not logged"}</p></div>
     ${cheat ? `<div class="log-sec"><div class="log-label">🍔 Treat logged</div><p class="note" style="margin:0">+${cheat} kcal</p></div>` : ""}
+    ${(() => { const r = LS.get("pt_ready_" + vkey, null); if (!r || !(r.s && r.m && r.e)) return "";
+      const sc = r.s + r.m + r.e; const [emo, word] = readinessMeta(sc);
+      return `<div class="log-sec"><div class="log-label">🌅 Readiness</div><p class="note" style="margin:0">${emo} ${word} · ${sc}/9</p></div>`; })()}
   </div>
 
   <p class="note" style="text-align:center;margin:4px 0 0">🔒 Past days are read-only — you can look back but not change them.</p>`;
@@ -698,9 +786,18 @@ function renderToday() {
       logBtn = `<button type="button" class="log-btn ${open ? "open" : logged.length ? "logged" : ""}" data-act="openlift" data-name="${encodeURIComponent(lf.name)}">${lbl}</button>`;
       if (open) logger = liftLogger(lf, pos.dn);
     }
+    // per-exercise form guide (ⓘ) — cues + common mistakes
+    const tip = formTipFor(t);
+    const infoBtn = tip ? `<button type="button" class="x-del info-btn ${OPEN_FORM === t ? "on" : ""}" data-act="formguide" data-name="${encodeURIComponent(t)}" title="Form guide" aria-label="Form guide">ⓘ</button>` : "";
+    const formTip = (tip && OPEN_FORM === t) ? `<li class="form-tip"><div style="width:100%">
+        <div class="ft-label">✅ Form cues</div>
+        <ul>${tip.cues.map((c) => `<li>${c}</li>`).join("")}</ul>
+        <div class="ft-label">⚠️ Avoid</div>
+        <ul>${tip.avoid.map((c) => `<li>${c}</li>`).join("")}</ul>
+      </div></li>` : "";
     return `<li class="${done ? "done" : ""} ${lf.loggable ? "wlog" : ""}" data-act="workout" data-i="${i}">
       <span class="checkbox">${done ? "✓" : ""}</span>
-      <span class="item-text">${t}${suffix}</span>${logBtn}</li>${logger}`;
+      <span class="item-text">${t}${suffix}</span>${infoBtn}${logBtn}</li>${formTip}${logger}`;
   }).join("");
 
   // meals checklist — portions auto-scale so the day lands on today's calorie aim,
@@ -948,14 +1045,35 @@ function renderToday() {
 
   const rv = revealInfo();
 
+  // morning readiness check-in (sleep · soreness · energy) — lives in the hero
+  const ready = LS.get("pt_ready_" + key, {});
+  const readyDone = ready.s && ready.m && ready.e;
+  const readyScore = (ready.s || 0) + (ready.m || 0) + (ready.e || 0);
+  const rBtns = (k, labels) => labels.map((l, i) =>
+    `<button type="button" class="ready-btn ${ready[k] === i + 1 ? "on" : ""}" data-act="ready" data-k="${k}" data-v="${i + 1}">${l}</button>`).join("");
+  let readyBlock;
+  if (readyDone) {
+    const [emo, word] = readinessMeta(readyScore);
+    readyBlock = `<div class="ready-done">${emo} <b>${word}</b> · ${readyScore}/9 — ${readinessAdvice(readyScore, day.type)}
+      <button type="button" class="ready-edit" data-act="readyedit" aria-label="Redo check-in">✎</button></div>`;
+  } else {
+    readyBlock = `<div class="ready">
+      <div class="ready-title">🌅 Morning check-in — how are you today?</div>
+      <div class="ready-row"><span class="ready-lbl">😴 Sleep</span>${rBtns("s", ["Rough", "OK", "Great"])}</div>
+      <div class="ready-row"><span class="ready-lbl">💪 Muscles</span>${rBtns("m", ["Sore", "OK", "Fresh"])}</div>
+      <div class="ready-row"><span class="ready-lbl">⚡ Energy</span>${rBtns("e", ["Low", "OK", "High"])}</div>
+    </div>`;
+  }
+
   // workout card — collapsed by default, expandable (stays open if you're mid-log)
-  const workoutCard = `<details class="card fold workout-card" data-workout-card data-panel="workout"${OPEN_PANELS.workout || OPEN_LIFT ? " open" : ""}>
+  const workoutCard = `<details class="card fold workout-card" data-workout-card data-panel="workout"${OPEN_PANELS.workout || OPEN_LIFT || OPEN_FORM ? " open" : ""}>
     <summary>
       <span class="work-emoji">${day.emoji}</span>
       <span class="wo-sum-name">${day.name} <span class="type-badge type-${day.type}">${day.type.toUpperCase()}</span></span>
       <span class="wo-sum-prog ${wDone === exercises.length ? "on" : ""}">${day.type === "rest" ? "😴" : `${wDone}/${exercises.length}`}</span>
     </summary>
     <div class="fold-body">
+      ${warmupBlock(day)}
       ${day.homeItems ? `<div class="mode-toggle">
         <button type="button" class="mode-btn ${!useHome ? "active" : ""}" data-mode="gym" aria-pressed="${!useHome}">🏋️ Gym</button>
         <button type="button" class="mode-btn ${useHome ? "active" : ""}" data-mode="home" aria-pressed="${!!useHome}">🏠 Home</button>
@@ -979,6 +1097,7 @@ function renderToday() {
     <h1>${day.emoji} ${day.name}</h1>
     <p class="hero-meta">Week ${pos.week}/12 · Day ${pos.dn + 1} · 🏁 ${Math.max(0, rv.daysLeft)} to Reveal Day</p>
     ${chips}
+    ${readyBlock}
     <div class="quote">"${quote}"</div>
   </div>
 
@@ -1478,6 +1597,8 @@ function renderProgress() {
     <div class="stat"><div class="big">✨ ${perfectDays}</div><div class="cap">perfect days</div></div>
   </div></div>
 
+  ${consistencyHeatmap(pos)}
+
   ${adCard}
 
   ${breakCard}
@@ -1493,12 +1614,92 @@ function renderProgress() {
     </div>
   </div>
 
+  ${renderMeasurements()}
+
   <details class="card fold">
     <summary>🏅 Achievements <span class="swap-tag">${earned}/${A.length}</span></summary>
     <div class="fold-body"><div class="badge-grid">${badges}</div></div>
   </details>
 
   ${renderStrength()}`;
+}
+
+/* ---------- consistency heatmap (84 days, GitHub-style) ---------- */
+function consistencyHeatmap(pos) {
+  const total = PLAN.meta.weeks * 7;
+  let cells = "";
+  for (let dn = 0; dn < total; dn++) {
+    const dk = dateKeyForDn(dn);
+    let cls, title;
+    if (dn > pos.dn) { cls = "hm-f"; title = dk; }
+    else {
+      const c = LS.get("pt_checks_" + dk, null);
+      const wq = c ? Object.values(c.workout || {}).filter(Boolean).length : 0;
+      const mq = c ? Object.values(c.meals || {}).filter(Boolean).length : 0;
+      const water = c ? (c.water || 0) : 0;
+      const lvl = (wq >= 1 ? 1 : 0) + (mq >= 3 ? 1 : 0) + (water >= 8 ? 1 : 0);
+      cls = "hm-" + lvl;
+      title = `${dk} · ${["nothing logged", "getting going", "good day", "perfect day"][lvl]}`;
+    }
+    if (dn === pos.dn) cls += " hm-today";
+    cells += `<div class="hm-cell ${cls}" title="${title}"></div>`;
+  }
+  return `<div class="card"><h2>📆 Consistency</h2>
+    <p class="sub">Every day of the 12 weeks — workout, meals and water each deepen the colour</p>
+    <div class="hm-wrap"><div class="hm-grid">${cells}</div></div>
+    <div class="hm-legend"><span>W1</span><span class="hm-scale">Less <i class="hm-cell hm-0"></i><i class="hm-cell hm-1"></i><i class="hm-cell hm-2"></i><i class="hm-cell hm-3"></i> More</span><span>W12</span></div>
+  </div>`;
+}
+
+/* ---------- body measurements (waist/chest/arm/thigh) ---------- */
+const MEAS = [["waist", "Waist"], ["chest", "Chest"], ["arm", "Arm"], ["thigh", "Thigh"]];
+function renderMeasurements() {
+  if (numbersFree()) return ""; // not for the teen numbers-free mode
+  const arr = LS.get("pt_meas", []);
+  const rows = MEAS.map(([k, l]) => {
+    const pts = arr.filter((x) => x[k] != null);
+    if (!pts.length) return "";
+    const first = pts[0][k], last = pts[pts.length - 1][k], d = +(last - first).toFixed(1);
+    return `<li>
+      <div class="lift-row-top"><span class="lift-name">${l}</span>${pts.length >= 2 ? miniSpark(pts.map((p) => p[k])) : ""}</div>
+      <span class="lift-figs"><b>${last} cm</b>${pts.length >= 2 ? ` · ${d > 0 ? "+" : ""}${d} cm since ${pts[0].date.slice(5)}` : " · first entry"}</span></li>`;
+  }).join("");
+  const entries = arr.slice().reverse().slice(0, 6).map((e) => {
+    const i = arr.indexOf(e);
+    return `<li style="cursor:default"><span class="item-text"><span class="meal-label">${e.date}</span>${MEAS.filter(([k]) => e[k] != null).map(([k, l]) => `${l} ${e[k]}`).join(" · ")} cm</span>
+      <button type="button" class="x-del" data-act="delmeas" data-i="${i}">✕</button></li>`;
+  }).join("");
+  return `<details class="card fold" ${!arr.length ? "" : ""}>
+    <summary>📏 Measurements ${arr.length ? `<span class="swap-tag">${arr.length} logged</span>` : ""}</summary>
+    <div class="fold-body">
+      <p class="sub">The tape beats the scale during a recomp — measure relaxed, same spot, same time of day, every 1–2 weeks.</p>
+      ${rows ? `<ul class="lift-stats">${rows}</ul>` : ""}
+      <div class="meas-grid">
+        ${MEAS.map(([k, l]) => `<div><label class="field-label">${l} (cm)</label><input class="field" id="meas_${k}" type="number" step="0.1" inputmode="decimal" placeholder="cm" /></div>`).join("")}
+      </div>
+      <button type="button" class="btn accent block" id="saveMeasBtn" style="margin-top:10px">Save measurements</button>
+      ${entries ? `<div class="ft-label" style="margin-top:14px">Recent entries</div><ul class="checklist">${entries}</ul>` : ""}
+    </div>
+  </details>`;
+}
+function saveMeas() {
+  const key = todayKey();
+  const entry = { date: key }; let any = false;
+  for (const [k] of MEAS) {
+    const el = document.getElementById("meas_" + k); const v = parseFloat(el && el.value);
+    if (v > 0) { entry[k] = v; any = true; }
+  }
+  if (!any) { toast("Enter at least one measurement"); return; }
+  const arr = LS.get("pt_meas", []);
+  const i = arr.findIndex((x) => x.date === key);
+  if (i >= 0) arr[i] = { ...arr[i], ...entry }; else arr.push(entry);
+  arr.sort((a, b) => a.date.localeCompare(b.date));
+  LS.set("pt_meas", arr);
+  haptic(8); toast("📏 Measurements saved"); repaintKeepScroll();
+}
+function delMeas(i) {
+  const arr = LS.get("pt_meas", []); arr.splice(i, 1); LS.set("pt_meas", arr);
+  haptic(6); repaintKeepScroll();
 }
 
 /* ---------- shareable weekly report ---------- */
@@ -1988,6 +2189,15 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "delcustom") { haptic(6); delCustom(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delstaple") { haptic(6); delStaple(+tagged.dataset.i); return; }
   if (tagged && tagged.dataset.act === "delextra") { haptic(6); delExtra(+tagged.dataset.i); return; }
+  if (tagged && tagged.dataset.act === "delmeas") { haptic(6); delMeas(+tagged.dataset.i); return; }
+  if (tagged && tagged.dataset.act === "ready") {
+    haptic(8); const k = todayKey(); const r = LS.get("pt_ready_" + k, {});
+    r[tagged.dataset.k] = +tagged.dataset.v; LS.set("pt_ready_" + k, r);
+    if (r.s && r.m && r.e) haptic([40, 30, 60]);
+    repaintKeepScroll(); return;
+  }
+  if (tagged && tagged.dataset.act === "readyedit") { haptic(6); localStorage.removeItem("pt_ready_" + todayKey()); repaintKeepScroll(); return; }
+  if (tagged && tagged.dataset.act === "formguide") { haptic(6); const n = decodeURIComponent(tagged.dataset.name); OPEN_FORM = OPEN_FORM === n ? null : n; repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "delphoto") { haptic(6); delPhoto(tagged.dataset.date); return; }
   if (tagged && tagged.dataset.act === "viewphoto") { haptic(6); VIEW_PHOTO = tagged.dataset.date; repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "closephoto") { VIEW_PHOTO = null; repaintKeepScroll(); return; }
@@ -2051,6 +2261,7 @@ function onViewClick(e) {
   if (e.target.id === "addCustomBtn") return addCustom();
   if (e.target.id === "addStapleBtn") return addStaple();
   if (e.target.id === "addExtraBtn") return addExtra();
+  if (e.target.id === "saveMeasBtn") return saveMeas();
   if (e.target.id === "addSuppBtn") return addSupp();
   if (e.target.id === "exportBtn") return exportData();
   if (e.target.id === "shareReportBtn") return shareReport();
@@ -2486,7 +2697,7 @@ async function boot() {
   buildBank();
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
     if (CURRENT_TAB === t.dataset.tab) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; VIEW_PHOTO = null; VIEW_OFFSET = 0; OPEN_PANELS = {}; setActiveTab(); navigate();
+    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; OPEN_FORM = null; VIEW_PHOTO = null; VIEW_OFFSET = 0; OPEN_PANELS = {}; setActiveTab(); navigate();
   }));
   const view = document.getElementById("view");
   view.addEventListener("click", onViewClick);
