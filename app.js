@@ -1960,6 +1960,7 @@ function applyMode() {
     b.classList.toggle("active", on);
     b.setAttribute("aria-pressed", String(on));
   });
+  updateWorkoutBadge();
 }
 
 function flashSaved(el) {
@@ -2031,7 +2032,8 @@ function onViewClick(e) {
       tagged.classList.toggle("done", on);
       const cb = tagged.querySelector(".checkbox");
       if (cb) cb.textContent = on ? "✓" : "";
-      if (act === "meals") updateRemaining();   // live "left to eat" budget
+      if (act === "meals") { updateRemaining(); updateFuelBadge(); }   // live budget + card summary
+      if (act === "workout") updateWorkoutBadge();
     }
     updateTodayChips();
     // celebrate the moment everything's complete
@@ -2397,6 +2399,29 @@ function updateWater(n) {
   const vol = document.getElementById("waterVol"); if (vol) vol.textContent = waterGlasses(n);
   const dec = document.querySelector('[data-act="waterdec"]'); if (dec) dec.disabled = n <= 0;
   const inc = document.querySelector('[data-act="waterinc"]'); if (inc) inc.disabled = n >= 8;
+  updateDailyBadge(n);
+}
+// refresh the collapsed-card summary counters after a surgical tick
+function updateWorkoutBadge() {
+  const card = document.querySelector('#view [data-panel="workout"]'); if (!card) return;
+  const b = card.querySelector(".wo-sum-prog"); if (!b || b.textContent.indexOf("😴") >= 0) return;
+  const rows = card.querySelectorAll('li[data-act="workout"]'), total = rows.length;
+  let done = 0; rows.forEach((li) => { if (li.classList.contains("done")) done++; });
+  b.textContent = `${done}/${total}`; b.classList.toggle("on", total > 0 && done >= total);
+}
+function updateFuelBadge() {
+  const card = document.querySelector('#view [data-panel="fuel"]'); if (!card) return;
+  const b = card.querySelector(".wo-sum-prog"); if (!b) return;
+  const rows = card.querySelectorAll('li[data-act="meals"]'), total = rows.length;
+  let done = 0; rows.forEach((li) => { if (li.classList.contains("done") || li.classList.contains("skipped-meal")) done++; });
+  const rr = document.getElementById("remainRow");
+  b.textContent = `${done}/${total}${rr ? ` · ${rr.dataset.kcal}kcal` : ""}`;
+  b.classList.toggle("on", total > 0 && done >= total);
+}
+function updateDailyBadge(n) {
+  const card = document.querySelector('#view [data-panel="daily"]'); if (!card) return;
+  const b = card.querySelector(".wo-sum-prog"); if (!b) return;
+  b.textContent = `💧 ${n}/8`; b.classList.toggle("on", n >= 8);
 }
 
 /* ---------- shell ---------- */
