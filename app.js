@@ -25,6 +25,7 @@ let VIEW_PHOTO = null;     // date of the photo open in the lightbox
 let VIEW_OFFSET = 0;       // Today tab: 0 = today, negative = read-only past days
 let OPEN_PANELS = {};      // Today: which collapsed-by-default cards the user has expanded
 let OPEN_FORM = null;      // Today: which exercise's form-guide panel is open
+let HM_SEL = null;         // Progress: selected consistency-heatmap day index
 
 /* ---------- progress photos: IndexedDB (blobs are too big for localStorage) ---------- */
 function idb() {
@@ -1642,12 +1643,40 @@ function consistencyHeatmap(pos) {
       title = `${dk} · ${["nothing logged", "getting going", "good day", "perfect day"][lvl]}`;
     }
     if (dn === pos.dn) cls += " hm-today";
-    cells += `<div class="hm-cell ${cls}" title="${title}"></div>`;
+    if (dn === HM_SEL) cls += " hm-sel";
+    cells += `<div class="hm-cell ${cls}" data-act="hmcell" data-dn="${dn}" title="${title}"></div>`;
   }
   return `<div class="card"><h2>📆 Consistency</h2>
-    <p class="sub">Every day of the 12 weeks — workout, meals and water each deepen the colour</p>
+    <p class="sub">Every day of the 12 weeks — workout, meals and water each deepen the colour · tap a day for detail</p>
     <div class="hm-wrap"><div class="hm-grid">${cells}</div></div>
     <div class="hm-legend"><span>W1</span><span class="hm-scale">Less <i class="hm-cell hm-0"></i><i class="hm-cell hm-1"></i><i class="hm-cell hm-2"></i><i class="hm-cell hm-3"></i> More</span><span>W12</span></div>
+    ${hmDetail(pos)}
+  </div>`;
+}
+// detail panel for the tapped heatmap day: past = what happened, future = what's planned
+function hmDetail(pos) {
+  if (HM_SEL == null) return "";
+  const dn = HM_SEL, dk = dateKeyForDn(dn);
+  const d = new Date(dk + "T00:00:00");
+  const dateStr = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  const week = Math.floor(dn / 7) + 1, weekday = (d.getDay() + 6) % 7;
+  const day = phaseForWeek(activePhases(), Math.max(1, week)).schedule[weekday];
+  if (dn > pos.dn) {
+    return `<div class="hm-detail"><b>${dateStr}</b> · Day ${dn + 1} · upcoming<br>
+      ${day.emoji} ${day.name} <span class="type-badge type-${day.type}">${day.type.toUpperCase()}</span></div>`;
+  }
+  const c = LS.get("pt_checks_" + dk, null) || { workout: {}, meals: {}, water: 0 };
+  const mode = LS.get("pt_mode", "gym");
+  const ex = (mode === "home" && day.homeItems) ? day.homeItems : day.items;
+  const wq = Math.min(Object.values(c.workout || {}).filter(Boolean).length, ex.length);
+  const mq = Object.values(c.meals || {}).filter(Boolean).length;
+  const wIn = LS.get("pt_weights", []).find((w) => w.date === dk);
+  const r = LS.get("pt_ready_" + dk, null);
+  const ready = (r && r.s && r.m && r.e) ? ` · 🌅 ${r.s + r.m + r.e}/9` : "";
+  return `<div class="hm-detail">
+    <div><b>${dateStr}</b> · Day ${dn + 1} · ${day.emoji} ${day.name}</div>
+    <div class="hm-detail-stats">🏋️ ${wq}/${ex.length} · 🍽️ ${mq}/${SLOTS.length} · 💧 ${c.water || 0}/8${wIn ? ` · ⚖️ ${wIn.kg}kg` : ""}${ready}</div>
+    <button type="button" class="btn block" data-act="hmopen" data-dn="${dn}" style="margin-top:8px">📖 Open this day</button>
   </div>`;
 }
 
@@ -2198,6 +2227,12 @@ function onViewClick(e) {
   }
   if (tagged && tagged.dataset.act === "readyedit") { haptic(6); localStorage.removeItem("pt_ready_" + todayKey()); repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "formguide") { haptic(6); const n = decodeURIComponent(tagged.dataset.name); OPEN_FORM = OPEN_FORM === n ? null : n; repaintKeepScroll(); return; }
+  if (tagged && tagged.dataset.act === "hmcell") { haptic(6); const dn = +tagged.dataset.dn; HM_SEL = HM_SEL === dn ? null : dn; repaintKeepScroll(); return; }
+  if (tagged && tagged.dataset.act === "hmopen") {
+    haptic(8); const dn = +tagged.dataset.dn;
+    VIEW_OFFSET = Math.min(0, dn - position().dn); HM_SEL = null;
+    CURRENT_TAB = "today"; setActiveTab(); navigate(); return;
+  }
   if (tagged && tagged.dataset.act === "delphoto") { haptic(6); delPhoto(tagged.dataset.date); return; }
   if (tagged && tagged.dataset.act === "viewphoto") { haptic(6); VIEW_PHOTO = tagged.dataset.date; repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "closephoto") { VIEW_PHOTO = null; repaintKeepScroll(); return; }
@@ -2670,6 +2705,7 @@ function enhanceA11y() {
     const t = el.tagName;
     if (t === "BUTTON" || t === "INPUT" || t === "A" || t === "SELECT") return;
     if (el.dataset.act === "noop" || el.dataset.act === "closephoto") return;
+    if (el.dataset.act === "hmcell") return; // 84 tab stops would drown the tab order
     if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "0");
     if (!el.hasAttribute("role")) el.setAttribute("role", "button");
   });
@@ -2697,7 +2733,7 @@ async function boot() {
   buildBank();
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
     if (CURRENT_TAB === t.dataset.tab) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; OPEN_FORM = null; VIEW_PHOTO = null; VIEW_OFFSET = 0; OPEN_PANELS = {}; setActiveTab(); navigate();
+    CURRENT_TAB = t.dataset.tab; SWAP_SLOT = null; OPEN_LIFT = null; OPEN_FORM = null; VIEW_PHOTO = null; VIEW_OFFSET = 0; OPEN_PANELS = {}; HM_SEL = null; setActiveTab(); navigate();
   }));
   const view = document.getElementById("view");
   view.addEventListener("click", onViewClick);
