@@ -1,12 +1,12 @@
 /* Offline cache for the PT app. Bump CACHE to invalidate.
  * Core app shell is network-first so code/style updates land immediately when
  * online, with the cache as an offline fallback. */
-const CACHE = "pt-shred-v53";
+const CACHE = "pt-shred-v54";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=53",
-  "./app.js?v=53",
+  "./styles.css?v=54",
+  "./app.js?v=54",
   "./data/plan.json",
   "./manifest.webmanifest",
   "./icons/icon.svg",

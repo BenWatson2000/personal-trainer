@@ -604,6 +604,47 @@ function readinessAdvice(score, dayType) {
 function readinessMeta(score) {
   return score <= 4 ? ["🪫", "Run down"] : score <= 7 ? ["🔋", "Steady"] : ["⚡", "Primed"];
 }
+// day-progress traffic light: expected completion ramps gently from ~10am so mornings
+// aren't red. ONE curve, shared by renderToday and the surgical chip updates.
+function trafficLight(frac) {
+  const expected = Math.max(0, Math.min(0.9, (new Date().getHours() - 10) / 12));
+  return frac >= expected ? "green" : frac >= expected * 0.6 ? "amber" : "red";
+}
+// The ONE builder for today's workout rows (ticks, suggestions, log buttons, ⓘ form
+// guides, inline logger). Used by renderToday AND the surgical Gym/Home swap — keep
+// them identical by never duplicating this template.
+function workoutRowsHtml(day, exercises, checks, dn) {
+  return exercises.map((t, i) => {
+    const done = checks.workout[i];
+    const lf = day.type === "strength" ? parseLift(t) : { loggable: false };
+    let suffix = "", logBtn = "", logger = "";
+    if (lf.loggable) {
+      const logged = todayLift(lf.name);
+      const open = OPEN_LIFT === lf.name;
+      if (logged.length) {
+        const top = Math.max(0, ...logged.map((s) => e1rm(s.w, s.r)));
+        suffix = `<span class="lift-done"> ✓ ${setSummary(logged)}${top ? ` · e1RM ${top}` : ""}</span>`;
+      } else {
+        const sug = suggestLift(lf.name, dn, lf.repLow, lf.repHigh);
+        if (sug) suffix = `<span class="lift-sug"> · 🎯 ${sug.w ? sug.w + "kg" : "BW"} × ${sug.reps}${sug.progress ? " ⤴" : ""}</span>`;
+      }
+      const lbl = open ? "✕ Close" : logged.length ? `✎ Edit weights` : `🏋️ Log weight & reps`;
+      logBtn = `<button type="button" class="log-btn ${open ? "open" : logged.length ? "logged" : ""}" data-act="openlift" data-name="${encodeURIComponent(lf.name)}">${lbl}</button>`;
+      if (open) logger = liftLogger(lf, dn);
+    }
+    const tip = formTipFor(t);
+    const infoBtn = tip ? `<button type="button" class="x-del info-btn ${OPEN_FORM === t ? "on" : ""}" data-act="formguide" data-name="${encodeURIComponent(t)}" title="Form guide" aria-label="Form guide">ⓘ</button>` : "";
+    const formTip = (tip && OPEN_FORM === t) ? `<li class="form-tip"><div style="width:100%">
+        <div class="ft-label">✅ Form cues</div>
+        <ul>${tip.cues.map((c) => `<li>${c}</li>`).join("")}</ul>
+        <div class="ft-label">⚠️ Avoid</div>
+        <ul>${tip.avoid.map((c) => `<li>${c}</li>`).join("")}</ul>
+      </div></li>` : "";
+    return `<li class="${done ? "done" : ""} ${lf.loggable ? "wlog" : ""}" data-act="workout" data-i="${i}">
+      <span class="checkbox">${done ? "✓" : ""}</span>
+      <span class="item-text">${t}${suffix}</span>${infoBtn}${logBtn}</li>${formTip}${logger}`;
+  }).join("");
+}
 
 /* ---------- TODAY ---------- */
 // Prep-ahead notes for a meal: explicit prep fields + an auto defrost hint for meat dinners.
@@ -768,38 +809,8 @@ function renderToday() {
   const useHome = mode === "home" && day.homeItems;
   const exercises = useHome ? day.homeItems : day.items;
 
-  // workout checklist
-  const workItems = exercises.map((t, i) => {
-    const done = checks.workout[i];
-    const lf = day.type === "strength" ? parseLift(t) : { loggable: false };
-    let suffix = "", logBtn = "", logger = "";
-    if (lf.loggable) {
-      const logged = todayLift(lf.name);
-      const open = OPEN_LIFT === lf.name;
-      if (logged.length) {
-        const top = Math.max(0, ...logged.map((s) => e1rm(s.w, s.r)));
-        suffix = `<span class="lift-done"> ✓ ${setSummary(logged)}${top ? ` · e1RM ${top}` : ""}</span>`;
-      } else {
-        const sug = suggestLift(lf.name, pos.dn, lf.repLow, lf.repHigh);
-        if (sug) suffix = `<span class="lift-sug"> · 🎯 ${sug.w ? sug.w + "kg" : "BW"} × ${sug.reps}${sug.progress ? " ⤴" : ""}</span>`;
-      }
-      const lbl = open ? "✕ Close" : logged.length ? `✎ Edit weights` : `🏋️ Log weight & reps`;
-      logBtn = `<button type="button" class="log-btn ${open ? "open" : logged.length ? "logged" : ""}" data-act="openlift" data-name="${encodeURIComponent(lf.name)}">${lbl}</button>`;
-      if (open) logger = liftLogger(lf, pos.dn);
-    }
-    // per-exercise form guide (ⓘ) — cues + common mistakes
-    const tip = formTipFor(t);
-    const infoBtn = tip ? `<button type="button" class="x-del info-btn ${OPEN_FORM === t ? "on" : ""}" data-act="formguide" data-name="${encodeURIComponent(t)}" title="Form guide" aria-label="Form guide">ⓘ</button>` : "";
-    const formTip = (tip && OPEN_FORM === t) ? `<li class="form-tip"><div style="width:100%">
-        <div class="ft-label">✅ Form cues</div>
-        <ul>${tip.cues.map((c) => `<li>${c}</li>`).join("")}</ul>
-        <div class="ft-label">⚠️ Avoid</div>
-        <ul>${tip.avoid.map((c) => `<li>${c}</li>`).join("")}</ul>
-      </div></li>` : "";
-    return `<li class="${done ? "done" : ""} ${lf.loggable ? "wlog" : ""}" data-act="workout" data-i="${i}">
-      <span class="checkbox">${done ? "✓" : ""}</span>
-      <span class="item-text">${t}${suffix}</span>${infoBtn}${logBtn}</li>${formTip}${logger}`;
-  }).join("");
+  // workout checklist (shared builder — also used by the surgical Gym/Home swap)
+  const workItems = workoutRowsHtml(day, exercises, checks, pos.dn);
 
   // meals checklist — portions auto-scale so the day lands on today's calorie aim,
   // and a skipped meal redistributes its share across the rest.
@@ -968,10 +979,7 @@ function renderToday() {
   const totalTargets = exercises.length + mealKeys.length + 8;
   const doneTargets = wDone + mDone + Math.min(checks.water, 8);
   const frac = totalTargets ? doneTargets / totalTargets : 0;
-  // expected progress ramps up gently through the day — forgiving in the morning so
-  // it doesn't show red before you've had a chance to do anything (starts ~10am).
-  const expected = Math.max(0, Math.min(0.9, (new Date().getHours() - 10) / 12));
-  const light = frac >= expected ? "green" : frac >= expected * 0.6 ? "amber" : "red";
+  const light = trafficLight(frac);
 
   // cook once, eat twice — leftover-friendly dinner → tomorrow's lunch
   const dinnerText = meal.items.Dinner ? meal.items.Dinner.text : "";
@@ -1094,7 +1102,7 @@ function renderToday() {
       <span class="phase-tag">Phase ${pos.phase.id} · ${pos.phase.name}</span>
       <span class="light-pill">${light === "green" ? "🟢 On track" : light === "amber" ? "🟡 Behind" : "🔴 Off pace"}</span>
     </div>
-    <p class="greet">${greet}, ${PLAN.meta.athlete} · ${dateStr}</p>
+    <p class="greet">${greet}, ${getProfile().name || PLAN.meta.athlete} · ${dateStr}</p>
     <h1>${day.emoji} ${day.name}</h1>
     <p class="hero-meta">Week ${pos.week}/12 · Day ${pos.dn + 1} · 🏁 ${Math.max(0, rv.daysLeft)} to Reveal Day</p>
     ${chips}
@@ -1766,7 +1774,9 @@ function weeklyReport() {
   }
   let streak = 0;
   for (let i = 0; i < 200; i++) { const dd = new Date(); dd.setDate(dd.getDate() - i); const c = LS.get("pt_checks_" + todayKey(dd), null); const any = c && (Object.values(c.workout || {}).some(Boolean) || Object.values(c.meals || {}).some(Boolean) || c.water > 0); if (any) streak++; else if (i > 0) break; }
-  return { week: wk, range: fmt(d0) + "–" + fmt(d6), phase: phase.name, weightStr, weightDelta, workouts, perfect, adherence, water8, volume: wv.vol, sets: wv.sets, pbs: pbNames.length, pbNames, streak, overall: +(PLAN.meta.stats.weightKg - latestWeight()).toFixed(1), day: Math.max(0, pos.dn + 1) };
+  const prof = getProfile();
+  return { week: wk, range: fmt(d0) + "–" + fmt(d6), phase: phase.name, weightStr, weightDelta, workouts, perfect, adherence, water8, volume: wv.vol, sets: wv.sets, pbs: pbNames.length, pbNames, streak,
+    overall: +(latestWeight() - prof.weightKg).toFixed(1), name: prof.name || PLAN.meta.athlete, goal: prof.goal, day: Math.max(0, pos.dn + 1) };
 }
 function renderReport() {
   const r = weeklyReport();
@@ -1787,7 +1797,8 @@ function reportCanvas(r) {
   x.fillStyle = g; x.fillRect(0, 0, W, H);
   x.fillStyle = "#34d399"; x.fillRect(0, 0, W, 14);
   const F = (w, s) => x.font = `${w} ${s}px -apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif`;
-  F(600, 32); x.fillStyle = "#9aa3b2"; x.fillText("BEN'S 12-WEEK SHRED", P, 120);
+  const progName = (r.goal === "gain" ? "12-WEEK BUILD" : r.goal === "maintain" ? "12-WEEK PLAN" : "12-WEEK SHRED");
+  F(600, 32); x.fillStyle = "#9aa3b2"; x.fillText(`${(r.name || "MY").toUpperCase()}'S ${progName}`, P, 120);
   F(800, 84); x.fillStyle = "#eef1f6"; x.fillText("Week " + r.week + " Report", P, 208);
   F(400, 34); x.fillStyle = "#9aa3b2"; x.fillText(r.range + "   ·   " + r.phase, P, 260);
   const tiles = [["WEIGHT", r.weightStr], ["WORKOUTS", String(r.workouts)], ["VOLUME", r.volume.toLocaleString() + " kg"], ["PERFECT DAYS", String(r.perfect)], ["STREAK", "🔥 " + r.streak], ["NEW PBs", String(r.pbs)]];
@@ -1800,10 +1811,12 @@ function reportCanvas(r) {
     F(800, 70); x.fillStyle = "#eef1f6"; x.fillText(t[1], X + 34, Y + 138);
   });
   const oy = gy + 3 * gh + 2 * gap + 76;
-  F(800, 54); x.fillStyle = "#34d399"; x.fillText((r.overall >= 0 ? "−" : "+") + Math.abs(r.overall) + " kg overall", P, oy);
+  // natural sign: + = heavier than start, − = lighter (reads correctly for every goal)
+  F(800, 54); x.fillStyle = "#34d399"; x.fillText((r.overall > 0 ? "+" : r.overall < 0 ? "−" : "±") + Math.abs(r.overall) + " kg overall", P, oy);
   F(400, 34); x.fillStyle = "#9aa3b2"; x.fillText("Day " + r.day + " of 84   ·   " + r.adherence + "% nutrition adherence", P, oy + 52);
   if (r.pbNames.length) { F(700, 32); x.fillStyle = "#fbbf24"; x.fillText("🏅 " + r.pbNames.slice(0, 3).join(", "), P, oy + 112); }
-  F(600, 30); x.fillStyle = "#9aa3b2"; x.fillText("My PT — get ripped in 12 weeks 💪", P, H - 56);
+  const tagline = r.goal === "gain" ? "My PT — build lean muscle 💪" : r.goal === "maintain" ? "My PT — stay strong 💪" : "My PT — get ripped in 12 weeks 💪";
+  F(600, 30); x.fillStyle = "#9aa3b2"; x.fillText(tagline, P, H - 56);
   return cv;
 }
 function shareReport() {
@@ -2028,6 +2041,10 @@ function ageGuard() {
 function saveProfileSettings() { if (!ageGuard()) return; readProfileForm(); buildBank(); toast("Profile saved · targets updated"); haptic(8); navigate(); }
 function completeOnboarding() {
   if (!ageGuard()) return;
+  const age = parseInt(document.getElementById("pfAge").value, 10);
+  const h = parseFloat(document.getElementById("pfHeight").value);
+  const w = parseFloat(document.getElementById("pfWeight").value);
+  if (!age || !h || !w) { toast("Add your age, height and weight first"); return; }
   if (!document.getElementById("pfGoal").value) { toast("Pick a goal to continue"); return; }
   const p = readProfileForm();
   buildBank(); // re-filter meals to the new dislikes
@@ -2105,7 +2122,7 @@ function renderSettings() {
 
   <div class="card"><h2>🗑️ Reset</h2>
     <button type="button" class="btn block" id="resetBtn">Clear all my data on this device</button>
-    <p class="note" style="margin-top:8px">Removes check-ins, weigh-ins and start date from this phone only.</p>
+    <p class="note" style="margin-top:8px">Removes check-ins, weigh-ins, photos, profile and start date from this phone only.</p>
   </div>
 
   ${(() => {
@@ -2180,11 +2197,8 @@ function applyMode() {
   const useHome = LS.get("pt_mode", "gym") === "home";
   const exercises = useHome ? day.homeItems : day.items;
   const checks = LS.get("pt_checks_" + todayKey(), { workout: {}, meals: {}, water: 0 });
-  card.querySelector("ul.checklist").innerHTML = exercises.map((t, i) => {
-    const done = checks.workout[i];
-    return `<li class="${done ? "done" : ""}" data-act="workout" data-i="${i}">
-      <span class="checkbox">${done ? "✓" : ""}</span><span class="item-text">${t}</span></li>`;
-  }).join("");
+  // full row template (log buttons, suggestions, ⓘ guides) — same builder as renderToday
+  card.querySelector("ul.checklist").innerHTML = workoutRowsHtml(day, exercises, checks, pos.dn);
   card.querySelectorAll(".mode-btn").forEach((b) => {
     const on = (b.dataset.mode === "home") === useHome;
     b.classList.toggle("active", on);
@@ -2317,10 +2331,11 @@ function onViewClick(e) {
     repaintKeepScroll(); return;
   }
   if (e.target.id === "resetBtn") {
-    if (confirm("Clear all saved data on this device?")) {
+    if (confirm("Clear all saved data on this device? This includes your photos.")) {
       Object.keys(localStorage).filter(k => k.startsWith("pt_")).forEach(k => localStorage.removeItem(k));
-      repaintKeepScroll();
+      (async () => { for (const p of PHOTOS) await photoDel(p.date); PHOTOS = []; repaintKeepScroll(); })();
     }
+    return;
   }
 }
 
@@ -2541,8 +2556,7 @@ function updateTodayChips() {
   const pill = hero && hero.querySelector(".light-pill");
   if (pill) {
     const total = ex.length + mKeys.length + 8, done = wDone + mDone + Math.min(c.water || 0, 8);
-    const frac = total ? done / total : 0, expected = Math.max(0, Math.min(0.95, (new Date().getHours() - 7) / 15));
-    const light = frac >= expected ? "green" : frac >= expected * 0.6 ? "amber" : "red";
+    const light = trafficLight(total ? done / total : 0);
     hero.classList.remove("light-green", "light-amber", "light-red");
     hero.classList.add("light-" + light);
     pill.textContent = light === "green" ? "🟢 On track" : light === "amber" ? "🟡 Behind" : "🔴 Off pace";
