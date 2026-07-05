@@ -172,6 +172,34 @@ ul.checklist li.form-tip { cursor: default; padding: 10px 12px; margin: 2px 0 6p
 .meas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 .meas-grid .field-label { margin-top: 8px; }
 
+/* XP & levels */
+.xp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.xp-num { font-size: 13px; font-weight: 800; color: var(--accent); white-space: nowrap; }
+
+/* muscle map */
+.mm-row { display: flex; align-items: center; gap: 14px; margin-top: 6px; }
+.muscle-svg { flex: 0 0 172px; width: 172px; height: auto; }
+.muscle-lbl { font-size: 10px; fill: var(--muted); font-weight: 700; letter-spacing: .06em; }
+.mm-legend { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.mm-chip { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.mm-chip i { width: 12px; height: 12px; border-radius: 4px; background: var(--mm); border: 1px solid var(--line); flex: 0 0 12px; }
+
+/* interval coach */
+.iv { margin-top: 14px; padding: 14px; border-radius: 14px; background: rgba(56,189,248,.07);
+  border: 1px solid rgba(56,189,248,.3); }
+.iv-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.iv-title { font-weight: 800; font-size: 14px; }
+.iv-spec { font-size: 12px; color: var(--muted); font-weight: 700; }
+.iv-stage { display: flex; align-items: baseline; gap: 10px; margin-top: 12px; min-height: 34px; }
+.iv-phase { font-size: 19px; font-weight: 800; }
+.iv-phase.work { color: #fb7185; }
+.iv-phase.easy { color: var(--accent-2); }
+.iv-phase.done { color: var(--accent); }
+.iv-time { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; margin-left: auto; }
+.iv-round { font-size: 12px; color: var(--muted); font-weight: 700; }
+.iv-bar { height: 8px; border-radius: 999px; background: var(--bg-card-2); overflow: hidden; margin-top: 8px; }
+.iv-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transition: width .3s linear; }
+
 /* teen (13–17) numbers-free fuel panel */
 .teen-fuel { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.28);
   border-radius: 12px; padding: 12px 14px; margin: 4px 0 2px; }
