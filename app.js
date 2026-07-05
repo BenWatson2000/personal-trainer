@@ -333,6 +333,46 @@ function weeklyMuscleVolume() {
   }
   return m;
 }
+/* ---------- muscle map: a body that glows where you trained this week ---------- */
+function muscleMapCard() {
+  const mv = weeklyMuscleVolume();
+  const vals = Object.values(mv);
+  const max = vals.length ? Math.max(...vals) : 0;
+  if (!max) return `<div class="card"><h2>🫀 Muscle map</h2>
+    <p class="note">Log sets with the 🏋️ button on your exercises and this body lights up where you've trained this week.</p></div>`;
+  const tone = (g) => { const v = mv[g] || 0; return v ? `rgba(52,211,153,${(0.2 + 0.75 * v / max).toFixed(2)})` : "rgba(255,255,255,.07)"; };
+  const idle = "rgba(255,255,255,.07)", line = "#2a2f3a";
+  const groups = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Posterior"];
+  const min = Math.min(...groups.map((g) => mv[g] || 0));
+  const least = groups.filter((g) => (mv[g] || 0) === min);
+  const svg = `<svg class="muscle-svg" viewBox="0 0 220 152" role="img" aria-label="Muscle groups trained this week">
+    <!-- front figure -->
+    <circle cx="55" cy="15" r="9" fill="${idle}" stroke="${line}"/>
+    <ellipse cx="40" cy="31" rx="9" ry="6" fill="${tone("Shoulders")}" stroke="${line}"/>
+    <ellipse cx="70" cy="31" rx="9" ry="6" fill="${tone("Shoulders")}" stroke="${line}"/>
+    <rect x="44" y="28" width="22" height="15" rx="5" fill="${tone("Chest")}" stroke="${line}"/>
+    <rect x="28" y="35" width="8" height="30" rx="4" fill="${tone("Arms")}" stroke="${line}"/>
+    <rect x="74" y="35" width="8" height="30" rx="4" fill="${tone("Arms")}" stroke="${line}"/>
+    <rect x="46" y="45" width="18" height="18" rx="4" fill="${idle}" stroke="${line}"/>
+    <rect x="44" y="66" width="10" height="36" rx="5" fill="${tone("Legs")}" stroke="${line}"/>
+    <rect x="56" y="66" width="10" height="36" rx="5" fill="${tone("Legs")}" stroke="${line}"/>
+    <text x="55" y="122" class="muscle-lbl" text-anchor="middle">front</text>
+    <!-- back figure -->
+    <circle cx="165" cy="15" r="9" fill="${idle}" stroke="${line}"/>
+    <rect x="148" y="26" width="34" height="24" rx="6" fill="${tone("Back")}" stroke="${line}"/>
+    <rect x="138" y="35" width="8" height="30" rx="4" fill="${tone("Arms")}" stroke="${line}"/>
+    <rect x="184" y="35" width="8" height="30" rx="4" fill="${tone("Arms")}" stroke="${line}"/>
+    <rect x="150" y="53" width="30" height="13" rx="5" fill="${tone("Posterior")}" stroke="${line}"/>
+    <rect x="153" y="69" width="10" height="33" rx="5" fill="${tone("Posterior")}" stroke="${line}"/>
+    <rect x="167" y="69" width="10" height="33" rx="5" fill="${tone("Posterior")}" stroke="${line}"/>
+    <text x="165" y="122" class="muscle-lbl" text-anchor="middle">back</text>
+  </svg>`;
+  const legend = groups.map((g) => `<span class="mm-chip" style="--mm:${tone(g)}"><i></i>${g}${mv[g] ? ` ${Math.round(mv[g]).toLocaleString()}kg` : ""}</span>`).join("");
+  return `<div class="card"><h2>🫀 Muscle map <small style="color:var(--muted);font-weight:600">this week</small></h2>
+    <div class="mm-row">${svg}<div class="mm-legend">${legend}</div></div>
+    ${least.length && least.length < groups.length ? `<p class="note" style="margin-top:8px">💡 Least trained: <b>${least.join(", ")}</b> — worth some love next session.</p>` : ""}
+  </div>`;
+}
 function liftLogger(lf, dn) {
   const logged = todayLift(lf.name);
   const sug = suggestLift(lf.name, dn, lf.repLow, lf.repHigh);
@@ -609,6 +649,54 @@ function readinessMeta(score) {
 function trafficLight(frac) {
   const expected = Math.max(0, Math.min(0.9, (new Date().getHours() - 10) / 12));
   return frac >= expected ? "green" : frac >= expected * 0.6 ? "amber" : "red";
+}
+
+/* ---------- XP & levels (derived retroactively from everything already logged) ---------- */
+const XP_RULES = "workout tick 5 · meal 3 · 2 L water day 10 · weigh-in 5 · exercise logged 8 · photo 15 · measurements 10";
+function computeXP() {
+  let xp = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    if (k.indexOf("pt_checks_") === 0) {
+      const c = LS.get(k, {});
+      xp += Object.values(c.workout || {}).filter(Boolean).length * 5;
+      xp += Object.values(c.meals || {}).filter(Boolean).length * 3;
+      if ((c.water || 0) >= 8) xp += 10;
+    } else if (k.indexOf("pt_lift_") === 0) {
+      xp += Object.keys(LS.get(k, {})).length * 8;
+    }
+  }
+  xp += LS.get("pt_weights", []).length * 5;
+  xp += LS.get("pt_meas", []).length * 10;
+  xp += PHOTOS.length * 15;
+  return xp;
+}
+// level n starts at 100·n·(n−1)/2 XP (0, 100, 300, 600, 1000, …)
+const LEVEL_NAMES = ["Rookie", "Starter", "Regular", "Grinder", "Committed", "Athlete", "Machine", "Beast", "Elite", "Legend"];
+function xpLevel(xp) {
+  let lvl = 1;
+  while (100 * lvl * (lvl + 1) / 2 <= xp) lvl++;
+  const base = 100 * (lvl - 1) * lvl / 2, next = 100 * lvl * (lvl + 1) / 2;
+  return { lvl, name: LEVEL_NAMES[Math.min(lvl, LEVEL_NAMES.length) - 1], xp, next,
+    pct: Math.max(0, Math.min(100, Math.round(((xp - base) / (next - base)) * 100))) };
+}
+function xpCard() {
+  const lv = xpLevel(computeXP());
+  const nextName = LEVEL_NAMES[Math.min(lv.lvl + 1, LEVEL_NAMES.length) - 1];
+  return `<div class="card"><div class="xp-head"><h2 style="margin:0">🎖️ Level ${lv.lvl} — ${lv.name}</h2><span class="xp-num">${lv.xp.toLocaleString()} XP</span></div>
+    <div class="progress-track" style="margin:12px 0 6px"><div class="progress-fill" style="width:${lv.pct}%"></div></div>
+    <p class="sub">${(lv.next - lv.xp).toLocaleString()} XP to Level ${lv.lvl + 1} — ${nextName}</p>
+    <p class="note">Everything you log earns XP: ${XP_RULES}.</p></div>`;
+}
+
+/* ---------- HIIT interval coach (parsed straight from the plan text) ---------- */
+function parseInterval(items) {
+  for (const t of items) {
+    const m = /(\d+)\s*x\s*\((\d+)s\s*hard[^/]*\/\s*(\d+)s\s*easy/i.exec(t);
+    if (m) return { rounds: +m[1], work: +m[2], easy: +m[3] };
+  }
+  return null;
 }
 // The ONE builder for today's workout rows (ticks, suggestions, log buttons, ⓘ form
 // guides, inline logger). Used by renderToday AND the surgical Gym/Home swap — keep
@@ -1074,6 +1162,25 @@ function renderToday() {
     </div>`;
   }
 
+  // XP level — retroactive from everything logged; celebrate crossing a threshold
+  const lv = xpLevel(computeXP());
+  const lastLvl = LS.get("pt_lastlvl", null);
+  if (lastLvl == null) LS.set("pt_lastlvl", lv.lvl);
+  else if (lv.lvl > lastLvl) { LS.set("pt_lastlvl", lv.lvl); haptic([80, 40, 80, 40, 160]); toast(`🎖️ Level up! Lv ${lv.lvl} — ${lv.name}`); }
+
+  // guided interval timer on HIIT days (spec parsed straight from the plan text)
+  const iv = day.type === "hiit" ? parseInterval(exercises) : null;
+  const intervalCoach = iv ? `<div class="iv" id="ivBox" data-rounds="${iv.rounds}" data-work="${iv.work}" data-easy="${iv.easy}">
+    <div class="iv-top"><span class="iv-title">⚡ Interval coach</span><span class="iv-spec">${iv.rounds} × ${iv.work}s hard / ${iv.easy}s easy</span></div>
+    <div class="iv-stage"><span class="iv-phase" id="ivPhase">Ready</span><span class="iv-time" id="ivTime">--</span><span class="iv-round" id="ivRound"></span></div>
+    <div class="iv-bar"><div class="iv-fill" id="ivFill"></div></div>
+    <div class="step-quick" style="margin-top:10px">
+      <button type="button" class="btn accent" data-act="ivstart">▶ Start intervals</button>
+      <button type="button" class="btn" data-act="ivstop">✕ Stop</button>
+    </div>
+    <p class="note" style="margin:8px 0 0">Beeps + buzz on every change — hard means hard, easy means easy.</p>
+  </div>` : "";
+
   // workout card — collapsed by default, expandable (stays open if you're mid-log)
   const workoutCard = `<details class="card fold workout-card" data-workout-card data-panel="workout"${OPEN_PANELS.workout || OPEN_LIFT || OPEN_FORM ? " open" : ""}>
     <summary>
@@ -1088,6 +1195,7 @@ function renderToday() {
         <button type="button" class="mode-btn ${useHome ? "active" : ""}" data-mode="home" aria-pressed="${!!useHome}">🏠 Home</button>
       </div>` : ""}
       <ul class="checklist">${workItems}</ul>
+      ${intervalCoach}
       <p class="note" style="margin:10px 0 0">${stepHint}</p>
       ${restTimer}
       ${(day.type === "strength" && allLiftNames().length) ? `<button type="button" class="link-btn" data-act="gotostats" style="margin-top:12px">📊 View your strength stats — PBs, e1RM &amp; volume →</button>` : ""}
@@ -1104,7 +1212,7 @@ function renderToday() {
     </div>
     <p class="greet">${greet}, ${getProfile().name || PLAN.meta.athlete} · ${dateStr}</p>
     <h1>${day.emoji} ${day.name}</h1>
-    <p class="hero-meta">Week ${pos.week}/12 · Day ${pos.dn + 1} · 🏁 ${Math.max(0, rv.daysLeft)} to Reveal Day</p>
+    <p class="hero-meta">Week ${pos.week}/12 · Day ${pos.dn + 1} · 🏁 ${Math.max(0, rv.daysLeft)} to Reveal Day · 🎖️ Lv ${lv.lvl} ${lv.name}</p>
     ${chips}
     ${readyBlock}
     <div class="quote">"${quote}"</div>
@@ -1606,6 +1714,8 @@ function renderProgress() {
     <div class="stat"><div class="big">✨ ${perfectDays}</div><div class="cap">perfect days</div></div>
   </div></div>
 
+  ${xpCard()}
+
   ${consistencyHeatmap(pos)}
 
   ${adCard}
@@ -1629,6 +1739,8 @@ function renderProgress() {
     <summary>🏅 Achievements <span class="swap-tag">${earned}/${A.length}</span></summary>
     <div class="fold-body"><div class="badge-grid">${badges}</div></div>
   </details>
+
+  ${muscleMapCard()}
 
   ${renderStrength()}`;
 }
@@ -2241,6 +2353,8 @@ function onViewClick(e) {
   }
   if (tagged && tagged.dataset.act === "readyedit") { haptic(6); localStorage.removeItem("pt_ready_" + todayKey()); repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "formguide") { haptic(6); const n = decodeURIComponent(tagged.dataset.name); OPEN_FORM = OPEN_FORM === n ? null : n; repaintKeepScroll(); return; }
+  if (tagged && tagged.dataset.act === "ivstart") { startIntervals(); return; }
+  if (tagged && tagged.dataset.act === "ivstop") { haptic(6); stopIntervals(true); return; }
   if (tagged && tagged.dataset.act === "hmcell") { haptic(6); const dn = +tagged.dataset.dn; HM_SEL = HM_SEL === dn ? null : dn; repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "hmopen") {
     haptic(8); const dn = +tagged.dataset.dn;
@@ -2576,6 +2690,51 @@ function isTodayPerfect() {
   return wDone === ex.length && mDone === mKeys.length && c.water >= 8;
 }
 
+/* ---------- interval coach runtime ---------- */
+let IV_INT = null;
+function stopIntervals(reset) {
+  clearInterval(IV_INT); IV_INT = null;
+  if (!reset) return;
+  const P = document.getElementById("ivPhase"), T = document.getElementById("ivTime"),
+    R = document.getElementById("ivRound"), F = document.getElementById("ivFill");
+  if (P) { P.textContent = "Ready"; P.className = "iv-phase"; }
+  if (T) T.textContent = "--"; if (R) R.textContent = ""; if (F) F.style.width = "0%";
+}
+function startIntervals() {
+  const box = document.getElementById("ivBox"); if (!box) return;
+  clearInterval(REST_INT); // one timer at a time
+  stopIntervals(false);
+  const rounds = +box.dataset.rounds, work = +box.dataset.work, easy = +box.dataset.easy;
+  let round = 1, phase = "work", left = work;
+  const P = document.getElementById("ivPhase"), T = document.getElementById("ivTime"),
+    R = document.getElementById("ivRound"), F = document.getElementById("ivFill");
+  const paint = () => {
+    P.textContent = phase === "work" ? "🔥 HARD" : "😮‍💨 EASY";
+    P.className = "iv-phase " + phase;
+    T.textContent = left + "s"; R.textContent = `round ${round}/${rounds}`;
+    F.style.width = Math.round(100 * (1 - left / (phase === "work" ? work : easy))) + "%";
+  };
+  haptic([60, 40, 120]); beep(); paint();
+  IV_INT = setInterval(() => {
+    left--;
+    if (left <= 0) {
+      if (phase === "work") { phase = "easy"; left = easy; beep(); haptic(60); }
+      else {
+        round++;
+        if (round > rounds) {
+          clearInterval(IV_INT); IV_INT = null;
+          P.textContent = "🎉 Done — great session!"; P.className = "iv-phase done";
+          T.textContent = ""; R.textContent = ""; F.style.width = "100%";
+          haptic([120, 60, 120, 60, 240]); beep(); setTimeout(beep, 300);
+          return;
+        }
+        phase = "work"; left = work; beep(); setTimeout(beep, 180); haptic([60, 40, 120]);
+      }
+    }
+    paint();
+  }, 1000);
+}
+
 let REST_INT = null;
 function startRest(sec) {
   const disp = document.getElementById("restDisplay"); if (!disp) return;
@@ -2687,7 +2846,7 @@ function updateDailyBadge(n) {
 /* ---------- shell ---------- */
 // render() repaints the current tab WITHOUT moving the scroll position.
 function render() {
-  clearInterval(REST_INT); clearInterval(TL_INT); // a repaint replaces those elements
+  clearInterval(REST_INT); clearInterval(TL_INT); clearInterval(IV_INT); // a repaint replaces those elements
   const view = document.getElementById("view");
   if (needsOnboarding()) {
     view.innerHTML = renderOnboarding();

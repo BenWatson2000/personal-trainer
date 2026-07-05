@@ -39,9 +39,13 @@ It works offline and remembers everything on your device.
   supplements, tomorrow preview, and **back/forward day navigation** (read-only).
 - **Shop** — a weekly shopping list **auto-built from your meals**, with batch-prep,
   custom items and **carry-over weekly staples**.
-- **Progress** — an **84-day consistency heatmap**, adaptive coach (+ metabolism/
-  TDEE), diet-break scheduler, weekly report card, weight trend, goal + ETA,
+- **Progress** — your **XP level** (everything you log earns XP, Rookie → Legend),
+  an **84-day consistency heatmap** (tap any day for detail), a **muscle map** body
+  that glows where you trained this week, adaptive coach (+ metabolism/TDEE),
+  diet-break scheduler, weekly report card, weight trend, goal + ETA,
   **body measurements with trend sparklines**, achievements and the strength log.
+- **HIIT days** get an **⚡ Interval Coach** — a guided work/easy timer with round
+  counter, beeps and buzz, parsed straight from the day's plan.
 - **Photos** — your own tab: progress photos with weight watermark, before/after
   compare slider and timelapse.
 - **Settings** — **your profile** (stats + goal), start date, **Recipe Library**
