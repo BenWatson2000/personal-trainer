@@ -145,7 +145,8 @@ ul.checklist li.form-tip { cursor: default; padding: 10px 12px; margin: 2px 0 6p
 .form-tip .ft-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
   color: var(--muted); margin: 6px 0 3px; }
 .form-tip .ft-label:first-child { margin-top: 0; }
-.form-tip ul { margin: 0; padding-left: 16px; font-size: 13px; line-height: 1.6; color: var(--text); }
+li.form-tip ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.55; color: var(--text); list-style: disc; }
+ul.checklist li.form-tip ul li { display: list-item; padding: 2px 0; border-bottom: none; cursor: default; }
 .ft-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 
 /* consistency heatmap — sequential single-hue ramp on the dark surface */
@@ -275,6 +276,13 @@ ul.checklist li.form-tip { cursor: default; padding: 10px 12px; margin: 2px 0 6p
   border-radius: 12px; padding: 12px 14px; margin: 4px 0 2px; }
 .teen-fuel p { margin: 0 0 8px; font-size: 14px; line-height: 1.5; }
 .teen-fuel ul { margin: 0; padding-left: 18px; line-height: 1.7; font-size: 13px; color: var(--muted); }
+
+/* dark-theme form controls (selects were rendering white OS chrome) */
+.field { color-scheme: dark; }
+select.field { -webkit-appearance: none; appearance: none; width: 100%;
+  background: var(--bg-card-2) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%239aa3b2' stroke-width='2' fill='none' stroke-linecap='round'/></svg>") no-repeat right 14px center;
+  color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 12px 34px 12px 12px; font-size: 15px; }
+select.field option { background: var(--bg-card-2); color: var(--text); }
 
 /* profile / onboarding form */
 .pf-row { display: flex; gap: 10px; }

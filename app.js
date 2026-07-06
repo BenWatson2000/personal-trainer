@@ -2084,7 +2084,7 @@ function renderPhotos() {
     `<button type="button" class="photo-thumb" data-act="viewphoto" data-date="${p.date}">
       <img src="${p.data}" alt="${p.date}" /></button>`).join("");
 
-  return `<div class="card"><h2>📸 Progress photos</h2>
+  return `<div class="card"><h2>🖼️ Gallery</h2>
     <p class="sub">Stored only on this device · tap a photo to view, share or delete</p>
     ${has ? `<div class="photo-grid" id="photoStage">${thumbs}</div>` : `<p class="note">Add a photo each week to build your transformation — each is stamped with your nearest weight.</p>`}
     ${compare}
@@ -2263,6 +2263,16 @@ function renderLibrary() {
 
 function renderSettings() {
   return `
+  ${(() => {
+    const prof = getProfile();
+    return `<div class="card"><h2>👤 Your profile</h2>
+      <p class="sub">Used to tailor your calorie targets & coaching. Changing your weight or goal updates everything.</p>
+      ${profileFields(prof)}
+      <button type="button" class="btn accent block" id="saveProfileBtn" style="margin-top:12px">Save profile</button>
+      <p class="note" style="margin-top:10px">${prof.name} · ${prof.sex} · ${prof.age}y · ${prof.heightCm}cm · goal <b>${GOALS[prof.goal] || prof.goal}</b> · training <b>${trainingStyle()}</b>${numbersFree() ? " · growing-mode (no calorie targets)" : ` · maintenance ~${currentMaintenance().toLocaleString()} kcal · today's aim ~${dailyAim(position()).toLocaleString()} kcal`}.</p>
+    </div>`;
+  })()}
+
   <div class="card"><h2>⚙️ Settings</h2>
     <label class="field-label">Program start date</label>
     <input class="field" id="startDateInput" type="date" value="${getStartDate()}" />
@@ -2294,25 +2304,15 @@ function renderSettings() {
     </div>
   </div>
 
-  <div class="card"><h2>🗑️ Reset</h2>
-    <button type="button" class="btn block" id="resetBtn">Clear all my data on this device</button>
-    <p class="note" style="margin-top:8px">Removes check-ins, weigh-ins, photos, profile and start date from this phone only.</p>
-  </div>
-
-  ${(() => {
-    const prof = getProfile();
-    return `<div class="card"><h2>👤 Your profile</h2>
-      <p class="sub">Used to tailor your calorie targets & coaching. Changing your weight or goal updates everything.</p>
-      ${profileFields(prof)}
-      <button type="button" class="btn accent block" id="saveProfileBtn" style="margin-top:12px">Save profile</button>
-      <p class="note" style="margin-top:10px">${prof.name} · ${prof.sex} · ${prof.age}y · ${prof.heightCm}cm · goal <b>${GOALS[prof.goal] || prof.goal}</b> · training <b>${trainingStyle()}</b>${numbersFree() ? " · growing-mode (no calorie targets)" : ` · maintenance ~${currentMaintenance().toLocaleString()} kcal · today's aim ~${dailyAim(position()).toLocaleString()} kcal`}.</p>
-    </div>`;
-  })()}
-
   ${renderPlanSection()}
 
   <div class="card"><h2>ℹ️ About</h2>
     <p class="note">Everything is stored on your device — no account, no tracking. Add this page to your home screen for an app-like experience.</p>
+  </div>
+
+  <div class="card"><h2>🗑️ Reset</h2>
+    <button type="button" class="btn block" id="resetBtn">Clear all my data on this device</button>
+    <p class="note" style="margin-top:8px">Removes check-ins, weigh-ins, photos, profile and start date from this phone only.</p>
   </div>`;
 }
 
