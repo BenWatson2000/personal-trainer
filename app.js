@@ -2935,6 +2935,11 @@ function render() {
   else if (CURRENT_TAB === "photos") view.innerHTML = renderPhotosTab();
   else view.innerHTML = renderSettings();
 
+  // the photo lightbox lives at body level — the tablet/desktop column layout would
+  // otherwise trap its position:fixed inside the multicol container
+  const ov = document.getElementById("overlay");
+  if (ov) { ov.innerHTML = ""; const lb = view.querySelector(".lightbox"); if (lb) ov.appendChild(lb); }
+
   // header
   const pos = position();
   document.getElementById("phaseName").textContent =
@@ -2983,6 +2988,8 @@ async function boot() {
   }));
   const view = document.getElementById("view");
   view.addEventListener("click", onViewClick);
+  const ovEl = document.getElementById("overlay");
+  if (ovEl) ovEl.addEventListener("click", onViewClick); // lightbox is delegated here too
   // remember which collapsed Today cards are expanded (toggle doesn't bubble → use capture)
   view.addEventListener("toggle", (e) => {
     if (e.target && e.target.matches && e.target.matches("details[data-panel]")) OPEN_PANELS[e.target.dataset.panel] = e.target.open;
