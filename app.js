@@ -2283,6 +2283,8 @@ function renderSettings() {
     </div>
   </div>
 
+  ${typeof syncCardHtml === "function" ? syncCardHtml() : ""}
+
   <div class="card"><h2>💾 Backup &amp; restore</h2>
     <p class="note">All your data lives on this device. Export a backup file you can keep safe or move to a new phone — includes check-ins, weigh-ins, lift logs, library, photos and settings.</p>
     <div class="step-quick" style="margin-top:8px">
@@ -2513,6 +2515,9 @@ function onViewClick(e) {
   if (e.target.id === "resetBtn") {
     if (confirm("Clear all saved data on this device? This includes your photos.")) {
       Object.keys(localStorage).filter(k => k.startsWith("pt_")).forEach(k => localStorage.removeItem(k));
+      // then reset sync state (drops the queued deletions + signs out) so the wipe is
+      // never mirrored to the cloud — signing back in restores your backup instead
+      if (typeof ptSyncOnReset === "function") ptSyncOnReset();
       (async () => { for (const p of PHOTOS) await photoDel(p.date); PHOTOS = []; repaintKeepScroll(); })();
     }
     return;
