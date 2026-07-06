@@ -1,12 +1,13 @@
 /* Offline cache for the PT app. Bump CACHE to invalidate.
  * Core app shell is network-first so code/style updates land immediately when
  * online, with the cache as an offline fallback. */
-const CACHE = "pt-shred-v58";
+const CACHE = "pt-shred-v59";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=58",
-  "./app.js?v=58",
+  "./styles.css?v=59",
+  "./app.js?v=59",
+  "./sync.js?v=59",
   "./data/plan.json",
   "./manifest.webmanifest",
   "./icons/icon.svg",
@@ -32,7 +33,7 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
   const isCore = e.request.mode === "navigate" ||
-    /\/(index\.html|app\.js|styles\.css|plan\.json|manifest\.webmanifest)$/.test(url.pathname) ||
+    /\/(index\.html|app\.js|sync\.js|styles\.css|plan\.json|manifest\.webmanifest)$/.test(url.pathname) ||
     url.pathname.endsWith("/");
   if (isCore) { e.respondWith(networkFirst(e.request)); return; }
   // icons and everything else: cache-first
