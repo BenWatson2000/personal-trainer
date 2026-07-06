@@ -1013,14 +1013,60 @@ function renderToday() {
   const greet = hr < 12 ? "Good morning" : hr < 18 ? "Good afternoon" : "Good evening";
   const dateStr = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 
-  // today at a glance
+  // today at a glance — activity rings (workout · meals · water) + week ribbon
   const wDone = exercises.filter((_, i) => checks.workout[i]).length;
   const mDone = mealKeys.filter((k, i) => checks.meals[i] || skipped[k]).length;
-  const chips = `<div class="today-chips">
-    <span class="chip ${wDone === exercises.length ? "on" : ""}">${day.type === "rest" ? "😴" : "🏋️"} ${wDone}/${exercises.length}</span>
-    <span class="chip ${mDone === mealKeys.length ? "on" : ""}">🍽️ ${mDone}/${mealKeys.length}</span>
-    <span class="chip ${checks.water >= 8 ? "on" : ""}">💧 ${checks.water}/8</span>
+  const ring = (k, r, color, done, total) => {
+    const C = (2 * Math.PI * r).toFixed(1);
+    const off = (C * (1 - Math.min(1, total ? done / total : 0))).toFixed(1);
+    return `<circle class="ring-bg" cx="50" cy="50" r="${r}"/>
+      <circle id="ring${k}" class="ring" data-r="${r}" cx="50" cy="50" r="${r}" stroke="${color}"
+        stroke-dasharray="${C}" style="stroke-dashoffset:${off}"/>`;
+  };
+  const waterC = Math.min(checks.water, 8);
+  const dayPct = Math.round(100 * (wDone + mDone + waterC) / (exercises.length + mealKeys.length + 8));
+  const weekDots = Array.from({ length: 7 }, (_, i) => {
+    const d = (pos.week - 1) * 7 + i;
+    let cls = "wd-f";
+    if (d <= pos.dn) {
+      const c = LS.get("pt_checks_" + dateKeyForDn(d), null);
+      const wq = c ? Object.values(c.workout || {}).filter(Boolean).length : 0;
+      const mq = c ? Object.values(c.meals || {}).filter(Boolean).length : 0;
+      cls = "wd-" + ((wq >= 1 ? 1 : 0) + (mq >= 3 ? 1 : 0) + ((c && c.water >= 8) ? 1 : 0));
+    }
+    return `<span class="wd ${cls} ${d === pos.dn ? "wd-today" : ""}"></span>`;
+  }).join("");
+  const chips = `<div class="hero-viz">
+    <div class="rings-wrap">
+      <svg class="rings" viewBox="0 0 100 100" aria-label="Day progress rings">
+        ${ring("W", 42, "#f472b6", wDone, exercises.length)}
+        ${ring("M", 32, "#34d399", mDone, mealKeys.length)}
+        ${ring("H", 22, "#38bdf8", waterC, 8)}
+      </svg>
+      <div class="rings-pct"><b id="ringPct">${dayPct}%</b><span>day</span></div>
+    </div>
+    <div class="ring-side">
+      <div class="rl"><i style="background:#f472b6"></i><span id="rlW">${day.type === "rest" ? "😴" : "🏋️"} ${wDone}/${exercises.length}</span></div>
+      <div class="rl"><i style="background:#34d399"></i><span id="rlM">🍽️ ${mDone}/${mealKeys.length}</span></div>
+      <div class="rl"><i style="background:#38bdf8"></i><span id="rlH">💧 ${waterC}/8</span></div>
+      <div class="week-dots">${weekDots}<span class="wd-lbl">wk ${pos.week}</span></div>
+    </div>
   </div>`;
+
+  // "Up next" — the single smartest things to do right now, as tappable pills
+  const nextBits = [];
+  const nextMealIdx = mealKeys.findIndex((k, i) => !checks.meals[i] && !skipped[k]);
+  if (day.type !== "rest" && wDone < exercises.length)
+    nextBits.push(`<button type="button" class="next-pill" data-act="openpanel" data-panel="workout">🏋️ ${wDone ? "Finish" : "Start"} ${day.name} <b>${wDone}/${exercises.length}</b></button>`);
+  if (nextMealIdx >= 0) {
+    const nm = meal.items[mealKeys[nextMealIdx]];
+    nextBits.push(`<button type="button" class="next-pill" data-act="openpanel" data-panel="fuel">🍽️ Next: ${mealKeys[nextMealIdx]}${teen ? "" : ` <b>${Math.round(nm.p * 4 * pf + Math.max(0, nm.kcal - nm.p * 4) * nf)} kcal</b>`}</button>`);
+  }
+  const expWater = Math.max(0, Math.min(8, Math.round((new Date().getHours() - 8) / 12 * 8)));
+  if (waterC < expWater) nextBits.push(`<button type="button" class="next-pill" data-act="openpanel" data-panel="daily">💧 ${expWater - waterC} glass${expWater - waterC > 1 ? "es" : ""} behind pace</button>`);
+  const nextStrip = nextBits.length
+    ? `<div class="next-strip"><span class="next-lbl">UP NEXT</span>${nextBits.slice(0, 3).join("")}</div>`
+    : `<div class="next-strip all-done"><span class="next-lbl">UP NEXT</span><span class="next-pill done-pill">🎉 All done — recover well</span></div>`;
 
   // tomorrow preview — activity + food (respects the current Gym/Home mode)
   const tDate = new Date(); tDate.setDate(tDate.getDate() + 1);
@@ -1205,7 +1251,7 @@ function renderToday() {
   return `
   ${dayNav(pos)}
   ${perfectBanner}
-  <div class="card hero light-${light}">
+  <div class="card hero today-hero light-${light}">
     <div class="hero-top">
       <span class="phase-tag">Phase ${pos.phase.id} · ${pos.phase.name}</span>
       <span class="light-pill">${light === "green" ? "🟢 On track" : light === "amber" ? "🟡 Behind" : "🔴 Off pace"}</span>
@@ -1217,6 +1263,8 @@ function renderToday() {
     ${readyBlock}
     <div class="quote">"${quote}"</div>
   </div>
+
+  ${nextStrip}
 
   <details class="card fold" data-panel="fuel"${OPEN_PANELS.fuel ? " open" : ""}>
     <summary>
@@ -2353,6 +2401,12 @@ function onViewClick(e) {
   }
   if (tagged && tagged.dataset.act === "readyedit") { haptic(6); localStorage.removeItem("pt_ready_" + todayKey()); repaintKeepScroll(); return; }
   if (tagged && tagged.dataset.act === "formguide") { haptic(6); const n = decodeURIComponent(tagged.dataset.name); OPEN_FORM = OPEN_FORM === n ? null : n; repaintKeepScroll(); return; }
+  if (tagged && tagged.dataset.act === "openpanel") {
+    haptic(6); const p = tagged.dataset.panel;
+    OPEN_PANELS[p] = true; repaintKeepScroll();
+    requestAnimationFrame(() => { const el = document.querySelector(`[data-panel="${p}"]`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); });
+    return;
+  }
   if (tagged && tagged.dataset.act === "ivstart") { startIntervals(); return; }
   if (tagged && tagged.dataset.act === "ivstop") { haptic(6); stopIntervals(true); return; }
   if (tagged && tagged.dataset.act === "hmcell") { haptic(6); const dn = +tagged.dataset.dn; HM_SEL = HM_SEL === dn ? null : dn; repaintKeepScroll(); return; }
@@ -2659,12 +2713,19 @@ function updateTodayChips() {
   const mKeys = Object.keys(meal.items);
   const wDone = ex.filter((_, i) => c.workout[i]).length;
   const sk = LS.get("pt_skip_" + key, {}); const mDone = mKeys.filter((k, i) => c.meals[i] || sk[k]).length;
-  const chips = document.querySelectorAll(".today-chips .chip");
-  if (chips.length === 3) {
-    chips[0].classList.toggle("on", wDone === ex.length); chips[0].textContent = `${day.type === "rest" ? "😴" : "🏋️"} ${wDone}/${ex.length}`;
-    chips[1].classList.toggle("on", mDone === mKeys.length); chips[1].textContent = `🍽️ ${mDone}/${mKeys.length}`;
-    chips[2].classList.toggle("on", c.water >= 8); chips[2].textContent = `💧 ${c.water}/8`;
-  }
+  // animate the hero rings + legend (CSS transitions the dash offsets)
+  const setRing = (k, done, total) => {
+    const el = document.getElementById("ring" + k); if (!el) return;
+    const C = 2 * Math.PI * (+el.dataset.r);
+    el.style.strokeDashoffset = (C * (1 - Math.min(1, total ? done / total : 0))).toFixed(1);
+  };
+  const waterC = Math.min(c.water || 0, 8);
+  setRing("W", wDone, ex.length); setRing("M", mDone, mKeys.length); setRing("H", waterC, 8);
+  const pctEl = document.getElementById("ringPct");
+  if (pctEl) pctEl.textContent = Math.round(100 * (wDone + mDone + waterC) / (ex.length + mKeys.length + 8)) + "%";
+  const rlW = document.getElementById("rlW"); if (rlW) rlW.textContent = `${day.type === "rest" ? "😴" : "🏋️"} ${wDone}/${ex.length}`;
+  const rlM = document.getElementById("rlM"); if (rlM) rlM.textContent = `🍽️ ${mDone}/${mKeys.length}`;
+  const rlH = document.getElementById("rlH"); if (rlH) rlH.textContent = `💧 ${waterC}/8`;
   // live-update the hero status (traffic light merged into the hero)
   const hero = document.querySelector(".hero");
   const pill = hero && hero.querySelector(".light-pill");

@@ -172,6 +172,70 @@ ul.checklist li.form-tip { cursor: default; padding: 10px 12px; margin: 2px 0 6p
 .meas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 .meas-grid .field-label { margin-top: 8px; }
 
+/* ===== landing hero: aurora + activity rings + week ribbon + up-next ===== */
+.today-hero { position: relative; overflow: hidden; }
+.today-hero::before { content: ""; position: absolute; inset: -40%; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(38% 30% at 22% 28%, rgba(52,211,153,.22), transparent 70%),
+    radial-gradient(30% 26% at 78% 18%, rgba(56,189,248,.18), transparent 70%),
+    radial-gradient(26% 24% at 60% 80%, rgba(244,114,182,.12), transparent 70%);
+  filter: blur(6px); }
+.today-hero > * { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .today-hero::before { animation: aurora 16s ease-in-out infinite alternate; }
+  @keyframes aurora {
+    0%   { transform: translate(-3%, -2%) rotate(0deg) scale(1); }
+    50%  { transform: translate(3%, 2%) rotate(4deg) scale(1.06); }
+    100% { transform: translate(-2%, 3%) rotate(-3deg) scale(1.02); }
+  }
+}
+
+.hero-viz { display: flex; align-items: center; gap: 18px; margin-top: 14px; }
+.rings-wrap { position: relative; flex: 0 0 108px; width: 108px; height: 108px; }
+.rings { width: 108px; height: 108px; transform: rotate(-90deg); }
+.rings .ring-bg { fill: none; stroke: rgba(255,255,255,.08); stroke-width: 7.5; }
+.rings .ring { fill: none; stroke-width: 7.5; stroke-linecap: round;
+  transition: stroke-dashoffset .7s cubic-bezier(.22,.9,.35,1); }
+.rings-pct { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; line-height: 1; }
+.rings-pct b { font-size: 21px; font-weight: 800; }
+.rings-pct span { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; margin-top: 3px; }
+.ring-side { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.rl { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
+.rl i { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 9px; box-shadow: 0 0 8px currentColor; }
+.week-dots { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+.wd { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.08); }
+.wd-1 { background: rgba(52,211,153,.35); }
+.wd-2 { background: rgba(52,211,153,.65); }
+.wd-3 { background: rgba(52,211,153,.95); }
+.wd-f { background: transparent; border: 1px dashed var(--line); }
+.wd-today { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+.wd-lbl { font-size: 10px; color: var(--muted); font-weight: 800; letter-spacing: .06em; margin-left: 3px; }
+
+.next-strip { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 2px 2px 6px;
+  margin: 0 0 2px; scrollbar-width: none; }
+.next-strip::-webkit-scrollbar { display: none; }
+.next-lbl { font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--muted); flex: 0 0 auto; }
+.next-pill { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px;
+  border-radius: 999px; font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap;
+  background: linear-gradient(135deg, rgba(52,211,153,.16), rgba(56,189,248,.13));
+  border: 1px solid rgba(52,211,153,.35); }
+.next-pill b { color: var(--accent); }
+.next-pill:active { transform: scale(.96); }
+.next-pill.done-pill { background: rgba(52,211,153,.14); border-color: rgba(52,211,153,.4); color: var(--accent); }
+
+/* staggered card entrance on tab switch */
+@media (prefers-reduced-motion: no-preference) {
+  .view-anim > * { animation: cardIn .38s cubic-bezier(.22,.9,.35,1) both; }
+  .view-anim > *:nth-child(2) { animation-delay: .04s; }
+  .view-anim > *:nth-child(3) { animation-delay: .08s; }
+  .view-anim > *:nth-child(4) { animation-delay: .12s; }
+  .view-anim > *:nth-child(5) { animation-delay: .16s; }
+  .view-anim > *:nth-child(6) { animation-delay: .2s; }
+  .view-anim > *:nth-child(n+7) { animation-delay: .24s; }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+}
+
 /* XP & levels */
 .xp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .xp-num { font-size: 13px; font-weight: 800; color: var(--accent); white-space: nowrap; }
