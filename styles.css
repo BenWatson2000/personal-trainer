@@ -127,9 +127,9 @@ main { flex: 1; padding: 16px 16px 96px; }
   background: var(--bg-card-2); border: 1px solid var(--line); color: var(--muted); }
 .ready-btn.on { background: rgba(56,189,248,.18); border-color: rgba(56,189,248,.5); color: var(--accent-2); }
 .ready-btn:active { transform: scale(.95); }
-.ready-done { margin-top: 12px; padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5;
+.ready-done { margin-top: 12px; position: relative; padding: 10px 34px 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5;
   background: rgba(56,189,248,.1); border: 1px solid rgba(56,189,248,.3); color: var(--text); }
-.ready-edit { background: none; border: none; color: var(--muted); font-size: 13px; padding: 2px 6px; margin-left: 4px; }
+.ready-edit { position: absolute; top: 8px; right: 8px; background: none; border: none; color: var(--muted); font-size: 13px; padding: 2px 6px; }
 
 /* warm-up fold inside the workout card */
 .warmup { border: 1px solid rgba(251,191,36,.3); border-radius: 12px; background: rgba(251,191,36,.06); margin-bottom: 12px; }
@@ -149,7 +149,7 @@ ul.checklist li.form-tip { cursor: default; padding: 10px 12px; margin: 2px 0 6p
 .ft-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 
 /* consistency heatmap — sequential single-hue ramp on the dark surface */
-.hm-wrap { overflow-x: auto; padding-bottom: 2px; }
+.hm-wrap { overflow-x: auto; padding: 4px 3px 6px; }
 .hm-grid { display: grid; grid-template-rows: repeat(7, 14px); grid-auto-flow: column; grid-auto-columns: 14px; gap: 3px; }
 .hm-cell { width: 14px; height: 14px; border-radius: 3.5px; background: var(--bg-card-2); }
 .hm-0 { background: var(--bg-card-2); }
@@ -198,8 +198,8 @@ ul.checklist li.form-tip { cursor: default; padding: 10px 12px; margin: 2px 0 6p
   transition: stroke-dashoffset .7s cubic-bezier(.22,.9,.35,1); }
 .rings-pct { position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; line-height: 1; }
-.rings-pct b { font-size: 21px; font-weight: 800; }
-.rings-pct span { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; margin-top: 3px; }
+.rings-pct b { font-size: 15px; font-weight: 800; }
+.rings-pct span { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; margin-top: 3px; }
 .ring-side { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 .rl { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
 .rl i { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 9px; box-shadow: 0 0 8px currentColor; }
@@ -211,6 +211,7 @@ ul.checklist li.form-tip { cursor: default; padding: 10px 12px; margin: 2px 0 6p
 .wd-f { background: transparent; border: 1px dashed var(--line); }
 .wd-today { outline: 2px solid var(--accent-2); outline-offset: 1px; }
 .wd-lbl { font-size: 10px; color: var(--muted); font-weight: 800; letter-spacing: .06em; margin-left: 3px; }
+.wd-flame { font-size: 11px; font-weight: 800; color: #fbbf24; margin-left: 4px; }
 
 .next-strip { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 2px 2px 6px;
   margin: 0 0 2px; scrollbar-width: none; }
@@ -223,6 +224,7 @@ ul.checklist li.form-tip { cursor: default; padding: 10px 12px; margin: 2px 0 6p
 .next-pill b { color: var(--accent); }
 .next-pill:active { transform: scale(.96); }
 .next-pill.done-pill { background: rgba(52,211,153,.14); border-color: rgba(52,211,153,.4); color: var(--accent); }
+.next-pill.pb-pill { background: rgba(251,191,36,.13); border-color: rgba(251,191,36,.4); }
 
 /* staggered card entrance on tab switch */
 @media (prefers-reduced-motion: no-preference) {
@@ -235,6 +237,10 @@ ul.checklist li.form-tip { cursor: default; padding: 10px 12px; margin: 2px 0 6p
   .view-anim > *:nth-child(n+7) { animation-delay: .24s; }
   @keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 }
+
+.hero-pills { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.lv-pill { font-size: 12px; font-weight: 800; padding: 6px 10px; border-radius: 999px; white-space: nowrap;
+  background: rgba(251,191,36,.14); border: 1px solid rgba(251,191,36,.35); color: #fcd34d; }
 
 /* XP & levels */
 .xp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }

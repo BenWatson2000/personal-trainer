@@ -650,6 +650,17 @@ function trafficLight(frac) {
   const expected = Math.max(0, Math.min(0.9, (new Date().getHours() - 10) / 12));
   return frac >= expected ? "green" : frac >= expected * 0.6 ? "amber" : "red";
 }
+// consecutive days (ending today or yesterday) with anything logged
+function currentStreak() {
+  let s = 0;
+  for (let i = 0; i < 200; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const c = LS.get("pt_checks_" + todayKey(d), null);
+    const any = c && (Object.values(c.workout || {}).some(Boolean) || Object.values(c.meals || {}).some(Boolean) || c.water > 0);
+    if (any) s++; else if (i > 0) break;
+  }
+  return s;
+}
 
 /* ---------- XP & levels (derived retroactively from everything already logged) ---------- */
 const XP_RULES = "workout tick 5 · meal 3 · 2 L water day 10 · weigh-in 5 · exercise logged 8 · photo 15 · measurements 10";
@@ -1049,7 +1060,7 @@ function renderToday() {
       <div class="rl"><i style="background:#f472b6"></i><span id="rlW">${day.type === "rest" ? "😴" : "🏋️"} ${wDone}/${exercises.length}</span></div>
       <div class="rl"><i style="background:#34d399"></i><span id="rlM">🍽️ ${mDone}/${mealKeys.length}</span></div>
       <div class="rl"><i style="background:#38bdf8"></i><span id="rlH">💧 ${waterC}/8</span></div>
-      <div class="week-dots">${weekDots}<span class="wd-lbl">wk ${pos.week}</span></div>
+      <div class="week-dots">${weekDots}${currentStreak() >= 2 ? `<span class="wd-flame">🔥 ${currentStreak()}</span>` : `<span class="wd-lbl">wk ${pos.week}</span>`}</div>
     </div>
   </div>`;
 
@@ -1058,6 +1069,15 @@ function renderToday() {
   const nextMealIdx = mealKeys.findIndex((k, i) => !checks.meals[i] && !skipped[k]);
   if (day.type !== "rest" && wDone < exercises.length)
     nextBits.push(`<button type="button" class="next-pill" data-act="openpanel" data-panel="workout">🏋️ ${wDone ? "Finish" : "Start"} ${day.name} <b>${wDone}/${exercises.length}</b></button>`);
+  // PB radar: today's suggested top set would beat your best-ever e1RM
+  if (day.type === "strength") for (const t of exercises) {
+    const lf = parseLift(t); if (!lf.loggable || todayLift(lf.name).length) continue;
+    const sug = suggestLift(lf.name, pos.dn, lf.repLow, lf.repHigh);
+    if (sug && sug.w && e1rm(sug.w, sug.reps) > bestE1rm(lf.name)) {
+      nextBits.push(`<button type="button" class="next-pill pb-pill" data-act="openpanel" data-panel="workout">🏅 PB chance: ${lf.name}</button>`);
+      break;
+    }
+  }
   if (nextMealIdx >= 0) {
     const nm = meal.items[mealKeys[nextMealIdx]];
     nextBits.push(`<button type="button" class="next-pill" data-act="openpanel" data-panel="fuel">🍽️ Next: ${mealKeys[nextMealIdx]}${teen ? "" : ` <b>${Math.round(nm.p * 4 * pf + Math.max(0, nm.kcal - nm.p * 4) * nf)} kcal</b>`}</button>`);
@@ -1254,11 +1274,11 @@ function renderToday() {
   <div class="card hero today-hero light-${light}">
     <div class="hero-top">
       <span class="phase-tag">Phase ${pos.phase.id} · ${pos.phase.name}</span>
-      <span class="light-pill">${light === "green" ? "🟢 On track" : light === "amber" ? "🟡 Behind" : "🔴 Off pace"}</span>
+      <span class="hero-pills"><span class="lv-pill">🎖️ Lv ${lv.lvl}</span><span class="light-pill">${light === "green" ? "🟢 On track" : light === "amber" ? "🟡 Behind" : "🔴 Off pace"}</span></span>
     </div>
     <p class="greet">${greet}, ${getProfile().name || PLAN.meta.athlete} · ${dateStr}</p>
     <h1>${day.emoji} ${day.name}</h1>
-    <p class="hero-meta">Week ${pos.week}/12 · Day ${pos.dn + 1} · 🏁 ${Math.max(0, rv.daysLeft)} to Reveal Day · 🎖️ Lv ${lv.lvl} ${lv.name}</p>
+    <p class="hero-meta">Week ${pos.week}/12 · Day ${pos.dn + 1} · 🏁 ${Math.max(0, rv.daysLeft)} to Reveal Day</p>
     ${chips}
     ${readyBlock}
     <div class="quote">"${quote}"</div>
@@ -1570,14 +1590,7 @@ function renderProgress() {
   const moved = +(gainMode ? delta : -delta).toFixed(1);  // progress toward goal (+ = good)
   const lost = moved;                                     // (kept name; = progress in goal direction)
 
-  // current streak: count back consecutive days with any completion
-  let streak = 0;
-  for (let i = 0; i < 200; i++) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const c = LS.get("pt_checks_" + todayKey(d), null);
-    const any = c && (Object.values(c.workout || {}).some(Boolean) || Object.values(c.meals || {}).some(Boolean) || c.water > 0);
-    if (any) streak++; else if (i > 0) break;
-  }
+  const streak = currentStreak();
 
   // single pass over elapsed days: workouts, perfect days, best streak, hydration
   let workoutsDone = 0, perfectDays = 0, anyWater8 = false; const active = [];
@@ -1932,8 +1945,7 @@ function weeklyReport() {
     const bestPt = series.find((p) => p.e === best);
     if (bestPt && effDnForDate(bestPt.date) >= start && effDnForDate(bestPt.date) <= start + 6) pbNames.push(n);
   }
-  let streak = 0;
-  for (let i = 0; i < 200; i++) { const dd = new Date(); dd.setDate(dd.getDate() - i); const c = LS.get("pt_checks_" + todayKey(dd), null); const any = c && (Object.values(c.workout || {}).some(Boolean) || Object.values(c.meals || {}).some(Boolean) || c.water > 0); if (any) streak++; else if (i > 0) break; }
+  const streak = currentStreak();
   const prof = getProfile();
   return { week: wk, range: fmt(d0) + "–" + fmt(d6), phase: phase.name, weightStr, weightDelta, workouts, perfect, adherence, water8, volume: wv.vol, sets: wv.sets, pbs: pbNames.length, pbNames, streak,
     overall: +(latestWeight() - prof.weightKg).toFixed(1), name: prof.name || PLAN.meta.athlete, goal: prof.goal, day: Math.max(0, pos.dn + 1) };
