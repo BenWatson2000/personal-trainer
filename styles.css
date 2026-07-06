@@ -645,3 +645,51 @@ a { color: var(--accent-2); }
 
 .celebrate { text-align: center; padding: 30px 10px; }
 .celebrate .big { font-size: 40px; }
+
+/* ===================================================================
+   Responsive: tablet dashboard (2-col masonry, keeps tab bar) and
+   desktop (fixed left sidebar nav + wide module grid)
+   =================================================================== */
+@media (min-width: 720px) {
+  #app { max-width: 1010px; }
+  .topbar { padding-left: 24px; padding-right: 24px; }
+  main { padding-left: 24px; padding-right: 24px; }
+  /* masonry module layout; headline rows span both columns */
+  main#view { columns: 2; column-gap: 16px; }
+  #view > * { break-inside: avoid; }
+  #view > .day-nav, #view > .next-strip, #view > .hero, #view > .perfect,
+  #view > p.note { column-span: all; }
+  .tabbar { max-width: 1010px; }
+  .hero h1 { font-size: 26px; }
+  .rings-wrap, .rings { width: 124px; height: 124px; flex-basis: 124px; }
+}
+
+@media (min-width: 1100px) {
+  #app { max-width: 1380px; }
+  .topbar, main { margin-left: 254px; }
+  main { padding-bottom: 40px; padding-right: 28px; }
+  /* the phone tab bar becomes a desktop sidebar */
+  .tabbar { top: 0; bottom: auto; left: max(0px, calc(50vw - 690px)); transform: none;
+    width: 236px; height: 100vh; max-width: none; flex-direction: column;
+    justify-content: flex-start; gap: 6px; padding: 20px 14px;
+    border-top: none; border-right: 1px solid var(--line); }
+  .tabbar::before { content: "🏋️ My PT"; display: block; font-size: 20px; font-weight: 800;
+    color: var(--text); padding: 8px 12px 24px; }
+  .tab { flex: 0 0 auto; flex-direction: row; justify-content: flex-start; gap: 12px;
+    width: 100%; padding: 13px 14px; border-radius: 12px; font-size: 20px; }
+  .tab span { font-size: 14.5px; font-weight: 700; }
+  .tab.active { background: rgba(52,211,153,.13); }
+  .tab.active::after { display: none; }
+  .hero h1 { font-size: 28px; }
+}
+
+/* pointer polish — hover states only where a mouse exists */
+@media (hover: hover) and (pointer: fine) {
+  .card { transition: border-color .18s ease; }
+  .card:hover { border-color: #3a4250; }
+  .tab:hover { color: var(--text); background: rgba(255,255,255,.05); }
+  .btn:hover, .next-pill:hover, .water-step:hover { border-color: rgba(52,211,153,.55); }
+  details.fold > summary:hover .wo-sum-name, details.fold > summary:hover { color: var(--accent); }
+  .photo-thumb:hover img { opacity: .85; }
+  .hm-cell[data-act]:hover { outline: 1px solid var(--accent-2); }
+}
