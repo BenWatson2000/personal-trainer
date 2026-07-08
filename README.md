@@ -87,7 +87,9 @@ By default everything lives only on your device. Flip on cloud sync to get a
 1. Create a free project at [supabase.com](https://supabase.com).
 2. In the project's **SQL Editor**, paste and run **`supabase/schema.sql`** from
    this repo (creates one row-level-secured table).
-3. In **Authentication → Providers**, make sure **Email** is enabled (magic links).
+3. In **Authentication → Providers**, make sure **Email** is enabled. For 6-digit code
+   sign-in, edit the **Confirm signup** and **Magic Link** email templates to include
+   `{{ .Token }}` (the code) — see "Cloud sync setup" below.
 4. In **Settings → API**, copy the **Project URL** and **publishable key** into the
    `SYNC_CONFIG` block at the top of **`sync.js`**, commit, and deploy.
    (The publishable key is safe to publish — row-level security means users can only
