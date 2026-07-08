@@ -58,20 +58,26 @@ async function initSync() {
 
 /* first session on this account → seed the cloud with everything local;
    otherwise pull whatever other devices have written since our last pull */
+function queueAllLocal() {
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.indexOf("pt_") === 0) DIRTY.add(k);
+  }
+  saveDirty();
+}
 async function firstSyncOrPull() {
   try {
     const { count, error } = await sb.from("user_state").select("key", { count: "exact", head: true });
     if (error) throw error;
-    if (count === 0) {
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.indexOf("pt_") === 0) DIRTY.add(k);
-      }
-      saveDirty(); await flush();
+    if (!count) {                       // empty cloud (0 or null) → seed it with everything local
+      queueAllLocal(); await flush();
     } else {
       await pull(); await flush();
     }
-  } catch (e) { SYNC.status = "error"; SYNC.err = e.message; refreshSyncCard(); }
+  } catch (e) {
+    console.error("[sync] first sync failed:", e.message || e);
+    SYNC.status = "error"; SYNC.err = e.message || String(e); refreshSyncCard();
+  }
 }
 
 function jsonSafe(raw) { try { return JSON.parse(raw); } catch { return raw; } }
@@ -85,8 +91,11 @@ async function flush() {
     return { user_id: sbSession.user.id, key: k, value: raw == null ? null : jsonSafe(raw) };
   });
   const { error } = await sb.from("user_state").upsert(rows, { onConflict: "user_id,key" });
-  if (error) { SYNC.status = "error"; SYNC.err = error.message; }
-  else {
+  if (error) {
+    console.error("[sync] upload failed:", error.message || error, "— is supabase/schema.sql applied?");
+    SYNC.status = "error"; SYNC.err = error.message;
+  } else {
+    console.info("[sync] uploaded " + keys.length + " item(s)");
     keys.forEach((k) => DIRTY.delete(k)); saveDirty();
     SYNC.status = "ok"; SYNC.err = null;
     SYNC.last = new Date().toISOString(); RAW.set("ptsync_lastok", SYNC.last);
@@ -100,7 +109,7 @@ async function pull() {
   const { data, error } = await sb.from("user_state")
     .select("key,value,updated_at").gt("updated_at", since)
     .order("updated_at", { ascending: true }).limit(1000);
-  if (error) { SYNC.status = "error"; SYNC.err = error.message; refreshSyncCard(); return; }
+  if (error) { console.error("[sync] pull failed:", error.message || error); SYNC.status = "error"; SYNC.err = error.message; refreshSyncCard(); return; }
   let maxT = since, applied = 0;
   for (const r of data) {
     if (r.updated_at > maxT) maxT = r.updated_at;
@@ -190,7 +199,7 @@ document.addEventListener("click", async (e) => {
     const { error } = await sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.href.split("#")[0] } });
     if (typeof toast === "function") toast(error ? "⚠️ " + error.message : "📩 Check your email for the sign-in link");
   }
-  if (e.target.id === "syncNow") { await pull(); await flush(); if (typeof toast === "function" && SYNC.status === "ok") toast("☁️ Synced"); }
+  if (e.target.id === "syncNow") { await pull(); queueAllLocal(); await flush(); if (typeof toast === "function") toast(SYNC.status === "ok" ? "☁️ Synced" : "⚠️ " + (SYNC.err || "sync error")); }
   if (e.target.id === "syncOut") { sb.auth.signOut(); if (typeof toast === "function") toast("Signed out — data stays on this device"); }
 });
 window.addEventListener("online", () => { flush(); pull(); });
