@@ -22,6 +22,7 @@ const SYNC = {
   last: localStorage.getItem("ptsync_lastok") || null,
 };
 let sb = null, sbSession = null, flushTimer = null;
+let OTP_EMAIL = null; // set once a code has been emailed → the sign-in UI switches to the code step
 
 /* ---- storage interception: every pt_* write anywhere in the app lands in the
    dirty-queue. RAW.* bypasses the queue (used when applying remote state). ---- */
@@ -141,11 +142,7 @@ function syncCardInner() {
   if (SYNC.status === "starting") return `<p class="note">Starting sync…</p>`;
   if (SYNC.status === "signedout") return `
     <p class="sub">Sign in to back up your data and sync across devices. Everything keeps working offline.</p>
-    <div class="tracker-row">
-      <input class="field" id="syncEmail" type="email" inputmode="email" placeholder="you@email.com" />
-      <button type="button" class="btn accent" id="syncSend">Send link</button>
-    </div>
-    <p class="note" style="margin-top:8px">We email you a magic sign-in link — no password. Your data is only ever visible to you.</p>`;
+    ${signinFormHtml()}`;
   const state = SYNC.status === "syncing" ? "⏳ syncing…"
     : SYNC.status === "error" ? `⚠️ ${SYNC.err || "sync error"}`
     : `✅ synced${SYNC.last ? " · " + syncTimeStr() : ""}${DIRTY.size ? ` · ${DIRTY.size} pending` : ""}`;
@@ -160,6 +157,25 @@ function syncCardInner() {
 }
 function syncCardHtml() {
   return `<div class="card" id="syncCard"><h2>☁️ Cloud sync</h2><div id="syncBody">${syncCardInner()}</div></div>`;
+}
+// Shared two-step sign-in form (email → 6-digit code). Used by the auth gate, the
+// onboarding sign-in card and the Settings cloud card, so all three behave identically.
+function signinFormHtml() {
+  if (OTP_EMAIL) {
+    return `<div class="tracker-row">
+        <input class="field" id="syncCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" />
+        <button type="button" class="btn accent" id="syncVerify">Verify</button>
+      </div>
+      ${SYNC.status === "error" ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err || "that code didn't work — check it or send a new one"}</p>` : ""}
+      <p class="note" style="margin-top:8px">Enter the 6-digit code we emailed to <b>${OTP_EMAIL}</b>.
+        <button type="button" class="btn" id="syncChangeEmail" style="min-height:auto;padding:4px 9px;margin-left:4px">Use a different email</button></p>`;
+  }
+  return `<div class="tracker-row">
+      <input class="field" id="syncEmail" type="email" inputmode="email" placeholder="you@email.com" />
+      <button type="button" class="btn accent" id="syncSend">Send code</button>
+    </div>
+    ${SYNC.status === "error" ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err || "sync error"}</p>` : ""}
+    <p class="note" style="margin-top:8px">We email you a 6-digit sign-in code — no password. New here? The same code creates your account.</p>`;
 }
 // require-account gate: true only when accounts are enforced AND this device has never signed in.
 // A device that has signed in once keeps working offline (session persists / the flag stays set).
@@ -179,13 +195,9 @@ function authGateHtml() {
     <p>Your plan, workouts and progress live in your private account and follow you across every device. One tap, no password.</p></div>
   <div class="card">
     <h2>☁️ Sign in or create your account</h2>
-    <div class="tracker-row">
-      <input class="field" id="syncEmail" type="email" inputmode="email" placeholder="you@email.com" />
-      <button type="button" class="btn accent" id="syncSend">Send link</button>
-    </div>
-    ${SYNC.status === "error" ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err || "sync error"}</p>` : ""}
+    ${signinFormHtml()}
     ${offline ? `<p class="note" style="color:var(--warn)">You're offline — you need a connection to sign in the first time.</p>` : ""}
-    <p class="note" style="margin-top:8px">We email you a one-tap sign-in link. New here? The same link creates your account and confirms your email — no password to remember. After you've signed in once on a device it keeps working offline.</p>
+    <p class="note" style="margin-top:8px">After you've signed in once on a device it keeps working offline.</p>
   </div>`;
 }
 // Sign-in entry point for the onboarding/welcome screen (app.js renderOnboarding):
@@ -197,12 +209,7 @@ function onboardSyncHtml() {
   if (SYNC.status === "ok" || SYNC.status === "syncing") {
     inner = `<p class="note">✅ Signed in${SYNC.email ? " as <b>" + SYNC.email + "</b>" : ""}. Any data from your other devices appears automatically — otherwise just set up below.</p>`;
   } else {
-    inner = `<div class="tracker-row">
-        <input class="field" id="syncEmail" type="email" inputmode="email" placeholder="you@email.com" />
-        <button type="button" class="btn accent" id="syncSend">Send sign-in link</button>
-      </div>
-      ${SYNC.status === "error" ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err || "sync error"}</p>` : ""}
-      <p class="note" style="margin-top:8px">One tap, no password — clicking the emailed link brings your profile, workouts and history to this device.</p>`;
+    inner = signinFormHtml();
   }
   return `<div class="card" id="onboardSync"><h2>☁️ Already use My PT?</h2>
     <p class="sub">Sign in to bring your data to this device — or set up fresh below.</p>${inner}</div>`;
@@ -221,16 +228,40 @@ function ptSyncOnReset() {
 }
 
 /* ---- wiring ---- */
+async function sendCode() {
+  const el = document.getElementById("syncEmail"); if (!el) return;
+  const em = (el.value || "").trim();
+  if (!em || em.indexOf("@") < 1) { if (typeof toast === "function") toast("Enter your email address"); return; }
+  if (!sb) { if (typeof toast === "function") toast("Sync is still starting — try again in a moment"); return; }
+  const { error } = await sb.auth.signInWithOtp({ email: em, options: { shouldCreateUser: true } });
+  if (error) { SYNC.err = error.message; refreshSyncCard(); if (typeof render === "function") render(); if (typeof toast === "function") toast("⚠️ " + error.message); return; }
+  OTP_EMAIL = em; SYNC.err = null;
+  refreshSyncCard(); if (typeof render === "function") render();   // switch the UI to the code step
+  if (typeof toast === "function") toast("📩 Code sent — check your email");
+}
+async function verifyCode() {
+  const el = document.getElementById("syncCode"); if (!el) return;
+  const code = (el.value || "").trim();
+  if (!/^\d{4,8}$/.test(code)) { if (typeof toast === "function") toast("Enter the code from your email"); return; }
+  if (!sb || !OTP_EMAIL) { if (typeof toast === "function") toast("Request a code first"); return; }
+  // 'email' verifies a returning-user code; new signups need 'signup' — try both.
+  let { error } = await sb.auth.verifyOtp({ email: OTP_EMAIL, token: code, type: "email" });
+  if (error) { const r = await sb.auth.verifyOtp({ email: OTP_EMAIL, token: code, type: "signup" }); error = r.error; }
+  if (error) { SYNC.err = error.message; refreshSyncCard(); if (typeof render === "function") render(); if (typeof toast === "function") toast("⚠️ " + error.message); return; }
+  OTP_EMAIL = null; SYNC.err = null;   // success → onAuthStateChange fires SIGNED_IN → renders the app
+}
 document.addEventListener("click", async (e) => {
-  if (e.target.id === "syncSend") {
-    const em = (document.getElementById("syncEmail").value || "").trim();
-    if (!em || em.indexOf("@") < 1) { if (typeof toast === "function") toast("Enter your email address"); return; }
-    if (!sb) { if (typeof toast === "function") toast("Sync is still starting — try again in a moment"); return; }
-    const { error } = await sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.href.split("#")[0] } });
-    if (typeof toast === "function") toast(error ? "⚠️ " + error.message : "📩 Check your email for the sign-in link");
-  }
+  if (e.target.id === "syncSend") return sendCode();
+  if (e.target.id === "syncVerify") return verifyCode();
+  if (e.target.id === "syncChangeEmail") { OTP_EMAIL = null; SYNC.err = null; refreshSyncCard(); if (typeof render === "function") render(); return; }
   if (e.target.id === "syncNow") { await pull(); queueAllLocal(); await flush(); if (typeof toast === "function") toast(SYNC.status === "ok" ? "☁️ Synced" : "⚠️ " + (SYNC.err || "sync error")); }
   if (e.target.id === "syncOut") { RAW.rm("ptsync_account"); sb.auth.signOut(); if (typeof toast === "function") toast("Signed out"); } // onAuthStateChange re-renders → sign-in gate
+});
+// Enter submits whichever sign-in step is showing
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  if (e.target.id === "syncEmail") { e.preventDefault(); sendCode(); }
+  else if (e.target.id === "syncCode") { e.preventDefault(); verifyCode(); }
 });
 window.addEventListener("online", () => { flush(); pull(); });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pull(); });
