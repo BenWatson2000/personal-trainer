@@ -1,6 +1,6 @@
 # TEST.md — vigorous UI audit of every feature
 
-> **Last run:** 2026-07-07 21:17 UTC · in-app clock frozen to **Mon 2026-07-06 18:00** (Day 15, Wk 3) · seeded by importing `tests/mock-data.json` through the app's own Restore flow · every check executed at **📱 phone 390px · 📟 tablet 834px · 🖥️ desktop 1440px**.
+> **Last run:** 2026-07-08 07:14 UTC · in-app clock frozen to **Mon 2026-07-06 18:00** (Day 15, Wk 3) · seeded by importing `tests/mock-data.json` through the app's own Restore flow · every check executed at **📱 phone 390px · 📟 tablet 834px · 🖥️ desktop 1440px**.
 
 ## How this file works (instructions to future agents)
 
@@ -51,10 +51,10 @@
 
 - [x] **D01** Summary badge shows meals X/Y · kcal; macros grid matches budget total — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **D02** Treat payback from yesterday shows as balancing note + lower aim — 📱 ✅ · 📟 ✅ · 🖥️ ✅
-- [x] **D03** Ticking a meal drops the live budget by exactly that row's kcal — 📱 ❌ · 📟 ❌ · 🖥️ ❌
+- [x] **D03** Ticking a meal drops the live budget by exactly that row's kcal — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **D04** Skip ⊘ redistributes: other rows scale up, note explains, restore ↺ works — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **D05** Per-meal swap 🔀: picker lists pool, pick changes row, default restores — 📱 ✅ · 📟 ✅ · 🖥️ ✅
-- [x] **D09** Swap picker highlights the meal you're currently on — 📱 ❌ · 📟 ❌ · 🖥️ ❌
+- [x] **D09** Swap picker highlights the meal you're currently on — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **D06** Extras: imported Latte listed; add via Enter; delete restores budget — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **D07** Blowing the budget flips it amber with an 'over by' note — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **D08** Recipe fold: tonight’s dinner with scaled ingredient quantities — 📱 ✅ · 📟 ✅ · 🖥️ ✅
@@ -63,7 +63,7 @@
 ### E · Workout card, set logging & rest timer
 
 - [x] **E01** Workout card: corner badge 1/5, warm-up fold, rest timer, Gym/Home toggle — 📱 ✅ · 📟 ✅ · 🖥️ ✅
-- [x] **E02** Ticking an exercise marks the row AND bumps the corner badge (regression) — 📱 ❌ · 📟 ❌ · 🖥️ ❌
+- [x] **E02** Ticking an exercise marks the row AND bumps the corner badge (regression) — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **E03** ⓘ form guide toggles cues + avoid lists; second tap closes — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **E04** Gym↔Home swap keeps the 🏋️ log buttons alive (mid-workout glitch regression) — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **E05** Set logging: open, fill 3×22.5kg×10, save → PB toast, ✓ summary, rest auto-starts — 📱 ✅ · 📟 ✅ · 🖥️ ✅
@@ -75,7 +75,7 @@
 
 - [x] **F01** Water: badge 💧3/8; ＋ bumps count/dots/hero legend; − restores — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **F02** Supplement chips: 3 from mock; tapping toggles ✓ and persists — 📱 ✅ · 📟 ✅ · 🖥️ ✅
-- [x] **F03** Weigh-in from Today: logs today's kg with a Saved ✓ tip, no scroll jump — 📱 ❌ · 📟 ❌ · 🖥️ ❌
+- [x] **F03** Weigh-in from Today: logs today's kg with a Saved ✓ tip, no scroll jump — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **F99** Zero console/page errors while exercising this area — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 
 ### G · Day navigation: read-only past days
@@ -95,7 +95,7 @@
 - [x] **H06** Week report: 6 tiles (weight/workouts/volume/perfect/streak/PBs) + share button — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **H07** Goal card: suggested-goal one-tap sets it; Change clears back — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **H08** Weight trend: raw + smoothed lines with legend; weigh-in logs from here too — 📱 ✅ · 📟 ✅ · 🖥️ ✅
-- [x] **H09** Measurements: mock trends with sparklines; save new waist; delete an entry — 📱 ❌ · 📟 ❌ · 🖥️ ❌
+- [x] **H09** Measurements: mock trends with sparklines; save new waist; delete an entry — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **H10** Achievements: earned counter and full badge grid render — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **H11** Muscle map: CTA when week has no sets; glows + kg legend once sets exist — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **H12** Strength log: imported Goblet squat with best e1RM + BW multiple — 📱 ✅ · 📟 ✅ · 🖥️ ✅
@@ -155,35 +155,4 @@
 
 ## Findings for the fixing agent
 
-15 failing check–viewport combinations. Grouped by check:
-
-### D03 — Ticking a meal drops the live budget by exactly that row's kcal
-*Area:* D · Today's Fuel (meals, budget, extras, swaps)
-- **📱 phone:** `FAIL — corner badge didn’t live-update (updateFuelBadge grabs the Up-Next pill, not the card)`
-- **📟 tablet:** `FAIL — corner badge didn’t live-update (updateFuelBadge grabs the Up-Next pill, not the card)`
-- **🖥️ desktop:** `FAIL — corner badge didn’t live-update (updateFuelBadge grabs the Up-Next pill, not the card)`
-
-### D09 — Swap picker highlights the meal you're currently on
-*Area:* D · Today's Fuel (meals, budget, extras, swaps)
-- **📱 phone:** `FAIL — no .cur highlight — default plan meals have no id, so curId never matches and the picker gives no anchor for what you're swapping away from`
-- **📟 tablet:** `FAIL — no .cur highlight — default plan meals have no id, so curId never matches and the picker gives no anchor for what you're swapping away from`
-- **🖥️ desktop:** `FAIL — no .cur highlight — default plan meals have no id, so curId never matches and the picker gives no anchor for what you're swapping away from`
-
-### E02 — Ticking an exercise marks the row AND bumps the corner badge (regression)
-*Area:* E · Workout card, set logging & rest timer
-- **📱 phone:** `FAIL — corner badge didn’t live-update (updateWorkoutBadge grabs the Up-Next pill, not the card)`
-- **📟 tablet:** `FAIL — corner badge didn’t live-update (updateWorkoutBadge grabs the Up-Next pill, not the card)`
-- **🖥️ desktop:** `FAIL — corner badge didn’t live-update (updateWorkoutBadge grabs the Up-Next pill, not the card)`
-
-### F03 — Weigh-in from Today: logs today's kg with a Saved ✓ tip, no scroll jump
-*Area:* F · Daily log: water, supplements, weigh-in
-- **📱 phone:** `FAIL — the Saved ✓ tip never shows — logWeight() repaints immediately after flashSaved(), wiping the tip before the user can see it`
-- **📟 tablet:** `FAIL — the Saved ✓ tip never shows — logWeight() repaints immediately after flashSaved(), wiping the tip before the user can see it`
-- **🖥️ desktop:** `FAIL — the Saved ✓ tip never shows — logWeight() repaints immediately after flashSaved(), wiping the tip before the user can see it`
-
-### H09 — Measurements: mock trends with sparklines; save new waist; delete an entry
-*Area:* H · Progress: stats, XP, heatmap, coach, report, goal, body data
-- **📱 phone:** `FAIL — saving collapses the Measurements fold — the repaint drops <details> open state, hiding the entry you just saved`
-- **📟 tablet:** `FAIL — saving collapses the Measurements fold — the repaint drops <details> open state, hiding the entry you just saved`
-- **🖥️ desktop:** `FAIL — saving collapses the Measurements fold — the repaint drops <details> open state, hiding the entry you just saved`
-
+No findings — every check passed on phone, tablet and desktop. 🎉

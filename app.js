@@ -970,10 +970,14 @@ function renderToday() {
     if (SWAP_SLOT === k && BANK) {
       const sk = slotKeyOf[k];
       const pool = libNow ? libNow[sk].map(id => BANK[sk].byId[id]).filter(Boolean) : BANK[sk].list;
+      // default plan meals carry no id — fall back to the dish name so the
+      // picker always shows which meal you're currently on
       const curId = m.id;
+      const curName = (m.text || "").split(" — ")[0].trim();
+      const isCur = (o) => o.id === curId || (curId == null && o.text.split(" — ")[0].trim() === curName);
       row += `<li class="swap-inline"><div class="swap-list">
         <button type="button" class="swap-opt reset" data-act="pickmeal" data-slot="${encodeURIComponent(k)}" data-id="__default">↩︎ Back to default</button>
-        ${pool.map(o => `<button type="button" class="swap-opt ${o.id === curId ? "cur" : ""}" data-act="pickmeal" data-slot="${encodeURIComponent(k)}" data-id="${o.id}">
+        ${pool.map(o => `<button type="button" class="swap-opt ${isCur(o) ? "cur" : ""}" data-act="pickmeal" data-slot="${encodeURIComponent(k)}" data-id="${o.id}">
           <span>${o.text.split(" — ")[0]}</span><span class="swap-kcal">${o.kcal} kcal · ${o.p}g P</span></button>`).join("")}
       </div></li>`;
     }
@@ -2327,8 +2331,10 @@ function logWeight() {
   if (existing >= 0) weights[existing].kg = kg; else weights.push({ date: key, kg });
   LS.set("pt_weights", weights);
   haptic(8); el.blur();
-  flashSaved(el);
   repaintKeepScroll();   // refresh stats/chart without snapping to top
+  // flash on the freshly-rendered input — flashing before the repaint wipes the tip instantly
+  const fresh = document.getElementById("quickWeight");
+  if (fresh) flashSaved(fresh);
 }
 
 function haptic(ms) { if (navigator.vibrate) { try { navigator.vibrate(ms); } catch {} } }
@@ -2353,10 +2359,20 @@ function libToggle(slot, id) {
   repaintKeepScroll();
 }
 
-// Repaint the current tab but keep the scroll exactly where it was (no jump).
+// Repaint the current tab but keep the scroll exactly where it was (no jump),
+// and keep every <details> fold that was open open — innerHTML replacement would
+// otherwise collapse them (e.g. saving a measurement used to hide the entry list).
+function foldId(d) {
+  // stable identity across repaints: counts in summaries change ("2 logged" → "3 logged")
+  const sum = d.querySelector("summary");
+  return d.dataset.panel || (sum ? sum.textContent.replace(/[0-9]/g, "").trim() : "");
+}
 function repaintKeepScroll() {
   const y = window.scrollY || window.pageYOffset || 0;
+  const view = document.getElementById("view");
+  const open = view ? [...view.querySelectorAll("details[open]")].map(foldId) : [];
   render();
+  if (view && open.length) view.querySelectorAll("details").forEach((d) => { if (open.includes(foldId(d))) d.open = true; });
   window.scrollTo(0, y);
   requestAnimationFrame(() => window.scrollTo(0, y));
 }
@@ -2418,7 +2434,7 @@ function onViewClick(e) {
   if (tagged && tagged.dataset.act === "openpanel") {
     haptic(6); const p = tagged.dataset.panel;
     OPEN_PANELS[p] = true; repaintKeepScroll();
-    requestAnimationFrame(() => { const el = document.querySelector(`[data-panel="${p}"]`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); });
+    requestAnimationFrame(() => { const el = document.querySelector(`details[data-panel="${p}"]`); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); });
     return;
   }
   if (tagged && tagged.dataset.act === "ivstart") { startIntervals(); return; }
@@ -2899,15 +2915,16 @@ function updateWater(n) {
   updateDailyBadge(n);
 }
 // refresh the collapsed-card summary counters after a surgical tick
+// (details[…] matters: the Up-Next pills carry the same data-panel attribute)
 function updateWorkoutBadge() {
-  const card = document.querySelector('#view [data-panel="workout"]'); if (!card) return;
+  const card = document.querySelector('#view details[data-panel="workout"]'); if (!card) return;
   const b = card.querySelector(".wo-sum-prog"); if (!b || b.textContent.indexOf("😴") >= 0) return;
   const rows = card.querySelectorAll('li[data-act="workout"]'), total = rows.length;
   let done = 0; rows.forEach((li) => { if (li.classList.contains("done")) done++; });
   b.textContent = `${done}/${total}`; b.classList.toggle("on", total > 0 && done >= total);
 }
 function updateFuelBadge() {
-  const card = document.querySelector('#view [data-panel="fuel"]'); if (!card) return;
+  const card = document.querySelector('#view details[data-panel="fuel"]'); if (!card) return;
   const b = card.querySelector(".wo-sum-prog"); if (!b) return;
   const rows = card.querySelectorAll('li[data-act="meals"]'), total = rows.length;
   let done = 0; rows.forEach((li) => { if (li.classList.contains("done") || li.classList.contains("skipped-meal")) done++; });
@@ -2916,7 +2933,7 @@ function updateFuelBadge() {
   b.classList.toggle("on", total > 0 && done >= total);
 }
 function updateDailyBadge(n) {
-  const card = document.querySelector('#view [data-panel="daily"]'); if (!card) return;
+  const card = document.querySelector('#view details[data-panel="daily"]'); if (!card) return;
   const b = card.querySelector(".wo-sum-prog"); if (!b) return;
   b.textContent = `💧 ${n}/8`; b.classList.toggle("on", n >= 8);
 }
