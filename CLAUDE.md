@@ -26,7 +26,8 @@ The audit is deterministic: it freezes the in-page clock to **Mon 2026-07-06 18:
 
 1. Any change to `app.js` / `styles.css` / `sync.js` / `index.html` needs a **cache bump**: increment every `?v=N` in `index.html` and `sw.js`, plus the `CACHE = "pt-shred-vN"` name in `sw.js` (all must match, one `sed 's/v=60/v=61/g'` usually covers it). Without the bump, installed PWAs keep serving the old files.
 2. Run the full audit; it must be 288/288 with an empty Findings section in TEST.md.
-3. PR → squash-merge to `main` → verify the "pages build and deployment" workflow run is `success` (this is the deploy; there is no other pipeline).
+3. Opening a PR into `main` triggers the **UI audit** workflow (`.github/workflows/audit.yml`) — it installs Chromium, runs the full audit at `AUDIT_TIMEOUT=8000`, and fails the check on any finding (the audit exits non-zero; `resolveChrome()` finds the browser in CI). TEST.md is uploaded as the run artifact. Wait for that check to be green.
+4. Squash-merge to `main` → verify the "pages build and deployment" workflow run is `success` (this is the deploy; there is no other pipeline).
 
 ## Architecture
 

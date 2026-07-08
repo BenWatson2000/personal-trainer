@@ -16,7 +16,16 @@ const http = require("http");
 
 const ROOT = path.join(__dirname, "..");
 const MOCK = path.join(__dirname, "mock-data.json");
-const CHROME = process.env.CHROME || "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+// Resolve a Chromium binary that works everywhere: explicit $CHROME wins, then the
+// sandbox's pinned build, otherwise let Playwright point at whatever it installed (CI).
+function resolveChrome() {
+  if (process.env.CHROME) return process.env.CHROME;
+  const pinned = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+  if (fs.existsSync(pinned)) return pinned;
+  try { return chromium.executablePath(); } catch { return pinned; }
+}
+const CHROME = resolveChrome();
+const TIMEOUT = +process.env.AUDIT_TIMEOUT || 3500; // CI machines are slower — bump via env there
 const PORT = 8125;
 const VPS = { phone: { width: 390, height: 844 }, tablet: { width: 834, height: 1112 }, desktop: { width: 1440, height: 900 } };
 const NOW = "2026-07-06T18:00:00";      // Mon · Day 15 · Wk 3 · strength
@@ -55,7 +64,7 @@ async function freshPage(browser, vpKey, dateStr) {
     if (navigator.serviceWorker) navigator.serviceWorker.register = () => Promise.resolve(); // keep audits SW-free
   }, dateStr || NOW);
   const page = await ctx.newPage();
-  page.setDefaultTimeout(3500);
+  page.setDefaultTimeout(TIMEOUT);
   page._consoleErrs = [];
   page.on("pageerror", (e) => page._consoleErrs.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error") page._consoleErrs.push("console: " + m.text().slice(0, 120)); });
@@ -688,6 +697,7 @@ const GROUPS = [
   const flat = ORDER.flatMap((id) => Object.values(RES[id].vp));
   const bad = flat.filter((s) => s !== "OK").length;
   console.log(`\n${ORDER.length} checks × 3 viewports — ${flat.length - bad} passed, ${bad} findings → TEST.md`);
+  process.exitCode = bad ? 1 : 0; // non-zero so CI fails the run when there are findings
 })();
 
 /* ---------------- TEST.md GENERATOR ---------------- */

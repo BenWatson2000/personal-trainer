@@ -1,0 +1,45 @@
+name: UI audit
+
+# Release gate: every PR into main must pass the full UI audit
+# (96 checks × phone/tablet/desktop) before it can be merged.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# a newer push to the same PR cancels the in-flight run
+concurrency:
+  group: audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run UI audit (regenerates TEST.md, exits non-zero on findings)
+        env:
+          AUDIT_TIMEOUT: 8000   # CI runners are slower than the dev sandbox
+        run: |
+          node tests/gen-mock.cjs
+          node tests/ui-audit.cjs
+
+      - name: Upload TEST.md
+        if: always()   # publish the ledger even when the audit fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: TEST.md
+          path: TEST.md
