@@ -280,7 +280,9 @@ const GROUPS = [
   await p.locator('.extras-list [data-act="delextra"]').last().click(); await sleep(300);
   A(+(await txt(p, '#remainRow .rv[data-m="kcal"]')) === before + 90, "delete didn’t restore budget"); }],
 ["D07", "Blowing the budget flips it amber with an 'over by' note", async (p) => {
-  await p.locator("details.swap summary").filter({ hasText: "extra food" }).click().catch(() => {});
+  if (!(await p.locator("#extraName").isVisible().catch(() => false)))
+    await p.locator("details.swap summary").filter({ hasText: "extra food" }).click();
+  await sleep(200);
   await p.fill("#extraName", "Blowout"); await p.fill("#extraKcal", "4000"); await p.click("#addExtraBtn"); await sleep(350);
   A(await p.locator("#remainRow.over").count() === 1, "no over state");
   A(/over/i.test(await txt(p, 'details[data-panel="fuel"] #remainRow, details[data-panel="fuel"]')), "no over note");
