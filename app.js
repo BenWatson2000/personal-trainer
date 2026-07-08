@@ -2232,7 +2232,8 @@ function renderOnboarding() {
   return `
   <div class="card hero"><span class="phase-tag">Welcome</span>
     <h1>Let's set up your plan</h1>
-    <p>Everything stays on your device — no account, no sign-up. Tell me about you and your goal and I'll tailor your calorie targets, meals and coaching.</p></div>
+    <p>Everything works on your device — no account required. Tell me about you and your goal and I'll tailor your calorie targets, meals and coaching.</p></div>
+  ${typeof onboardSyncHtml === "function" ? onboardSyncHtml() : ""}
   <div class="card">
     <h2>👤 About you</h2>
     ${profileFields(blankProfile())}

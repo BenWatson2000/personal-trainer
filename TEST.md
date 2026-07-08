@@ -1,6 +1,6 @@
 # TEST.md — vigorous UI audit of every feature
 
-> **Last run:** 2026-07-08 12:33 UTC · in-app clock frozen to **Mon 2026-07-06 18:00** (Day 15, Wk 3) · seeded by importing `tests/mock-data.json` through the app's own Restore flow · every check executed at **📱 phone 390px · 📟 tablet 834px · 🖥️ desktop 1440px**.
+> **Last run:** 2026-07-08 13:20 UTC · in-app clock frozen to **Mon 2026-07-06 18:00** (Day 15, Wk 3) · seeded by importing `tests/mock-data.json` through the app's own Restore flow · every check executed at **📱 phone 390px · 📟 tablet 834px · 🖥️ desktop 1440px**.
 
 ## How this file works (instructions to future agents)
 
@@ -19,6 +19,7 @@
 - [x] **A03** Under-13 is refused with guidance — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **A04** Teen picking 'cut' is coerced to maintain (toast) — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **A05** Restore-from-backup on onboarding imports mock & lands on Today — 📱 ✅ · 📟 ✅ · 🖥️ ✅
+- [x] **A06** Onboarding hides the cloud sign-in card when sync is offline/unconfigured — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 - [x] **A99** Zero console/page errors while exercising this area — 📱 ✅ · 📟 ✅ · 🖥️ ✅
 
 ### B · Shell, navigation & layout
