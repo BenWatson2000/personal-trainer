@@ -149,9 +149,30 @@ function syncCardInner() {
 function syncCardHtml() {
   return `<div class="card" id="syncCard"><h2>☁️ Cloud sync</h2><div id="syncBody">${syncCardInner()}</div></div>`;
 }
+// Sign-in entry point for the onboarding/welcome screen (app.js renderOnboarding):
+// a returning user on a new device signs in here and their cloud data pulls down.
+// Returns "" when cloud sync isn't configured — so the offline audit shows nothing.
+function onboardSyncHtml() {
+  if (SYNC.status === "unconfigured") return "";
+  let inner;
+  if (SYNC.status === "ok" || SYNC.status === "syncing") {
+    inner = `<p class="note">✅ Signed in${SYNC.email ? " as <b>" + SYNC.email + "</b>" : ""}. Any data from your other devices appears automatically — otherwise just set up below.</p>`;
+  } else {
+    inner = `<div class="tracker-row">
+        <input class="field" id="syncEmail" type="email" inputmode="email" placeholder="you@email.com" />
+        <button type="button" class="btn accent" id="syncSend">Send sign-in link</button>
+      </div>
+      ${SYNC.status === "error" ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err || "sync error"}</p>` : ""}
+      <p class="note" style="margin-top:8px">One tap, no password — clicking the emailed link brings your profile, workouts and history to this device.</p>`;
+  }
+  return `<div class="card" id="onboardSync"><h2>☁️ Already use My PT?</h2>
+    <p class="sub">Sign in to bring your data to this device — or set up fresh below.</p>${inner}</div>`;
+}
 function refreshSyncCard() {
   const el = document.getElementById("syncBody");
   if (el) el.innerHTML = syncCardInner();
+  const ob = document.getElementById("onboardSync"); // keep the onboarding sign-in card live too
+  if (ob) { const html = onboardSyncHtml(); if (html) ob.outerHTML = html; else ob.remove(); }
 }
 // app.js calls this from the "Clear all my data" flow: cloud session + cursors go too
 function ptSyncOnReset() {
@@ -165,6 +186,7 @@ document.addEventListener("click", async (e) => {
   if (e.target.id === "syncSend") {
     const em = (document.getElementById("syncEmail").value || "").trim();
     if (!em || em.indexOf("@") < 1) { if (typeof toast === "function") toast("Enter your email address"); return; }
+    if (!sb) { if (typeof toast === "function") toast("Sync is still starting — try again in a moment"); return; }
     const { error } = await sb.auth.signInWithOtp({ email: em, options: { emailRedirectTo: location.href.split("#")[0] } });
     if (typeof toast === "function") toast(error ? "⚠️ " + error.message : "📩 Check your email for the sign-in link");
   }

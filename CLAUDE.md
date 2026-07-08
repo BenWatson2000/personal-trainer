@@ -51,6 +51,7 @@ The audit is deterministic: it freezes the in-page clock to **Mon 2026-07-06 18:
 - Toasts linger ~1.7 s. Tests must clear old toasts before triggering the one they want to read (`doToast()` helper in the audit).
 - `#importFile` and `#photoUpload` are `display:none` inputs behind styled labels — Playwright must wait with `state: "attached"`, not the default visible.
 - `#quickWeight` / `#logWeightBtn` ids appear in both the Today daily-log card and the Progress weight card. Only one exists per rendered tab, but don't add a third.
+- `#syncEmail` / `#syncSend` (the magic-link sign-in) appear in both the onboarding sign-in card (`onboardSyncHtml()` in sync.js) and the Settings cloud-sync card — but onboarding and Settings are mutually exclusive screens (`needsOnboarding()` gates them), so only one instance is ever live. The shared `onViewClick`-independent document handler in sync.js drives both.
 - Feedback rendered before a repaint dies with it — flash tips / open folds *after* `repaintKeepScroll()`, or rely on its fold-state preservation.
 - Multi-column card layout (tablet ≥720px, `columns:2`) traps `position:fixed` — full-viewport overlays (photo lightbox) must be moved to the body-level `#overlay` div, which `render()` does automatically for `.lightbox`.
 

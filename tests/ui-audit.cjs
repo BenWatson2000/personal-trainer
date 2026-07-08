@@ -138,6 +138,11 @@ const GROUPS = [
   await p.waitForSelector(".today-hero", { timeout: 6000 });
   A((await txt(p, ".greet")).includes("Ben"), "greet lacks imported name");
   A((await txt(p, "#dayPill")).includes("Day 15"), "day pill wrong: " + await txt(p, "#dayPill")); }],
+["A06", "Onboarding hides the cloud sign-in card when sync is offline/unconfigured", async (p) => {
+  await p.evaluate(() => { Object.keys(localStorage).forEach((k) => localStorage.removeItem(k)); location.reload(); });
+  await p.waitForSelector("#pfName");
+  A(await p.locator("#onboardSync").count() === 0, "cloud sign-in card leaked into offline onboarding");
+  A(await p.locator("#importFile").count() === 1, "restore-from-backup option missing"); }],
 ]},
 
 { mode: "import", area: "B · Shell, navigation & layout", items: [
