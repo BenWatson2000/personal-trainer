@@ -52,3 +52,7 @@ The audit is deterministic: it freezes the in-page clock to **Mon 2026-07-06 18:
 - `#quickWeight` / `#logWeightBtn` ids appear in both the Today daily-log card and the Progress weight card. Only one exists per rendered tab, but don't add a third.
 - Feedback rendered before a repaint dies with it — flash tips / open folds *after* `repaintKeepScroll()`, or rely on its fold-state preservation.
 - Multi-column card layout (tablet ≥720px, `columns:2`) traps `position:fixed` — full-viewport overlays (photo lightbox) must be moved to the body-level `#overlay` div, which `render()` does automatically for `.lightbox`.
+
+## Maintaining this file
+
+Keep this document alive. When a session establishes a **durable rule** — a convention, a constraint, a gotcha discovered by hitting a bug — add it here in the same PR rather than leaving it as one-off chat guidance; that's the difference between advice that survives and advice that's lost when the session ends. Put new rules in the section they belong to (a shipping step under *Shipping a change*, a trap under *Gotchas*, etc.). Prune anything that's gone stale — a gotcha that no longer applies is worse than none, because it's trusted. This file is docs-only: editing it needs no cache bump.
