@@ -2944,6 +2944,15 @@ function updateDailyBadge(n) {
 function render() {
   clearInterval(REST_INT); clearInterval(TL_INT); clearInterval(IV_INT); // a repaint replaces those elements
   const view = document.getElementById("view");
+  // require-account mode: no session yet (and never signed in on this device) → sign-in wall
+  if (typeof ptSyncRequiresAuth === "function" && ptSyncRequiresAuth()) {
+    view.innerHTML = authGateHtml();
+    const pn = document.getElementById("phaseName"); if (pn) pn.textContent = "My PT";
+    const dp = document.getElementById("dayPill"); if (dp) dp.textContent = "Sign in";
+    const op = document.getElementById("overallProgress"); if (op) op.style.width = "0%";
+    enhanceA11y();
+    return;
+  }
   if (needsOnboarding()) {
     view.innerHTML = renderOnboarding();
     const pn = document.getElementById("phaseName"); if (pn) pn.textContent = "Welcome";

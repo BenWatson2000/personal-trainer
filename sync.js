@@ -13,6 +13,7 @@
 const SYNC_CONFIG = {
   url: "https://osbxbvnupeshqgfzvxtd.supabase.co",       // project root (no /rest/v1)
   key: "sb_publishable_K3OMbJUDlzDEc5KJ8erHKA_qDItNXI_", // Settings → API → publishable key (safe to publish)
+  requireAccount: true,  // gate the whole app behind sign-in (first use needs a connection; offline after)
 };
 
 const SYNC = {
@@ -50,7 +51,9 @@ async function initSync() {
       sbSession = session;
       SYNC.email = session ? session.user.email : null;
       SYNC.status = session ? "ok" : "signedout";
+      if (session) RAW.set("ptsync_account", session.user.email); // remember: this device has an account
       refreshSyncCard();
+      if (typeof render === "function") render();                 // enter/leave the sign-in gate
       if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) firstSyncOrPull();
     });
   } catch (e) { SYNC.status = "error"; SYNC.err = "Couldn't load sync library (offline?)"; refreshSyncCard(); }
@@ -158,6 +161,33 @@ function syncCardInner() {
 function syncCardHtml() {
   return `<div class="card" id="syncCard"><h2>☁️ Cloud sync</h2><div id="syncBody">${syncCardInner()}</div></div>`;
 }
+// require-account gate: true only when accounts are enforced AND this device has never signed in.
+// A device that has signed in once keeps working offline (session persists / the flag stays set).
+function ptSyncRequiresAuth() {
+  if (SYNC.status === "unconfigured") return false;         // offline audit / no backend configured
+  if (!SYNC_CONFIG.requireAccount) return false;
+  if (sbSession) return false;
+  if (localStorage.getItem("ptsync_account")) return false; // already has an account on this device
+  return true;
+}
+// The sign-in wall (app.js renders this from render() when ptSyncRequiresAuth() is true).
+function authGateHtml() {
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+  return `
+  <div class="card hero"><span class="phase-tag">My PT</span>
+    <h1>Sign in to get started</h1>
+    <p>Your plan, workouts and progress live in your private account and follow you across every device. One tap, no password.</p></div>
+  <div class="card">
+    <h2>☁️ Sign in or create your account</h2>
+    <div class="tracker-row">
+      <input class="field" id="syncEmail" type="email" inputmode="email" placeholder="you@email.com" />
+      <button type="button" class="btn accent" id="syncSend">Send link</button>
+    </div>
+    ${SYNC.status === "error" ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err || "sync error"}</p>` : ""}
+    ${offline ? `<p class="note" style="color:var(--warn)">You're offline — you need a connection to sign in the first time.</p>` : ""}
+    <p class="note" style="margin-top:8px">We email you a one-tap sign-in link. New here? The same link creates your account and confirms your email — no password to remember. After you've signed in once on a device it keeps working offline.</p>
+  </div>`;
+}
 // Sign-in entry point for the onboarding/welcome screen (app.js renderOnboarding):
 // a returning user on a new device signs in here and their cloud data pulls down.
 // Returns "" when cloud sync isn't configured — so the offline audit shows nothing.
@@ -186,7 +216,7 @@ function refreshSyncCard() {
 // app.js calls this from the "Clear all my data" flow: cloud session + cursors go too
 function ptSyncOnReset() {
   DIRTY.clear(); saveDirty();
-  RAW.rm("ptsync_last"); RAW.rm("ptsync_lastok"); SYNC.last = null;
+  RAW.rm("ptsync_last"); RAW.rm("ptsync_lastok"); RAW.rm("ptsync_account"); SYNC.last = null;
   if (sb) sb.auth.signOut();
 }
 
@@ -200,7 +230,7 @@ document.addEventListener("click", async (e) => {
     if (typeof toast === "function") toast(error ? "⚠️ " + error.message : "📩 Check your email for the sign-in link");
   }
   if (e.target.id === "syncNow") { await pull(); queueAllLocal(); await flush(); if (typeof toast === "function") toast(SYNC.status === "ok" ? "☁️ Synced" : "⚠️ " + (SYNC.err || "sync error")); }
-  if (e.target.id === "syncOut") { sb.auth.signOut(); if (typeof toast === "function") toast("Signed out — data stays on this device"); }
+  if (e.target.id === "syncOut") { RAW.rm("ptsync_account"); sb.auth.signOut(); if (typeof toast === "function") toast("Signed out"); } // onAuthStateChange re-renders → sign-in gate
 });
 window.addEventListener("online", () => { flush(); pull(); });
 document.addEventListener("visibilitychange", () => { if (!document.hidden) pull(); });
