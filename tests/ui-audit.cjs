@@ -62,6 +62,7 @@ async function freshPage(browser, vpKey, dateStr) {
     // eslint-disable-next-line no-global-assign
     Date = class extends Real { constructor(...a) { a.length ? super(...a) : super(now); } static now() { return new Real(now).getTime(); } };
     if (navigator.serviceWorker) navigator.serviceWorker.register = () => Promise.resolve(); // keep audits SW-free
+    window.__PT_NO_CLOUD = true; // keep cloud sync dormant so the audit stays offline & deterministic
   }, dateStr || NOW);
   const page = await ctx.newPage();
   page.setDefaultTimeout(TIMEOUT);

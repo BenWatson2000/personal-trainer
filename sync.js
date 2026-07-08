@@ -6,17 +6,17 @@
  * lost phone and follows you across devices.
  *
  * SETUP (one time, free): create a Supabase project, run supabase/schema.sql in its
- * SQL editor, then paste the project's URL + anon public key below. The anon key is
- * safe to publish — row-level security means users can only ever read their own rows.
- * Leave these blank and the app remains 100% on-device.
+ * SQL editor, then paste the project's URL + publishable key below. The publishable
+ * key is safe to publish — row-level security means users can only ever read their
+ * own rows. Leave these blank and the app remains 100% on-device.
  */
 const SYNC_CONFIG = {
-  url: "",      // e.g. "https://abcdefgh.supabase.co"
-  anonKey: "",  // Settings → API → anon public
+  url: "https://osbxbvnupeshqgfzvxtd.supabase.co",       // project root (no /rest/v1)
+  key: "sb_publishable_K3OMbJUDlzDEc5KJ8erHKA_qDItNXI_", // Settings → API → publishable key (safe to publish)
 };
 
 const SYNC = {
-  status: (SYNC_CONFIG.url && SYNC_CONFIG.anonKey) ? "starting" : "unconfigured",
+  status: (SYNC_CONFIG.url && SYNC_CONFIG.key) ? "starting" : "unconfigured",
   email: null, err: null,
   last: localStorage.getItem("ptsync_lastok") || null,
 };
@@ -40,10 +40,12 @@ function markDirty(k) {
 
 /* ---- boot ---- */
 async function initSync() {
+  // The UI audit runs fully offline & deterministic — never reach for the network there.
+  if (typeof window !== "undefined" && window.__PT_NO_CLOUD) { SYNC.status = "unconfigured"; return; }
   if (SYNC.status === "unconfigured") return;
   try {
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    sb = createClient(SYNC_CONFIG.url, SYNC_CONFIG.anonKey);
+    sb = createClient(SYNC_CONFIG.url, SYNC_CONFIG.key);
     sb.auth.onAuthStateChange((event, session) => {
       sbSession = session;
       SYNC.email = session ? session.user.email : null;
@@ -123,7 +125,7 @@ function syncCardInner() {
   if (SYNC.status === "unconfigured") return `
     <p class="note">Optional & free. Your data currently lives only on this device — cloud sync backs it up
     and follows you across devices. To enable it: create a free Supabase project, run
-    <b>supabase/schema.sql</b>, and paste the project URL + anon key into <b>sync.js</b> (see README).</p>`;
+    <b>supabase/schema.sql</b>, and paste the project URL + publishable key into <b>sync.js</b> (see README).</p>`;
   if (SYNC.status === "starting") return `<p class="note">Starting sync…</p>`;
   if (SYNC.status === "signedout") return `
     <p class="sub">Sign in to back up your data and sync across devices. Everything keeps working offline.</p>

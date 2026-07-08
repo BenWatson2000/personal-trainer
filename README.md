@@ -88,10 +88,10 @@ By default everything lives only on your device. Flip on cloud sync to get a
 2. In the project's **SQL Editor**, paste and run **`supabase/schema.sql`** from
    this repo (creates one row-level-secured table).
 3. In **Authentication → Providers**, make sure **Email** is enabled (magic links).
-4. In **Settings → API**, copy the **Project URL** and **anon public key** into the
+4. In **Settings → API**, copy the **Project URL** and **publishable key** into the
    `SYNC_CONFIG` block at the top of **`sync.js`**, commit, and deploy.
-   (The anon key is safe to publish — row-level security means users can only
-   ever see their own rows.)
+   (The publishable key is safe to publish — row-level security means users can only
+   ever see their own rows. Never put the **secret** key in client code.)
 5. Open the app → **Settings → ☁️ Cloud sync** → enter your email → click the
    magic link. Your existing data uploads on first sign-in.
 
