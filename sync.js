@@ -163,11 +163,11 @@ function syncCardHtml() {
 function signinFormHtml() {
   if (OTP_EMAIL) {
     return `<div class="tracker-row">
-        <input class="field" id="syncCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" />
+        <input class="field" id="syncCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="sign-in code" />
         <button type="button" class="btn accent" id="syncVerify">Verify</button>
       </div>
       ${SYNC.status === "error" ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err || "that code didn't work — check it or send a new one"}</p>` : ""}
-      <p class="note" style="margin-top:8px">Enter the 6-digit code we emailed to <b>${OTP_EMAIL}</b>.
+      <p class="note" style="margin-top:8px">Enter the code we emailed to <b>${OTP_EMAIL}</b>.
         <button type="button" class="btn" id="syncChangeEmail" style="min-height:auto;padding:4px 9px;margin-left:4px">Use a different email</button></p>`;
   }
   return `<div class="tracker-row">
@@ -175,7 +175,7 @@ function signinFormHtml() {
       <button type="button" class="btn accent" id="syncSend">Send code</button>
     </div>
     ${SYNC.status === "error" ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err || "sync error"}</p>` : ""}
-    <p class="note" style="margin-top:8px">We email you a 6-digit sign-in code — no password. New here? The same code creates your account.</p>`;
+    <p class="note" style="margin-top:8px">We email you a sign-in code — no password. New here? The same code creates your account.</p>`;
 }
 // require-account gate: true only when accounts are enforced AND this device has never signed in.
 // A device that has signed in once keeps working offline (session persists / the flag stays set).
@@ -242,7 +242,7 @@ async function sendCode() {
 async function verifyCode() {
   const el = document.getElementById("syncCode"); if (!el) return;
   const code = (el.value || "").trim();
-  if (!/^\d{4,8}$/.test(code)) { if (typeof toast === "function") toast("Enter the code from your email"); return; }
+  if (!/^\d{4,10}$/.test(code)) { if (typeof toast === "function") toast("Enter the code from your email"); return; }
   if (!sb || !OTP_EMAIL) { if (typeof toast === "function") toast("Request a code first"); return; }
   // 'email' verifies a returning-user code; new signups need 'signup' — try both.
   let { error } = await sb.auth.verifyOtp({ email: OTP_EMAIL, token: code, type: "email" });
