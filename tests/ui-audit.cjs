@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* ============================================================================
-   My PT — VIGOROUS UI AUDIT (testing agent; observes, never fixes)
+   Exervo — VIGOROUS UI AUDIT (testing agent; observes, never fixes)
    Runs every feature check below at phone(390) / tablet(834) / desktop(1440),
    seeding each session by IMPORTING tests/mock-data.json through the app's own
    Restore flow, with the in-page clock frozen to Mon 2026-07-06 18:00 (Day 15,
@@ -83,7 +83,10 @@ async function boot(browser, vpKey, mode) {
   const page = await freshPage(browser, vpKey, mode === "sat" ? SAT : NOW);
   if (mode === "fresh") {
     await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: "domcontentloaded" });
-    await sleep(300); return page;
+    // wait for onboarding to actually render — the vendored supabase-js parses before
+    // app.js, so a blind sleep is too tight on a cold start
+    await page.waitForSelector("#completeOnboard", { timeout: 8000 });
+    await sleep(150); return page;
   }
   await importMock(page);
   if (mode === "teen" || mode === "gain" || mode === "older") {

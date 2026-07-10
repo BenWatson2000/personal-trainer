@@ -2,7 +2,7 @@
   "name": "personal-trainer",
   "version": "1.0.0",
   "private": true,
-  "description": "My PT — offline-first PWA personal trainer. No build step; this manifest exists only for the UI-audit test harness.",
+  "description": "Exervo — offline-first PWA personal trainer. No build step; this manifest exists only for the UI-audit test harness.",
   "scripts": {
     "test": "node tests/gen-mock.cjs && node tests/ui-audit.cjs"
   },

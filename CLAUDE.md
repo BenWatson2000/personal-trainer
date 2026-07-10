@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-"My PT" — a vanilla-JS PWA personal trainer (12-week programme, meals, lifting log, progress tracking) hosted on GitHub Pages. **No frameworks, no build step, no bundler** — `index.html` + `app.js` + `styles.css` deploy exactly as committed. All user data lives on-device: localStorage (`pt_*` keys) is the source of truth, photos in IndexedDB (`pt-photos`). `sync.js` is an optional Supabase mirror that stays dormant until `SYNC_CONFIG` at its top is filled in.
+"Exervo" (formerly "My PT") — a vanilla-JS PWA personal trainer (12-week programme, meals, lifting log, progress tracking) hosted on GitHub Pages. **No frameworks, no build step, no bundler** — `index.html` + `app.js` + `styles.css` deploy exactly as committed. All user data lives on-device: localStorage (`pt_*` keys) is the source of truth, photos in IndexedDB (`pt-photos`). `sync.js` is an optional Supabase mirror that stays dormant until `SYNC_CONFIG` at its top is filled in.
 
 ## Commands
 

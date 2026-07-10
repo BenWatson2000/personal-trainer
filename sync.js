@@ -212,7 +212,7 @@ function ptSyncRequiresAuth() {
 function authGateHtml() {
   const offline = typeof navigator !== "undefined" && navigator.onLine === false;
   return `
-  <div class="card hero"><span class="phase-tag">My PT</span>
+  <div class="card hero"><span class="phase-tag">Exervo</span>
     <h1>Sign in to get started</h1>
     <p>Your plan, workouts and progress live in your private account and follow you across every device. One tap, no password.</p></div>
   <div class="card">
@@ -233,7 +233,7 @@ function onboardSyncHtml() {
   } else {
     inner = signinFormHtml();
   }
-  return `<div class="card" id="onboardSync"><h2>☁️ Already use My PT?</h2>
+  return `<div class="card" id="onboardSync"><h2>☁️ Already use Exervo?</h2>
     <p class="sub">Sign in to bring your data to this device — or set up fresh below.</p>${inner}</div>`;
 }
 function refreshSyncCard() {

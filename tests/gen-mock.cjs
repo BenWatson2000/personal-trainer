@@ -1,4 +1,4 @@
-// Generates tests/mock-data.json — a My PT backup file (Settings → Restore format)
+// Generates tests/mock-data.json — an Exervo backup file (Settings → Restore format)
 // with 15 days of realistic history. The UI audit freezes the in-page clock to
 // 2026-07-06T18:00 (Mon, Day 15, Wk 3, strength day) so this data is deterministic.
 const fs = require("fs");

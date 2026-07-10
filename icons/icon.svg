@@ -6,14 +6,10 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="#0f1116"/>
+  <!-- Exervo "E": three rep bars, the middle one pulling back — set, rest, go again -->
   <g fill="url(#g)">
-    <!-- dumbbell -->
-    <rect x="176" y="236" width="160" height="40" rx="14"/>
-    <rect x="120" y="196" width="44" height="120" rx="18"/>
-    <rect x="80" y="216" width="34" height="80" rx="14"/>
-    <rect x="348" y="196" width="44" height="120" rx="18"/>
-    <rect x="398" y="216" width="34" height="80" rx="14"/>
+    <rect x="130" y="134" width="252" height="58" rx="29"/>
+    <rect x="130" y="227" width="188" height="58" rx="29"/>
+    <rect x="130" y="320" width="252" height="58" rx="29"/>
   </g>
-  <text x="256" y="392" font-family="Helvetica, Arial, sans-serif" font-size="56" font-weight="800"
-        fill="url(#g)" text-anchor="middle">12 WEEKS</text>
 </svg>
