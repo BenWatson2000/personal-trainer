@@ -37,7 +37,7 @@ localStorage.removeItem = (k) => { RAW.rm(k); if (k.indexOf("pt_") === 0) markDi
 function markDirty(k) {
   if (SYNC.status === "unconfigured") return;
   DIRTY.add(k); saveDirty();
-  clearTimeout(flushTimer); flushTimer = setTimeout(flush, 2500);
+  clearTimeout(flushTimer); flushTimer = setTimeout(flush, 700); // push almost immediately after a change
 }
 
 /* ---- boot ---- */
@@ -46,8 +46,10 @@ async function initSync() {
   if (typeof window !== "undefined" && window.__PT_NO_CLOUD) { SYNC.status = "unconfigured"; return; }
   if (SYNC.status === "unconfigured") return;
   try {
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    sb = createClient(SYNC_CONFIG.url, SYNC_CONFIG.key);
+    // supabase-js is vendored (vendor/supabase-js.js, loaded before this script) — no CDN at runtime
+    const lib = (typeof window !== "undefined" && window.supabase) || null;
+    if (!lib || !lib.createClient) throw new Error("sync library not loaded");
+    sb = lib.createClient(SYNC_CONFIG.url, SYNC_CONFIG.key);
     sb.auth.onAuthStateChange((event, session) => {
       sbSession = session;
       SYNC.email = session ? session.user.email : null;
@@ -57,7 +59,7 @@ async function initSync() {
       if (typeof render === "function") render();                 // enter/leave the sign-in gate
       if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) firstSyncOrPull();
     });
-  } catch (e) { SYNC.status = "error"; SYNC.err = "Couldn't load sync library (offline?)"; refreshSyncCard(); }
+  } catch (e) { console.error("[sync] init failed:", e.message || e); SYNC.status = "error"; SYNC.err = e.message || "couldn't start sync"; refreshSyncCard(); }
 }
 
 /* first session on this account → seed the cloud with everything local;
@@ -150,10 +152,9 @@ function syncCardInner() {
     <p class="sub">Signed in as <b>${SYNC.email || "…"}</b></p>
     <p class="note" style="margin:0 0 10px">${state}</p>
     <div class="step-quick">
-      <button type="button" class="btn accent" id="syncNow">⟳ Sync now</button>
       <button type="button" class="btn" id="syncOut">Sign out</button>
     </div>
-    <p class="note" style="margin-top:8px">Every change mirrors to your private cloud backup a few seconds after you make it.</p>`;
+    <p class="note" style="margin-top:8px">Every change saves to your account automatically — nothing to press. Works offline and catches up when you're back online.</p>`;
 }
 function syncCardHtml() {
   return `<div class="card" id="syncCard"><h2>☁️ Cloud sync</h2><div id="syncBody">${syncCardInner()}</div></div>`;
@@ -254,7 +255,6 @@ document.addEventListener("click", async (e) => {
   if (e.target.id === "syncSend") return sendCode();
   if (e.target.id === "syncVerify") return verifyCode();
   if (e.target.id === "syncChangeEmail") { OTP_EMAIL = null; SYNC.err = null; refreshSyncCard(); if (typeof render === "function") render(); return; }
-  if (e.target.id === "syncNow") { await pull(); queueAllLocal(); await flush(); if (typeof toast === "function") toast(SYNC.status === "ok" ? "☁️ Synced" : "⚠️ " + (SYNC.err || "sync error")); }
   if (e.target.id === "syncOut") { RAW.rm("ptsync_account"); sb.auth.signOut(); if (typeof toast === "function") toast("Signed out"); } // onAuthStateChange re-renders → sign-in gate
 });
 // Enter submits whichever sign-in step is showing
@@ -263,6 +263,6 @@ document.addEventListener("keydown", (e) => {
   if (e.target.id === "syncEmail") { e.preventDefault(); sendCode(); }
   else if (e.target.id === "syncCode") { e.preventDefault(); verifyCode(); }
 });
-window.addEventListener("online", () => { flush(); pull(); });
-document.addEventListener("visibilitychange", () => { if (!document.hidden) pull(); });
+window.addEventListener("online", () => { flush(); pull(); });          // reconnect → push queued + pull
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { flush(); pull(); } }); // refocus → same
 initSync();
