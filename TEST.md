@@ -1,6 +1,6 @@
 # TEST.md — vigorous UI audit of every feature
 
-> **Last run:** 2026-07-10 13:13 UTC · in-app clock frozen to **Mon 2026-07-06 18:00** (Day 15, Wk 3) · seeded by importing `tests/mock-data.json` through the app's own Restore flow · every check executed at **📱 phone 390px · 📟 tablet 834px · 🖥️ desktop 1440px**.
+> **Last run:** 2026-07-10 19:19 UTC · in-app clock frozen to **Mon 2026-07-06 18:00** (Day 15, Wk 3) · seeded by importing `tests/mock-data.json` through the app's own Restore flow · every check executed at **📱 phone 390px · 📟 tablet 834px · 🖥️ desktop 1440px**.
 
 ## How this file works (instructions to future agents)
 

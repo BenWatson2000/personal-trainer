@@ -1,7 +1,8 @@
-# 🏋️ Ben's PT — 12-Week Shred
+# ⚡ Exervo — your personal trainer
 
 Your own personal trainer in your pocket: a free, installable web app, hosted on
-GitHub Pages for **£0**. No account, no tracking — everything lives on your device.
+GitHub Pages for **£0**. Sign in once with an email code and your workouts, meals
+and progress follow you across devices — while the app itself keeps working offline.
 
 - **Goal:** get ripped in 12 weeks — lose fat, keep muscle, reveal definition
 - **Built for:** 25 yr · 68 kg · 156 cm male

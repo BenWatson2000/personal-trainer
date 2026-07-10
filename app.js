@@ -1,4 +1,4 @@
-/* Ben's PT — 12 Week Shred. Pure front-end, data from data/plan.json, state in localStorage. */
+/* Exervo — your personal trainer. Pure front-end, data from data/plan.json, state in localStorage. */
 
 const LS = {
   get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
@@ -1991,7 +1991,7 @@ function reportCanvas(r) {
   F(800, 54); x.fillStyle = "#34d399"; x.fillText((r.overall > 0 ? "+" : r.overall < 0 ? "−" : "±") + Math.abs(r.overall) + " kg overall", P, oy);
   F(400, 34); x.fillStyle = "#9aa3b2"; x.fillText("Day " + r.day + " of 84   ·   " + r.adherence + "% nutrition adherence", P, oy + 52);
   if (r.pbNames.length) { F(700, 32); x.fillStyle = "#fbbf24"; x.fillText("🏅 " + r.pbNames.slice(0, 3).join(", "), P, oy + 112); }
-  const tagline = r.goal === "gain" ? "My PT — build lean muscle 💪" : r.goal === "maintain" ? "My PT — stay strong 💪" : "My PT — get ripped in 12 weeks 💪";
+  const tagline = r.goal === "gain" ? "Exervo — build lean muscle 💪" : r.goal === "maintain" ? "Exervo — stay strong 💪" : "Exervo — get ripped in 12 weeks 💪";
   F(600, 30); x.fillStyle = "#9aa3b2"; x.fillText(tagline, P, H - 56);
   return cv;
 }
@@ -2947,7 +2947,7 @@ function render() {
   // require-account mode: no session yet (and never signed in on this device) → sign-in wall
   if (typeof ptSyncRequiresAuth === "function" && ptSyncRequiresAuth()) {
     view.innerHTML = authGateHtml();
-    const pn = document.getElementById("phaseName"); if (pn) pn.textContent = "My PT";
+    const pn = document.getElementById("phaseName"); if (pn) pn.textContent = "Exervo";
     const dp = document.getElementById("dayPill"); if (dp) dp.textContent = "Sign in";
     const op = document.getElementById("overallProgress"); if (op) op.style.width = "0%";
     enhanceA11y();

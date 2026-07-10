@@ -1,7 +1,7 @@
 {
-  "name": "Ben's PT — 12 Week Shred",
-  "short_name": "My PT",
-  "description": "Your daily personal trainer: workouts, meals and progress for a 12-week shred.",
+  "name": "Exervo — your personal trainer",
+  "short_name": "Exervo",
+  "description": "Exervo: your daily personal trainer — workouts, meals, coaching and progress that follow you across devices.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
