@@ -2961,6 +2961,7 @@ function render() {
     enhanceA11y();
     return;
   }
+  if (!PLAN) return; // auth events can fire before boot() has loaded plan.json — boot re-renders
   if (CURRENT_TAB === "today") view.innerHTML = renderToday();
   else if (CURRENT_TAB === "shop") view.innerHTML = renderShop();
   else if (CURRENT_TAB === "progress") view.innerHTML = renderProgress();

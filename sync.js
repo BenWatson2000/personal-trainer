@@ -57,7 +57,12 @@ async function initSync() {
       if (session) RAW.set("ptsync_account", session.user.email); // remember: this device has an account
       refreshSyncCard();
       if (typeof render === "function") render();                 // enter/leave the sign-in gate
-      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) firstSyncOrPull();
+      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+        const prevUid = localStorage.getItem("ptsync_uid");
+        if (prevUid && prevUid !== session.user.id) switchAccount(); // different person — don't mix their data
+        RAW.set("ptsync_uid", session.user.id);
+        firstSyncOrPull();
+      }
     });
   } catch (e) { console.error("[sync] init failed:", e.message || e); SYNC.status = "error"; SYNC.err = e.message || "couldn't start sync"; refreshSyncCard(); }
 }
@@ -70,6 +75,20 @@ function queueAllLocal() {
     if (k && k.indexOf("pt_") === 0) DIRTY.add(k);
   }
   saveDirty();
+}
+// A different account signed in on this device: the previous user's local data must
+// not leak into (or be uploaded to) the new account. Start clean; their cloud data
+// pulls down right after (or, for a brand-new account, onboarding starts fresh).
+function switchAccount() {
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (k && k.indexOf("pt_") === 0) RAW.rm(k);
+  }
+  DIRTY.clear(); saveDirty();
+  RAW.rm("ptsync_last"); RAW.rm("ptsync_lastok"); SYNC.last = null;
+  if (typeof PHOTOS !== "undefined" && typeof photoDel === "function") {
+    (async () => { try { for (const p of PHOTOS) await photoDel(p.date); PHOTOS = []; } catch {} })();
+  }
 }
 async function firstSyncOrPull() {
   try {
@@ -142,7 +161,9 @@ function syncCardInner() {
     and follows you across devices. To enable it: create a free Supabase project, run
     <b>supabase/schema.sql</b>, and paste the project URL + publishable key into <b>sync.js</b> (see README).</p>`;
   if (SYNC.status === "starting") return `<p class="note">Starting sync…</p>`;
-  if (SYNC.status === "signedout") return `
+  // No live session → show the sign-in form, whatever the status (an error state
+  // without a session must offer a way back in, not a dead "signed in" layout).
+  if (!sbSession) return `
     <p class="sub">Sign in to back up your data and sync across devices. Everything keeps working offline.</p>
     ${signinFormHtml()}`;
   const state = SYNC.status === "syncing" ? "⏳ syncing…"
@@ -223,9 +244,10 @@ function refreshSyncCard() {
 }
 // app.js calls this from the "Clear all my data" flow: cloud session + cursors go too
 function ptSyncOnReset() {
-  DIRTY.clear(); saveDirty();
+  DIRTY.clear(); saveDirty(); OTP_EMAIL = null;
   RAW.rm("ptsync_last"); RAW.rm("ptsync_lastok"); RAW.rm("ptsync_account"); SYNC.last = null;
-  if (sb) sb.auth.signOut();
+  if (sb) { try { sb.auth.signOut({ scope: "local" }); } catch {} }
+  sbSession = null; SYNC.email = null; SYNC.status = "signedout";
 }
 
 /* ---- wiring ---- */
@@ -255,7 +277,15 @@ document.addEventListener("click", async (e) => {
   if (e.target.id === "syncSend") return sendCode();
   if (e.target.id === "syncVerify") return verifyCode();
   if (e.target.id === "syncChangeEmail") { OTP_EMAIL = null; SYNC.err = null; refreshSyncCard(); if (typeof render === "function") render(); return; }
-  if (e.target.id === "syncOut") { RAW.rm("ptsync_account"); sb.auth.signOut(); if (typeof toast === "function") toast("Signed out"); } // onAuthStateChange re-renders → sign-in gate
+  if (e.target.id === "syncOut") {
+    // Sign out must work even if the server round-trip fails (expired session, blip):
+    // local-scope sign-out + explicit state reset, never relying on the event alone.
+    RAW.rm("ptsync_account"); OTP_EMAIL = null;
+    if (sb) { try { await sb.auth.signOut({ scope: "local" }); } catch (err) { console.error("[sync] sign-out:", err.message || err); } }
+    sbSession = null; SYNC.email = null; SYNC.status = "signedout"; SYNC.err = null;
+    refreshSyncCard(); if (typeof render === "function") render();  // straight to the sign-in gate
+    if (typeof toast === "function") toast("Signed out");
+  }
 });
 // Enter submits whichever sign-in step is showing
 document.addEventListener("keydown", (e) => {
