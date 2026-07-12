@@ -188,7 +188,7 @@ function signinFormHtml() {
         <input class="field" id="syncCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="sign-in code" />
         <button type="button" class="btn accent" id="syncVerify">Verify</button>
       </div>
-      ${SYNC.status === "error" ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err || "that code didn't work — check it or send a new one"}</p>` : ""}
+      ${SYNC.err ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err}</p>` : ""}
       <p class="note" style="margin-top:8px">Enter the code we emailed to <b>${OTP_EMAIL}</b>.
         <button type="button" class="btn" id="syncChangeEmail" style="min-height:auto;padding:4px 9px;margin-left:4px">Use a different email</button></p>`;
   }
@@ -196,7 +196,7 @@ function signinFormHtml() {
       <input class="field" id="syncEmail" type="email" inputmode="email" placeholder="you@email.com" />
       <button type="button" class="btn accent" id="syncSend">Send code</button>
     </div>
-    ${SYNC.status === "error" ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err || "sync error"}</p>` : ""}
+    ${SYNC.err ? `<p class="note" style="color:var(--warn)">⚠️ ${SYNC.err}</p>` : ""}
     <p class="note" style="margin-top:8px">We email you a sign-in code — no password. New here? The same code creates your account.</p>`;
 }
 // require-account gate: true only when accounts are enforced AND this device has never signed in.
