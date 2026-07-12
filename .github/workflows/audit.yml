@@ -37,6 +37,9 @@ jobs:
           node tests/gen-mock.cjs
           node tests/ui-audit.cjs
 
+      - name: Run cloud data-flow test (auth + sync against a mock backend)
+        run: node tests/sync-flow.cjs
+
       - name: Upload TEST.md
         if: always()   # publish the ledger even when the audit fails
         uses: actions/upload-artifact@v4

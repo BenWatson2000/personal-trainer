@@ -4,7 +4,7 @@
   "private": true,
   "description": "Exervo — offline-first PWA personal trainer. No build step; this manifest exists only for the UI-audit test harness.",
   "scripts": {
-    "test": "node tests/gen-mock.cjs && node tests/ui-audit.cjs"
+    "test": "node tests/gen-mock.cjs && node tests/ui-audit.cjs && node tests/sync-flow.cjs"
   },
   "devDependencies": {
     "playwright": "1.48.2",
