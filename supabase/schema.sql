@@ -1,6 +1,7 @@
--- Cloud sync schema for My PT — run this once in your Supabase project's SQL editor.
+-- Cloud sync schema for Exervo — run this in your Supabase project's SQL editor.
 -- One row per (user, localStorage key); row-level security means every user can
--- only ever see and write their own rows.
+-- only ever see and write their own rows. The whole script is idempotent — safe
+-- to re-run any time (e.g. after pulling an update to this file).
 
 create table if not exists public.user_state (
   user_id    uuid not null default auth.uid(),
@@ -12,6 +13,7 @@ create table if not exists public.user_state (
 
 alter table public.user_state enable row level security;
 
+drop policy if exists "users manage own state" on public.user_state;
 create policy "users manage own state" on public.user_state
   for all
   using (auth.uid() = user_id)
