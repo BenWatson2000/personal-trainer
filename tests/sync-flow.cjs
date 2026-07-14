@@ -47,9 +47,10 @@ window.supabase = {
               if (i>=0) M.store[i]=row; else M.store.push(row); }
             return { error:null }; },
           then(resolve){
-            if (q.head) return resolve({ count: M.store.length, error:null });
+            if (q.head) { M.log.push(["select", "count"]); return resolve({ count: M.store.length, error:null }); }
             let rows = M.store.slice();
             for (const f of q.filters) if (f[0]==="gt" && f[1]==="updated_at") rows = rows.filter(r => r.updated_at > f[2]);
+            M.log.push(["select", "rows", rows.length]);
             resolve({ data: rows.map(r => ({ key:r.key, value:r.value, updated_at:r.updated_at })), error:null });
           },
         };
@@ -304,6 +305,63 @@ async function newCtx(browser, seedRows) {
     await sleep(900); // let the local flush actually go out
     const uploaded = await p.evaluate((tk) => { const r = window.__mock.store.find(x => x.key==="pt_checks_"+tk); return r && r.value.water; }, tKey);
     A(uploaded === localValue, "the local (winning) value is the one that eventually uploads to the cloud");
+    await ctx.close();
+  }
+
+  // ============ FLOW 7: "last synced" reflects a pull too, not only an upload ============
+  // Regression test for a real bug: a device with nothing local to push (only ever
+  // receiving another device's changes) never updated its "last synced" timestamp,
+  // so it looked stuck/broken days after its last local edit even while pulling fine.
+  console.log("\nFLOW 7 · \"Last synced\" updates from a pull-only session (nothing to push)");
+  {
+    const seed = [
+      { user_id:"user-AAA", key:"pt_profile", value:{ name:"Ben", sex:"male", age:25, heightCm:156, weightKg:67, activity:1.55, goal:"cut", surplus:300, dislikes:[] }, updated_at:"2026-07-01T00:00:00.000Z" },
+      { user_id:"user-AAA", key:"pt_startDate", value:"2026-06-22", updated_at:"2026-07-01T00:00:00.001Z" },
+    ];
+    const ctx = await newCtx(browser, seed);
+    const p = await ctx.newPage();
+    await p.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil:"domcontentloaded" });
+    await sleep(700);
+    await p.fill("#syncEmail", "ben@example.com"); await p.click("#syncSend"); await sleep(250);
+    await p.fill("#syncCode", "12345678"); await p.click("#syncVerify"); await sleep(1200);
+    // This device pulled a full profile from the cloud and never uploaded anything of
+    // its own (a brand-new device, nothing local, nothing dirty) — "last synced" must
+    // still be set from that successful pull.
+    A(await p.evaluate(() => !!localStorage.getItem("ptsync_lastok")), "ptsync_lastok is set after a pull-only sign-in (no uploads occurred)");
+    await p.click('[data-tab="settings"]'); await sleep(400);
+    A(/✅ synced/.test(await p.locator("#syncCard").textContent()), "Settings shows a synced state, not a stale/blank one");
+    await ctx.close();
+  }
+
+  // ============ FLOW 8: seeding a brand-new account also pulls right after ============
+  // Regression test for the dual-first-sign-in race: two devices signing in to an empty
+  // cloud within the same instant would each seed with their OWN local snapshot and
+  // never look back — whichever upload landed last in the DB silently won for a shared
+  // key, and the "losing" device just kept displaying its own (stale) local value
+  // indefinitely. The seed branch must pull immediately after uploading so it picks up
+  // the DB's actual final state instead of blindly trusting its own upload.
+  console.log("\nFLOW 8 · New-account seeding pulls right after uploading (closes the dual-sign-in race)");
+  {
+    // A device that already had local history BEFORE ever signing in (used the app
+    // pre-accounts, or is simply the first of two devices to reach an empty cloud) —
+    // this is what actually exercises the seed branch; a truly blank device has
+    // nothing to seed and the fix would be a no-op against an empty store.
+    const ctx = await newCtx(browser);
+    const p = await ctx.newPage();
+    await p.addInitScript(() => {
+      localStorage.setItem("pt_profile", JSON.stringify({ name:"Ben", sex:"male", age:25, heightCm:156, weightKg:68, activity:1.55, goal:"cut", surplus:300, dislikes:[] }));
+      localStorage.setItem("pt_startDate", "2026-06-22");
+    });
+    await p.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil:"domcontentloaded" });
+    await sleep(700);
+    await p.fill("#syncEmail", "ben@example.com"); await p.click("#syncSend"); await sleep(250);
+    await p.fill("#syncCode", "12345678"); await p.click("#syncVerify"); await sleep(1200);
+    const log = await p.evaluate(() => window.__mock.log);
+    const upsertAt = log.findIndex((l) => l[0] === "upsert" && l[2].includes("pt_profile"));
+    // "select","count" is the seed branch's own head-count check, which happens BEFORE
+    // the upload — what proves the fix is a "select","rows" (a real row pull) AFTER it.
+    const pulledAfter = log.slice(upsertAt + 1).some((l) => l[0] === "select" && l[1] === "rows");
+    A(upsertAt >= 0 && pulledAfter, "a real pull happens right after the seed upload — log: " + JSON.stringify(log));
     await ctx.close();
   }
 
