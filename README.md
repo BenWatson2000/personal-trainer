@@ -87,21 +87,24 @@ By default everything lives only on your device. Flip on cloud sync to get a
 
 1. Create a free project at [supabase.com](https://supabase.com).
 2. In the project's **SQL Editor**, paste and run **`supabase/schema.sql`** from
-   this repo (creates one row-level-secured table).
-3. In **Authentication → Providers**, make sure **Email** is enabled. For 6-digit code
-   sign-in, edit the **Confirm signup** and **Magic Link** email templates to include
-   `{{ .Token }}` (the code) — see "Cloud sync setup" below.
+   this repo (creates one row-level-secured table and turns on Realtime for it —
+   safe to re-run any time, e.g. after pulling an update to this file).
+3. In **Authentication → Providers**, make sure **Email** is enabled. For the sign-in
+   code to actually appear in the email, edit the **Confirm signup** *and* **Magic
+   Link** templates to include `{{ .Token }}` (e.g. "Your sign-in code is `{{ .Token }}`").
 4. In **Settings → API**, copy the **Project URL** and **publishable key** into the
    `SYNC_CONFIG` block at the top of **`sync.js`**, commit, and deploy.
    (The publishable key is safe to publish — row-level security means users can only
    ever see their own rows. Never put the **secret** key in client code.)
-5. Open the app → **Settings → ☁️ Cloud sync** → enter your email → click the
-   magic link. Your existing data uploads on first sign-in.
+5. Open the app → **Settings → ☁️ Cloud sync** → enter your email → enter the code
+   from the email. Your existing data uploads on first sign-in.
 
-How it behaves: every change mirrors to the cloud a few seconds after you make
-it; opening the app (or coming back online) pulls anything newer from your other
-devices. "Clear all my data" only wipes the device — sign back in and your
-backup restores. Photos stay device-only for now (use Export for those).
+How it behaves: every change pushes to the cloud within a second of you making it,
+and updates from your other signed-in devices land live — a Realtime subscription
+applies them the moment they arrive, no refresh or app-switch needed (a 30-second
+poll runs alongside it as a backstop). "Clear all my data" only wipes the device —
+sign back in and your backup restores. Photos stay device-only for now (use Export
+for those).
 
 ## 🗓️ The Plan
 

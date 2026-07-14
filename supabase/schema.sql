@@ -33,3 +33,15 @@ create trigger t_touch_user_state
 -- helpful index for the sync pull ("everything newer than my cursor")
 create index if not exists idx_user_state_updated
   on public.user_state (user_id, updated_at);
+
+-- live multi-device updates: broadcast row changes over Realtime. RLS above still
+-- governs who receives what. Safe to re-run.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'user_state'
+  ) then
+    alter publication supabase_realtime add table public.user_state;
+  end if;
+end $$;
