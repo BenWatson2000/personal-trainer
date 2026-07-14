@@ -16,7 +16,7 @@ const PORT = 8137;
 // Mock supabase-js served in place of vendor/supabase-js.js. An in-memory user_state
 // table + auth that records calls on window.__mock.
 const MOCK = `
-window.__mock = { log: [], store: [], session: null, otpEmail: null };
+window.__mock = { log: [], store: [], session: null, otpEmail: null, channels: [] };
 window.supabase = {
   createClient(url, key) {
     window.__mock.log.push(["createClient", url, key.slice(0,14)]);
@@ -55,6 +55,16 @@ window.supabase = {
         };
         return api;
       },
+      // Realtime: a channel a test can push a "remote device wrote this row" event into
+      // directly (window.__mock.channels[n].emit(row)) — no websocket needed.
+      channel(name){
+        const ch = { _name: name, _filter: null, _cb: null };
+        ch.on = (type, opts, cb) => { if (type === "postgres_changes") { ch._filter = opts.filter; ch._cb = cb; } return ch; };
+        ch.subscribe = (statusCb) => { M.log.push(["subscribe", name, ch._filter]); M.channels.push(ch); if (statusCb) statusCb("SUBSCRIBED"); return ch; };
+        ch.emit = (row) => { if (ch._cb) ch._cb({ new: row, old: null }); };
+        return ch;
+      },
+      removeChannel(ch){ M.log.push(["removeChannel", ch && ch._name]); M.channels = M.channels.filter(c => c !== ch); },
     };
   }
 };
@@ -222,6 +232,78 @@ async function newCtx(browser, seedRows) {
     A(await p.evaluate(() => localStorage.getItem("ptsync_uid")==="user-NEW"), "new user id recorded after switch");
     A(await p.evaluate(() => { const v = localStorage.getItem("pt_profile"); return !v || JSON.parse(v).name!=="OldUser"; }), "previous user's pt_profile wiped on account switch");
     A(await p.evaluate(() => { const v = localStorage.getItem("pt_weights"); return v===null || JSON.parse(v).every(w=>w.kg!==90); }), "previous user's pt_weights wiped (no data bleed between accounts)");
+    await ctx.close();
+  }
+
+  // ============ FLOW 5: live update — another device's change lands with no refresh ============
+  console.log("\nFLOW 5 · Live update: another device's change lands with no refresh/refocus");
+  {
+    const seed = [
+      { user_id:"user-AAA", key:"pt_profile", value:{ name:"Ben", sex:"male", age:25, heightCm:156, weightKg:67, activity:1.55, goal:"cut", surplus:300, dislikes:[] }, updated_at:"2026-07-01T00:00:00.000Z" },
+      { user_id:"user-AAA", key:"pt_startDate", value:"2026-06-22", updated_at:"2026-07-01T00:00:00.001Z" },
+    ];
+    const ctx = await newCtx(browser, seed);
+    const p = await ctx.newPage();
+    const errs = []; p.on("pageerror", e => errs.push(e.message));
+    await p.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil:"domcontentloaded" });
+    await sleep(700);
+    await p.fill("#syncEmail", "ben@example.com"); await p.click("#syncSend"); await sleep(250);
+    await p.fill("#syncCode", "12345678"); await p.click("#syncVerify"); await sleep(1200);
+    A(await p.locator(".today-hero").count() === 1, "signed in and landed on Today (returning account)");
+
+    const sub = await p.evaluate(() => window.__mock.log.find(l => l[0]==="subscribe"));
+    A(sub && sub[2] === "user_id=eq.user-AAA", "Realtime subscribed with a user_id filter scoped to this account");
+
+    const before = await p.locator("#rlH").textContent();
+    const tKey = await p.evaluate(() => todayKey());
+    // Simulate a write from ANOTHER device — pushed straight into the channel, exactly
+    // how Postgres Changes would deliver it. Crucially: no online/visibilitychange
+    // event is fired anywhere in this flow, and the tab is never backgrounded/refocused.
+    await p.evaluate(({ tk }) => {
+      const ch = window.__mock.channels[window.__mock.channels.length - 1];
+      ch.emit({ user_id:"user-AAA", key:"pt_checks_"+tk, value:{ workout:{}, meals:{}, water:5 }, updated_at:new Date(Date.now()+5000).toISOString() });
+    }, { tk: tKey });
+    await sleep(500);
+
+    const after = await p.locator("#rlH").textContent();
+    A(after !== before && /5\/8/.test(after), `hero water legend updated live from a remote row (no refresh/refocus): "${before}" → "${after}"`);
+    A(await p.evaluate((tk) => JSON.parse(localStorage.getItem("pt_checks_"+tk)).water === 5, tKey), "applied value is exactly what the 'other device' wrote");
+    A(errs.length === 0, "no console/page errors while applying the live update");
+    await ctx.close();
+  }
+
+  // ============ FLOW 6: an in-flight local edit beats a racing incoming remote row ============
+  console.log("\nFLOW 6 · Local edit wins a race against an incoming remote row for the same key");
+  {
+    const seed = [
+      { user_id:"user-AAA", key:"pt_profile", value:{ name:"Ben", sex:"male", age:25, heightCm:156, weightKg:67, activity:1.55, goal:"cut", surplus:300, dislikes:[] }, updated_at:"2026-07-01T00:00:00.000Z" },
+      { user_id:"user-AAA", key:"pt_startDate", value:"2026-06-22", updated_at:"2026-07-01T00:00:00.001Z" },
+    ];
+    const ctx = await newCtx(browser, seed);
+    const p = await ctx.newPage();
+    await p.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil:"domcontentloaded" });
+    await sleep(700);
+    await p.fill("#syncEmail", "ben@example.com"); await p.click("#syncSend"); await sleep(250);
+    await p.fill("#syncCode", "12345678"); await p.click("#syncVerify"); await sleep(1200);
+
+    const tKey = await p.evaluate(() => todayKey());
+    const daily = p.locator('details[data-panel="daily"]');
+    if ((await daily.getAttribute("open")) == null) { await daily.locator("> summary").click(); await sleep(250); }
+    await p.click('[data-act="waterinc"]');  // local tap → DIRTY immediately, flush scheduled ~700ms out
+    const localValue = await p.evaluate((tk) => JSON.parse(localStorage.getItem("pt_checks_"+tk)).water, tKey);
+
+    // A conflicting remote row for the SAME key arrives before the local flush fires
+    await p.evaluate(({ tk }) => {
+      const ch = window.__mock.channels[window.__mock.channels.length - 1];
+      ch.emit({ user_id:"user-AAA", key:"pt_checks_"+tk, value:{ workout:{}, meals:{}, water:0 }, updated_at:new Date(Date.now()+5000).toISOString() });
+    }, { tk: tKey });
+    await sleep(150);
+    A(await p.evaluate((tk) => JSON.parse(localStorage.getItem("pt_checks_"+tk)).water, tKey) === localValue,
+      "in-flight local edit is NOT clobbered by a racing remote row for the same key");
+
+    await sleep(900); // let the local flush actually go out
+    const uploaded = await p.evaluate((tk) => { const r = window.__mock.store.find(x => x.key==="pt_checks_"+tk); return r && r.value.water; }, tKey);
+    A(uploaded === localValue, "the local (winning) value is the one that eventually uploads to the cloud");
     await ctx.close();
   }
 

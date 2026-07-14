@@ -23,6 +23,7 @@ const SYNC = {
 };
 let sb = null, sbSession = null, flushTimer = null;
 let OTP_EMAIL = null; // set once a code has been emailed → the sign-in UI switches to the code step
+let rtChannel = null, rtUid = null, rtRenderTimer = null, pollTimer = null;
 
 /* ---- storage interception: every pt_* write anywhere in the app lands in the
    dirty-queue. RAW.* bypasses the queue (used when applying remote state). ---- */
@@ -62,6 +63,9 @@ async function initSync() {
         if (prevUid && prevUid !== session.user.id) switchAccount(); // different person — don't mix their data
         RAW.set("ptsync_uid", session.user.id);
         firstSyncOrPull();
+        startRealtime(session.user.id); startPoll();
+      } else if (!session) {
+        stopRealtime(); stopPoll();
       }
     });
   } catch (e) { console.error("[sync] init failed:", e.message || e); SYNC.status = "error"; SYNC.err = e.message || "couldn't start sync"; refreshSyncCard(); }
@@ -89,7 +93,58 @@ function switchAccount() {
   if (typeof PHOTOS !== "undefined" && typeof photoDel === "function") {
     (async () => { try { for (const p of PHOTOS) await photoDel(p.date); PHOTOS = []; } catch {} })();
   }
+  stopRealtime(); // the old channel is filtered to the previous user_id — never let it keep applying
 }
+
+/* ---- live updates: instead of waiting for a refresh/refocus, a Postgres Changes
+   subscription pushes every change from any other signed-in device the moment it
+   lands. A gentle 30s poll runs alongside it as a backstop — it costs one lightweight
+   query and keeps multi-device sync working even before the Realtime publication step
+   in schema.sql has been (re-)run, or if a channel silently drops. ---- */
+function startRealtime(uid) {
+  if (!sb || typeof sb.channel !== "function") return; // vendored lib without realtime, or mock without it — poll still covers us
+  if (rtChannel && rtUid === uid) return;               // already subscribed for this user
+  stopRealtime();
+  try {
+    rtChannel = sb.channel("user_state:" + uid)
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_state", filter: "user_id=eq." + uid },
+        (payload) => applyRemoteRow(payload.new || payload.old))
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") console.error("[sync] realtime channel " + status + " — the 30s poll still covers multi-device updates");
+      });
+    rtUid = uid;
+  } catch (e) { console.error("[sync] realtime subscribe failed:", e.message || e); rtChannel = null; rtUid = null; }
+}
+function stopRealtime() {
+  if (rtChannel && sb) { try { sb.removeChannel(rtChannel); } catch {} }
+  rtChannel = null; rtUid = null;
+}
+function startPoll() {
+  if (pollTimer) return;
+  pollTimer = setInterval(() => { if (sbSession && navigator.onLine && !document.hidden) pull(); }, 30000);
+}
+function stopPoll() { clearInterval(pollTimer); pollTimer = null; }
+// Apply one incoming row the instant Realtime delivers it (as opposed to pull()'s
+// batch catch-up). Skips a key mid-upload locally (DIRTY) — the local edit wins —
+// and skips a value that's already identical (an echo of our own upload, or a
+// duplicate delivery), so this never causes a redundant re-render or flicker.
+function applyRemoteRow(row) {
+  if (!row || !row.key) return;
+  if (DIRTY.has(row.key)) return;
+  const incoming = (row.value === null || row.value === undefined) ? null : (typeof row.value === "string" ? row.value : JSON.stringify(row.value));
+  const changed = incoming !== localStorage.getItem(row.key);
+  if (changed) { if (incoming === null) RAW.rm(row.key); else RAW.set(row.key, incoming); }
+  if (row.updated_at) {
+    const cur = localStorage.getItem("ptsync_last") || "1970-01-01T00:00:00Z";
+    if (row.updated_at > cur) RAW.set("ptsync_last", row.updated_at);
+  }
+  if (!changed) return;
+  clearTimeout(rtRenderTimer);   // coalesce a burst of incoming rows into one repaint
+  rtRenderTimer = setTimeout(() => {
+    if (typeof buildBank === "function" && typeof render === "function") { buildBank(); render(); }
+  }, 200);
+}
+
 async function firstSyncOrPull() {
   try {
     const { count, error } = await sb.from("user_state").select("key", { count: "exact", head: true });
@@ -248,6 +303,7 @@ function ptSyncOnReset() {
   RAW.rm("ptsync_last"); RAW.rm("ptsync_lastok"); RAW.rm("ptsync_account"); SYNC.last = null;
   if (sb) { try { sb.auth.signOut({ scope: "local" }); } catch {} }
   sbSession = null; SYNC.email = null; SYNC.status = "signedout";
+  stopRealtime(); stopPoll();
 }
 
 /* ---- wiring ---- */
@@ -283,6 +339,7 @@ document.addEventListener("click", async (e) => {
     RAW.rm("ptsync_account"); OTP_EMAIL = null;
     if (sb) { try { await sb.auth.signOut({ scope: "local" }); } catch (err) { console.error("[sync] sign-out:", err.message || err); } }
     sbSession = null; SYNC.email = null; SYNC.status = "signedout"; SYNC.err = null;
+    stopRealtime(); stopPoll();
     refreshSyncCard(); if (typeof render === "function") render();  // straight to the sign-in gate
     if (typeof toast === "function") toast("Signed out");
   }
