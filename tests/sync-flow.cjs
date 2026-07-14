@@ -365,6 +365,82 @@ async function newCtx(browser, seedRows) {
     await ctx.close();
   }
 
+  // ============ FLOW 9: two devices ticking DIFFERENT parts of the same day merge ============
+  // Regression test for the actual reported bug: ticking all of today's meals on one
+  // device didn't show up on the other, even after a refresh. Root cause: a day's
+  // workout/meals/water all live in ONE JSON value under one key (pt_checks_<date>), and
+  // the old apply logic replaced that whole value outright — so whichever device's
+  // upload happened to land last in the DB silently discarded the OTHER device's ticks
+  // to a different field of the very same day, even though the two edits don't actually
+  // conflict. Both must survive.
+  console.log("\nFLOW 9 · Ticking different fields of the same day (meals vs workout) — both survive");
+  {
+    const seed = [
+      { user_id:"user-AAA", key:"pt_profile", value:{ name:"Ben", sex:"male", age:25, heightCm:156, weightKg:67, activity:1.55, goal:"cut", surplus:300, dislikes:[] }, updated_at:"2026-07-01T00:00:00.000Z" },
+      { user_id:"user-AAA", key:"pt_startDate", value:"2026-06-22", updated_at:"2026-07-01T00:00:00.001Z" },
+    ];
+    const ctx = await newCtx(browser, seed);
+    const p = await ctx.newPage();
+    await p.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil:"domcontentloaded" });
+    await sleep(700);
+    await p.fill("#syncEmail", "ben@example.com"); await p.click("#syncSend"); await sleep(250);
+    await p.fill("#syncCode", "12345678"); await p.click("#syncVerify"); await sleep(1200);
+
+    const tKey = await p.evaluate(() => todayKey());
+    // Local device: tick a meal (dirty, unflushed — flush is debounced ~700ms out)
+    const fuel = p.locator('details[data-panel="fuel"]');
+    if ((await fuel.getAttribute("open")) == null) { await fuel.locator("> summary").click(); await sleep(200); }
+    await p.click('li[data-act="meals"][data-i="0"]');
+    await sleep(100);
+    A(await p.evaluate((tk) => JSON.parse(localStorage.getItem("pt_checks_"+tk)).meals["0"] === true, tKey), "local meal tick landed before the remote row arrives");
+
+    // "Another device" ticked a DIFFERENT field (workout) on the same day, in the same window
+    await p.evaluate(({ tk }) => {
+      const ch = window.__mock.channels[window.__mock.channels.length - 1];
+      ch.emit({ user_id:"user-AAA", key:"pt_checks_"+tk, value:{ workout:{ 0:true }, meals:{}, water:0 }, updated_at:new Date(Date.now()+5000).toISOString() });
+    }, { tk: tKey });
+    await sleep(400); // applyRemoteRow's merge + coalesced render (200ms), well before the 700ms local flush
+
+    const merged = await p.evaluate((tk) => JSON.parse(localStorage.getItem("pt_checks_"+tk)), tKey);
+    A(merged.meals["0"] === true, "the local meal tick survived the incoming remote row (not clobbered)");
+    A(merged.workout["0"] === true, "the remote device's workout tick was ALSO applied (merged, not skipped)");
+
+    await sleep(900); // let the (now re-dirtied, since the merge added local-only info) key flush out
+    const uploaded = await p.evaluate((tk) => { const r = window.__mock.store.find(x => x.key==="pt_checks_"+tk); return r && r.value; }, tKey);
+    A(uploaded && uploaded.meals["0"] === true && uploaded.workout["0"] === true, "the fully-merged object (both fields) is what eventually uploads — every device converges on the union: " + JSON.stringify(uploaded));
+    await ctx.close();
+  }
+
+  // ============ FLOW 10: a pulled string value stays valid, readable JSON ============
+  // Regression test: applying an incoming row used to store a string-typed value
+  // (e.g. pt_startDate = "2026-06-22") into localStorage WITHOUT re-stringifying it,
+  // because it was "already a string". But LS.get() always JSON.parses whatever's in
+  // localStorage — an unquoted date isn't valid JSON, so JSON.parse would throw and
+  // LS.get() would silently fall back to its default from then on, on every future
+  // read, with no error ever surfaced. A synced start date could quietly "revert".
+  console.log("\nFLOW 10 · A pulled string value (pt_startDate) stays valid JSON, not silently corrupted");
+  {
+    const seed = [
+      { user_id:"user-AAA", key:"pt_profile", value:{ name:"Ben", sex:"male", age:25, heightCm:156, weightKg:67, activity:1.55, goal:"cut", surplus:300, dislikes:[] }, updated_at:"2026-07-01T00:00:00.000Z" },
+      { user_id:"user-AAA", key:"pt_startDate", value:"2026-06-22", updated_at:"2026-07-01T00:00:00.001Z" },
+    ];
+    const ctx = await newCtx(browser, seed);
+    const p = await ctx.newPage();
+    await p.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil:"domcontentloaded" });
+    await sleep(700);
+    await p.fill("#syncEmail", "ben@example.com"); await p.click("#syncSend"); await sleep(250);
+    await p.fill("#syncCode", "12345678"); await p.click("#syncVerify"); await sleep(1200);
+    const readBack = await p.evaluate(() => {
+      try { return { ok:true, value: JSON.parse(localStorage.getItem("pt_startDate")) }; }
+      catch (e) { return { ok:false, error: e.message }; }
+    });
+    A(readBack.ok && readBack.value === "2026-06-22", "pulled pt_startDate round-trips through JSON.parse cleanly and matches the synced value: " + JSON.stringify(readBack));
+    // getStartDate() is the app's own read path (LS.get with a fallback) — prove it
+    // reads the REAL synced value, not silently falling back to the plan's default.
+    A(await p.evaluate(() => getStartDate() === "2026-06-22"), "getStartDate() reads the synced date, not a silent fallback default");
+    await ctx.close();
+  }
+
   await browser.close(); server.close();
   console.log(`\n==== data-flow: ${pass} passed, ${fail} failed ====`);
   process.exitCode = fail ? 1 : 0;
