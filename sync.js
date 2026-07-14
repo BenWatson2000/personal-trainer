@@ -121,7 +121,10 @@ function stopRealtime() {
 }
 function startPoll() {
   if (pollTimer) return;
-  pollTimer = setInterval(() => { if (sbSession && navigator.onLine && !document.hidden) pull(); }, 30000);
+  // flush() first: retries anything stuck in DIRTY (a failed upload otherwise only
+  // retries on a fresh local edit or an online/visibilitychange event — a device that
+  // hit a transient error and was then left untouched could sit stuck indefinitely).
+  pollTimer = setInterval(() => { if (sbSession && navigator.onLine && !document.hidden) { flush(); pull(); } }, 30000);
 }
 function stopPoll() { clearInterval(pollTimer); pollTimer = null; }
 // Apply one incoming row the instant Realtime delivers it (as opposed to pull()'s
@@ -151,6 +154,11 @@ async function firstSyncOrPull() {
     if (error) throw error;
     if (!count) {                       // empty cloud (0 or null) → seed it with everything local
       queueAllLocal(); await flush();
+      // Another device signing in for the first time at nearly the same moment could
+      // have raced this exact check and ALSO seeded (both saw count===0) — pull now to
+      // pick up whichever of a shared key's two uploads the DB ended up keeping, so
+      // this device converges immediately instead of waiting on the next poll/realtime.
+      await pull();
     } else {
       await pull(); await flush();
     }
@@ -161,6 +169,10 @@ async function firstSyncOrPull() {
 }
 
 function jsonSafe(raw) { try { return JSON.parse(raw); } catch { return raw; } }
+// "Last synced" must reflect the most recent successful contact with the server in
+// EITHER direction — a device that's only receiving (nothing local to push) previously
+// never updated this, so its timestamp looked stale/broken even while pulling fine.
+function markSynced() { SYNC.last = new Date().toISOString(); RAW.set("ptsync_lastok", SYNC.last); }
 
 async function flush() {
   if (!sb || !sbSession || !navigator.onLine || !DIRTY.size) return;
@@ -177,8 +189,7 @@ async function flush() {
   } else {
     console.info("[sync] uploaded " + keys.length + " item(s)");
     keys.forEach((k) => DIRTY.delete(k)); saveDirty();
-    SYNC.status = "ok"; SYNC.err = null;
-    SYNC.last = new Date().toISOString(); RAW.set("ptsync_lastok", SYNC.last);
+    SYNC.status = "ok"; SYNC.err = null; markSynced();
   }
   refreshSyncCard();
 }
@@ -200,7 +211,7 @@ async function pull() {
   }
   RAW.set("ptsync_last", maxT);
   if (applied && typeof buildBank === "function" && typeof render === "function") { buildBank(); render(); }
-  if (SYNC.status !== "error") { SYNC.status = "ok"; refreshSyncCard(); }
+  if (SYNC.status !== "error") { SYNC.status = "ok"; markSynced(); refreshSyncCard(); }
 }
 
 /* ---- Settings card (app.js calls syncCardHtml() while rendering Settings) ---- */
