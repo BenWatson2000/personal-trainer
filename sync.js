@@ -127,21 +127,72 @@ function startPoll() {
   pollTimer = setInterval(() => { if (sbSession && navigator.onLine && !document.hidden) { flush(); pull(); } }, 30000);
 }
 function stopPoll() { clearInterval(pollTimer); pollTimer = null; }
+/* ---- reconciling an incoming row with local state ----
+   Most pt_* values are CHECKLISTS: nested maps of booleans/counts (pt_checks_<date>'s
+   workout/meals/water, pt_shop_w<N>, pt_batch_w<N>). Two devices routinely tick
+   DIFFERENT parts of the SAME key around the same time — e.g. one ticks today's meals
+   while the other logs water — and a plain "whichever upload lands last in the DB wins
+   the whole object" would silently throw away whichever device didn't upload last, even
+   though the two edits don't actually conflict. mergeValue() unions those instead:
+   booleans OR (ticked on either device stays ticked), numbers MAX (a day's count only
+   climbs), nested objects recurse. A few keys are identity RECORDS, not checklists —
+   pt_profile's fields are plain values where "biggest number wins" would be wrong (it'd
+   silently resurrect a stale, higher weightKg after you'd deliberately logged a lower
+   one) — those are excluded and keep the previous whole-value-overwrite behaviour. */
+const NO_MERGE_KEYS = new Set(["pt_profile"]);
+function mergeValue(local, remote) {
+  const isPlainObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  if (!isPlainObj(local) || !isPlainObj(remote)) return remote; // arrays/scalars/type-mismatch: incoming wins
+  const out = { ...local };
+  for (const k of Object.keys(remote)) {
+    const lv = local[k], rv = remote[k];
+    if (typeof lv === "boolean" && typeof rv === "boolean") out[k] = lv || rv;
+    else if (typeof lv === "number" && typeof rv === "number") out[k] = Math.max(lv, rv);
+    else if (isPlainObj(lv) && isPlainObj(rv)) out[k] = mergeValue(lv, rv);
+    else out[k] = rv;
+  }
+  return out;
+}
+// Reconciles one row into localStorage. Returns "none" (nothing changed), "applied"
+// (local now matches the incoming value exactly — nothing extra to re-upload) or
+// "merged" (the result kept something local that the incoming row didn't have — the
+// caller must re-mark it dirty so that gets uploaded too, closing the loop both ways).
+function reconcileRow(key, value) {
+  const rawLocal = localStorage.getItem(key);
+  if (value === null || value === undefined) {
+    if (rawLocal === null) return "none";
+    RAW.rm(key); return "applied";
+  }
+  // Always JSON.stringify, even when value is already a string (e.g. pt_startDate,
+  // pt_mode): localStorage.setItem elsewhere always stores valid JSON text via
+  // JSON.stringify, and LS.get() always JSON.parses it back — storing a BARE string
+  // like "2026-06-22" here (not "\"2026-06-22\"") is invalid JSON. LS.get()'s
+  // JSON.parse would throw and silently fall back to its default from then on, an easy
+  // way for a pulled date/mode value to quietly "revert" on the receiving device.
+  const remoteStr = JSON.stringify(value);
+  if (NO_MERGE_KEYS.has(key) || rawLocal === null) {
+    if (remoteStr === rawLocal) return "none";
+    RAW.set(key, remoteStr); return "applied";
+  }
+  let local; try { local = JSON.parse(rawLocal); } catch { local = null; }
+  const merged = local === null ? value : mergeValue(local, value);
+  const mergedStr = JSON.stringify(merged);
+  if (mergedStr === rawLocal) return "none";
+  RAW.set(key, mergedStr);
+  return mergedStr === remoteStr ? "applied" : "merged";
+}
 // Apply one incoming row the instant Realtime delivers it (as opposed to pull()'s
-// batch catch-up). Skips a key mid-upload locally (DIRTY) — the local edit wins —
-// and skips a value that's already identical (an echo of our own upload, or a
-// duplicate delivery), so this never causes a redundant re-render or flicker.
+// batch catch-up). A key mid-upload locally (DIRTY) still merges in — an in-flight
+// local edit is preserved by the merge itself, not by skipping the remote row outright.
 function applyRemoteRow(row) {
   if (!row || !row.key) return;
-  if (DIRTY.has(row.key)) return;
-  const incoming = (row.value === null || row.value === undefined) ? null : (typeof row.value === "string" ? row.value : JSON.stringify(row.value));
-  const changed = incoming !== localStorage.getItem(row.key);
-  if (changed) { if (incoming === null) RAW.rm(row.key); else RAW.set(row.key, incoming); }
+  const outcome = reconcileRow(row.key, row.value);
+  if (outcome === "merged") { DIRTY.add(row.key); saveDirty(); clearTimeout(flushTimer); flushTimer = setTimeout(flush, 700); }
   if (row.updated_at) {
     const cur = localStorage.getItem("ptsync_last") || "1970-01-01T00:00:00Z";
     if (row.updated_at > cur) RAW.set("ptsync_last", row.updated_at);
   }
-  if (!changed) return;
+  if (outcome === "none") return;
   clearTimeout(rtRenderTimer);   // coalesce a burst of incoming rows into one repaint
   rtRenderTimer = setTimeout(() => {
     if (typeof buildBank === "function" && typeof render === "function") { buildBank(); render(); }
@@ -201,15 +252,16 @@ async function pull() {
     .select("key,value,updated_at").gt("updated_at", since)
     .order("updated_at", { ascending: true }).limit(1000);
   if (error) { console.error("[sync] pull failed:", error.message || error); SYNC.status = "error"; SYNC.err = error.message; refreshSyncCard(); return; }
-  let maxT = since, applied = 0;
+  let maxT = since, applied = 0, needsReupload = false;
   for (const r of data) {
     if (r.updated_at > maxT) maxT = r.updated_at;
-    if (DIRTY.has(r.key)) continue;               // local unsent change wins
-    if (r.value === null) RAW.rm(r.key);
-    else RAW.set(r.key, typeof r.value === "string" ? r.value : JSON.stringify(r.value));
-    applied++;
+    if (NO_MERGE_KEYS.has(r.key) && DIRTY.has(r.key)) continue; // identity record: an in-flight local edit wins outright
+    const outcome = reconcileRow(r.key, r.value);
+    if (outcome === "merged") { DIRTY.add(r.key); saveDirty(); needsReupload = true; }
+    if (outcome !== "none") applied++;
   }
   RAW.set("ptsync_last", maxT);
+  if (needsReupload) { clearTimeout(flushTimer); flushTimer = setTimeout(flush, 700); } // push the merged result back up
   if (applied && typeof buildBank === "function" && typeof render === "function") { buildBank(); render(); }
   if (SYNC.status !== "error") { SYNC.status = "ok"; markSynced(); refreshSyncCard(); }
 }
